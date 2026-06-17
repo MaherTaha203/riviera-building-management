@@ -21,15 +21,20 @@ router.post("/payment-vouchers", authMiddleware, validateBody(CreatePaymentVouch
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
-  const voucherNumber = await generatePaymentVoucherNumber();
-  const [voucher] = await db.insert(paymentVouchersTable).values({
-    voucherNumber, date, beneficiaryName,
-    amount: String(amount), currency, exchangeRate: String(exchangeRate ?? 1), amountILS: String(amountILS),
-    paymentMethod, category,
-    chequeNumber: chequeNumber ?? null, bankName: bankName ?? null,
-    chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
-    notes: notes ?? null,
-  }).returning();
+  // Atomically generate voucher number + insert in one transaction.
+  // pg_advisory_xact_lock inside generatePaymentVoucherNumber serializes concurrent callers.
+  const voucher = await db.transaction(async (tx) => {
+    const voucherNumber = await generatePaymentVoucherNumber(tx);
+    const [inserted] = await tx.insert(paymentVouchersTable).values({
+      voucherNumber, date, beneficiaryName,
+      amount: String(amount), currency, exchangeRate: String(exchangeRate ?? 1), amountILS: String(amountILS),
+      paymentMethod, category,
+      chequeNumber: chequeNumber ?? null, bankName: bankName ?? null,
+      chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
+      notes: notes ?? null,
+    }).returning();
+    return inserted;
+  });
   // Sync bank account balance for bank_transfer (payment reduces bank balance)
   if (paymentMethod === "bank_transfer" && bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));

@@ -39,33 +39,37 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
-  const voucherNumber = await generateReceiptVoucherNumber();
-  // Update tenant balance
-  let previousBalance: number | null = null;
-  let newBalance: number | null = null;
-  if (tenantId) {
-    const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, Number(tenantId)));
-    if (tenant) {
-      previousBalance = Number(tenant.balance);
-      newBalance = previousBalance + Number(amountILS);
-      await db.update(tenantsTable).set({ balance: String(newBalance) }).where(eq(tenantsTable.id, Number(tenantId)));
+  // Atomically generate voucher number + insert + update tenant balance in one transaction.
+  // pg_advisory_xact_lock inside generateReceiptVoucherNumber serializes concurrent callers.
+  const voucher = await db.transaction(async (tx) => {
+    const voucherNumber = await generateReceiptVoucherNumber(tx);
+    let previousBalance: number | null = null;
+    let newBalance: number | null = null;
+    if (tenantId) {
+      const [tenant] = await tx.select().from(tenantsTable).where(eq(tenantsTable.id, Number(tenantId)));
+      if (tenant) {
+        previousBalance = Number(tenant.balance);
+        newBalance = previousBalance + Number(amountILS);
+        await tx.update(tenantsTable).set({ balance: String(newBalance) }).where(eq(tenantsTable.id, Number(tenantId)));
+      }
     }
-  }
-  const [voucher] = await db.insert(receiptVouchersTable).values({
-    voucherNumber, date, payerName,
-    tenantId: tenantId ? Number(tenantId) : null,
-    contractId: contractId ? Number(contractId) : null,
-    amount: String(amount), currency,
-    exchangeRate: String(exchangeRate ?? 1),
-    amountILS: String(amountILS),
-    paymentMethod,
-    chequeNumber: chequeNumber ?? null, bankName: bankName ?? null,
-    chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
-    accountHolderName: accountHolderName ?? null,
-    previousBalance: previousBalance != null ? String(previousBalance) : null,
-    newBalance: newBalance != null ? String(newBalance) : null,
-    notes: notes ?? null,
-  }).returning();
+    const [inserted] = await tx.insert(receiptVouchersTable).values({
+      voucherNumber, date, payerName,
+      tenantId: tenantId ? Number(tenantId) : null,
+      contractId: contractId ? Number(contractId) : null,
+      amount: String(amount), currency,
+      exchangeRate: String(exchangeRate ?? 1),
+      amountILS: String(amountILS),
+      paymentMethod,
+      chequeNumber: chequeNumber ?? null, bankName: bankName ?? null,
+      chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
+      accountHolderName: accountHolderName ?? null,
+      previousBalance: previousBalance != null ? String(previousBalance) : null,
+      newBalance: newBalance != null ? String(newBalance) : null,
+      notes: notes ?? null,
+    }).returning();
+    return inserted;
+  });
   // Sync bank account balance for bank_transfer
   if (paymentMethod === "bank_transfer" && bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));

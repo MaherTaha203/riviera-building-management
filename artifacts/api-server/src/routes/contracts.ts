@@ -34,14 +34,18 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
   }
   const rate = Number(exchangeRate ?? 1);
   const amountILS = Number(rentAmount) * rate;
-  const contractNumber = await generateContractNumber();
-  const [contract] = await db.insert(contractsTable).values({
-    contractNumber, tenantId: Number(tenantId), unitId: Number(unitId), startDate, endDate,
-    rentAmount: String(rentAmount), currency, exchangeRate: String(rate),
-    rentAmountILS: String(amountILS), paymentFrequency: paymentFrequency ?? "monthly",
-    status: "active", notes: notes ?? null,
-  }).returning();
-  // mark unit as occupied
+  // Atomically generate contract number + insert in one transaction.
+  const contract = await db.transaction(async (tx) => {
+    const contractNumber = await generateContractNumber(tx);
+    const [inserted] = await tx.insert(contractsTable).values({
+      contractNumber, tenantId: Number(tenantId), unitId: Number(unitId), startDate, endDate,
+      rentAmount: String(rentAmount), currency, exchangeRate: String(rate),
+      rentAmountILS: String(amountILS), paymentFrequency: paymentFrequency ?? "monthly",
+      status: "active", notes: notes ?? null,
+    }).returning();
+    return inserted;
+  });
+  // Mark unit as occupied (outside transaction; non-critical if this fails separately)
   await db.update(unitsTable).set({ status: "occupied" }).where(eq(unitsTable.id, Number(unitId)));
   await logAction(user, "CREATE", "contract", contract.id);
   res.status(201).json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), tenantName: "", unitNumber: "" });
@@ -58,18 +62,24 @@ router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody),
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const { startDate, endDate, rentAmount, currency, exchangeRate, paymentFrequency, status, notes } = req.body;
+  // Fetch existing to get current rentAmount / exchangeRate for ILS recomputation
+  const [existing] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
+  if (!existing) { res.status(404).json({ error: "Contract not found" }); return; }
   const updates: Record<string, unknown> = {};
   if (startDate != null) updates.startDate = startDate;
   if (endDate != null) updates.endDate = endDate;
   if (rentAmount != null) updates.rentAmount = String(rentAmount);
   if (currency != null) updates.currency = currency;
-  if (exchangeRate != null) {
-    updates.exchangeRate = String(exchangeRate);
-    if (rentAmount != null) updates.rentAmountILS = String(Number(rentAmount) * Number(exchangeRate));
-  }
+  if (exchangeRate != null) updates.exchangeRate = String(exchangeRate);
   if (paymentFrequency != null) updates.paymentFrequency = paymentFrequency;
   if (status != null) updates.status = status;
   if (notes !== undefined) updates.notes = notes;
+  // Recompute rentAmountILS whenever either component changes (use existing value for the unchanged one)
+  if (rentAmount != null || exchangeRate != null) {
+    const effectiveRent = rentAmount != null ? Number(rentAmount) : Number(existing.rentAmount);
+    const effectiveRate = exchangeRate != null ? Number(exchangeRate) : Number(existing.exchangeRate);
+    updates.rentAmountILS = String(effectiveRent * effectiveRate);
+  }
   const [contract] = await db.update(contractsTable).set(updates).where(eq(contractsTable.id, id)).returning();
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
   await logAction(user, "UPDATE", "contract", contract.id);

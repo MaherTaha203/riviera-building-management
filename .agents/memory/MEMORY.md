@@ -1,0 +1,3 @@
+- [Riviera BMS stack](riviera-bms-stack.md) — pnpm mono, Express 5, Drizzle/PG, React+Wouter+TanStack, Zod v4, Orval; SESSION_SECRET set
+- [Voucher advisory locks](voucher-advisory-locks.md) — pg_advisory_xact_lock inside db.transaction() for race-free sequential numbers
+- [Contract rentAmountILS](contract-rent-ils.md) — PATCH must fetch existing row first; recompute ILS when either rentAmount or exchangeRate changes
