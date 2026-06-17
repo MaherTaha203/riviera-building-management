@@ -41,28 +41,27 @@ router.get("/account-statements", authMiddleware, async (req, res): Promise<void
     referenceId: v.id,
   }));
 
-  // Payment vouchers (debit entries) — only included in general (non-tenant, non-contract) view
-  if (!tenantId && !contractId) {
-    const paymentConds: SQL[] = [];
-    if (from) paymentConds.push(gte(paymentVouchersTable.date, from));
-    if (to) paymentConds.push(lte(paymentVouchersTable.date, to));
+  // Payment vouchers (debit entries) — always included, filtered by date range only
+  // (payments are building-level expenses; they appear in all statement views)
+  const paymentConds: SQL[] = [];
+  if (from) paymentConds.push(gte(paymentVouchersTable.date, from));
+  if (to) paymentConds.push(lte(paymentVouchersTable.date, to));
 
-    const payments = await db
-      .select()
-      .from(paymentVouchersTable)
-      .where(paymentConds.length > 0 ? and(...paymentConds) : undefined)
-      .orderBy(paymentVouchersTable.date, paymentVouchersTable.id);
+  const payments = await db
+    .select()
+    .from(paymentVouchersTable)
+    .where(paymentConds.length > 0 ? and(...paymentConds) : undefined)
+    .orderBy(paymentVouchersTable.date, paymentVouchersTable.id);
 
-    for (const v of payments) {
-      rows.push({
-        date: v.date,
-        debit: Number(v.amountILS),
-        credit: 0,
-        description: `${v.voucherNumber} - ${v.beneficiaryName}`,
-        referenceType: "payment_voucher",
-        referenceId: v.id,
-      });
-    }
+  for (const v of payments) {
+    rows.push({
+      date: v.date,
+      debit: Number(v.amountILS),
+      credit: 0,
+      description: `${v.voucherNumber} - ${v.beneficiaryName}`,
+      referenceType: "payment_voucher",
+      referenceId: v.id,
+    });
   }
 
   // Sort chronologically; same-date entries keep their natural DB order

@@ -61,8 +61,17 @@ export default function Reports() {
     receiptsByMethod[label] = (receiptsByMethod[label] ?? 0) + Number(r.amountILS);
   });
 
-  const activeContracts = contractList.filter((c: any) => c.status === "active");
-  const totalMonthlyRent = activeContracts.reduce((s: number, c: any) => s + Number(c.rentAmountILS), 0);
+  // Period-aware occupancy: contracts whose period overlaps [appliedFrom, appliedTo]
+  const periodContracts = contractList.filter((c: any) => {
+    if (!appliedFrom && !appliedTo) return c.status === "active";
+    const start = c.startDate ?? "";
+    const end = c.endDate ?? "9999-12-31";
+    if (appliedFrom && end < appliedFrom) return false;
+    if (appliedTo && start > appliedTo) return false;
+    return true;
+  });
+  const periodOccupiedUnitIds = new Set(periodContracts.map((c: any) => c.unitId).filter(Boolean));
+  const totalMonthlyRent = periodContracts.reduce((s: number, c: any) => s + Number(c.rentAmountILS), 0);
 
   const isFiltered = appliedFrom || appliedTo;
 
@@ -131,7 +140,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold ltr-nums">{formatAmount(totalMonthlyRent, "ILS")}</div>
-            <p className="text-xs text-muted-foreground">{activeContracts.length} عقد نشط</p>
+            <p className="text-xs text-muted-foreground">{periodContracts.length} عقد {isFiltered ? "خلال الفترة" : "نشط"}</p>
           </CardContent>
         </Card>
         <Card>
@@ -141,9 +150,9 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold ltr-nums">
-              {summary && summary.totalUnits > 0 ? Math.round((summary.occupiedUnits / summary.totalUnits) * 100) : 0}%
+              {(summary?.totalUnits ?? 0) > 0 ? Math.round((periodOccupiedUnitIds.size / (summary?.totalUnits ?? 1)) * 100) : 0}%
             </div>
-            <p className="text-xs text-muted-foreground">{summary?.occupiedUnits ?? 0} من {summary?.totalUnits ?? 0} وحدة</p>
+            <p className="text-xs text-muted-foreground">{periodOccupiedUnitIds.size} من {summary?.totalUnits ?? 0} وحدة</p>
           </CardContent>
         </Card>
         <Card>
