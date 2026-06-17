@@ -1,0 +1,297 @@
+# Riviera Building Management System
+
+# Full Audit + Completion Roadmap
+
+Repository:
+
+https://github.com/MaherTaha203/riviera-building-management
+
+IMPORTANT:
+
+Before doing any implementation, perform a complete audit of the repository.
+
+Do NOT start coding.
+
+Do NOT rewrite architecture.
+
+Do NOT create new features.
+
+Do NOT assume previous reports are accurate.
+
+Verify everything directly from the source code.
+
+---
+
+## Project Context
+
+This project is:
+
+Riviera Building Management System
+
+Purpose:
+
+Manage a commercial building with:
+
+* Floors
+* Units
+* Contracts
+* Tenants
+* Financial operations
+* Receipt vouchers
+* Payment vouchers
+* Cash fund
+* Bank accounts
+* Cheques
+* Reports
+
+This is NOT:
+
+* ERP
+* E-commerce
+* Product Catalog
+* CRM
+
+The system must remain simple, professional, and maintainable.
+
+---
+
+# Phase A — Repository Audit
+
+Perform a complete audit.
+
+Analyze:
+
+## Architecture
+
+Review:
+
+* Project structure
+* Frontend architecture
+* Backend architecture
+* Database architecture
+* State management
+* API design
+
+Provide:
+
+* Strengths
+* Weaknesses
+* Technical debt
+
+---
+
+## Database Audit
+
+Review:
+
+* Schema design
+* Relationships
+* Constraints
+* Foreign keys
+* Indexes
+
+Verify:
+
+### Building
+
+* Property
+* Floors
+* Units
+
+### Contracts
+
+* Contract records
+* Contract status
+* Annual increase logic
+
+### Financial
+
+* Receipt vouchers
+* Payment vouchers
+* Cash fund
+* Bank accounts
+* Cheques
+
+Identify:
+
+* Missing tables
+* Missing relations
+* Data integrity risks
+
+---
+
+## Authentication & Security Audit
+
+Review:
+
+* Authentication
+* Authorization
+* Session management
+* API protection
+* Validation
+
+Provide:
+
+* Security findings
+* Critical issues
+* Medium issues
+* Low issues
+
+---
+
+## Frontend Audit
+
+Review:
+
+* Navigation
+* Routing
+* Screens
+* Forms
+* Tables
+* User experience
+
+For every page identify:
+
+* Completed
+* Partially completed
+* Missing
+
+---
+
+## Runtime Audit
+
+Verify:
+
+* Build status
+* Dependency issues
+* Environment requirements
+* Startup requirements
+
+Provide:
+
+### Backend
+
+* Builds?
+* Runs?
+* Errors?
+
+### Frontend
+
+* Builds?
+* Runs?
+* Errors?
+
+---
+
+# Phase B — Functional Audit
+
+Create a table:
+
+| Module | Status | Percentage | Notes |
+| ------ | ------ | ---------- | ----- |
+
+Review:
+
+* Dashboard
+* Building Management
+* Floors
+* Units
+* Tenants
+* Contracts
+* Receipt Vouchers
+* Payment Vouchers
+* Cash Fund
+* Bank Accounts
+* Cheques
+* Reports
+* Authentication
+* Settings
+
+Classify each as:
+
+* Complete
+* Partial
+* Missing
+
+---
+
+# Phase C — Gap Analysis
+
+Provide:
+
+## What is already completed
+
+List all completed functionality.
+
+---
+
+## What is partially implemented
+
+List all partial functionality.
+
+---
+
+## What is missing
+
+List all missing functionality.
+
+---
+
+## Critical blockers
+
+List everything preventing production usage.
+
+---
+
+# Phase D — Completion Roadmap
+
+Create a realistic implementation roadmap.
+
+Priority 1:
+Critical fixes.
+
+Priority 2:
+Core business modules.
+
+Priority 3:
+Reports and polish.
+
+For each task include:
+
+* Estimated complexity
+* Dependencies
+* Risk level
+
+---
+
+# Important Rules
+
+Do not create new architecture.
+
+Do not suggest microservices.
+
+Do not suggest enterprise complexity.
+
+Do not redesign the entire project.
+
+Work with the existing codebase.
+
+Goal:
+
+Complete Riviera Building Management System efficiently and professionally.
+
+---
+
+# Deliverables
+
+Provide:
+
+1. Full repository audit.
+2. Database audit.
+3. Security audit.
+4. Runtime audit.
+5. Functional audit table.
+6. Gap analysis.
+7. Completion roadmap.
+
+Wait for approval before making any code changes.
