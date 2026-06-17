@@ -92,10 +92,61 @@ router.get("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise<vo
 router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceiptVoucherBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const updates: Record<string, unknown> = {};
-  const fields = ["date","payerName","amount","currency","exchangeRate","amountILS","paymentMethod","chequeNumber","bankName","chequeDate","dueDate","accountHolderName","notes"];
-  for (const f of fields) { if (req.body[f] !== undefined) updates[f] = req.body[f] != null ? (["amount","exchangeRate","amountILS"].includes(f) ? String(req.body[f]) : req.body[f]) : null; }
-  const [v] = await db.update(receiptVouchersTable).set(updates).where(eq(receiptVouchersTable.id, id)).returning();
+
+  // Atomically: fetch existing → compute tenant-balance delta → apply updates
+  const v = await db.transaction(async (tx) => {
+    const [existing] = await tx.select().from(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
+    if (!existing) return null;
+
+    const oldTenantId = existing.tenantId;
+    const newTenantId = req.body.tenantId !== undefined
+      ? (req.body.tenantId ? Number(req.body.tenantId) : null)
+      : oldTenantId;
+    const oldAmountILS = Number(existing.amountILS);
+    const newAmountILS = req.body.amountILS != null ? Number(req.body.amountILS) : oldAmountILS;
+
+    const tenantChanged = newTenantId !== oldTenantId;
+    const amountChanged = newAmountILS !== oldAmountILS;
+
+    if (tenantChanged || amountChanged) {
+      // Reverse the old tenant's balance for the old amount
+      if (oldTenantId) {
+        const [oldTenant] = await tx.select().from(tenantsTable).where(eq(tenantsTable.id, oldTenantId));
+        if (oldTenant) {
+          await tx.update(tenantsTable)
+            .set({ balance: String(Number(oldTenant.balance) - oldAmountILS) })
+            .where(eq(tenantsTable.id, oldTenantId));
+        }
+      }
+      // Credit the new tenant's balance with the new amount
+      if (newTenantId) {
+        // Re-fetch if same tenant (balance just changed above)
+        const [newTenant] = await tx.select().from(tenantsTable).where(eq(tenantsTable.id, newTenantId));
+        if (newTenant) {
+          await tx.update(tenantsTable)
+            .set({ balance: String(Number(newTenant.balance) + newAmountILS) })
+            .where(eq(tenantsTable.id, newTenantId));
+        }
+      }
+    }
+
+    // Build the column update set
+    const updates: Record<string, unknown> = {};
+    if (req.body.tenantId !== undefined) updates.tenantId = newTenantId;
+    if (req.body.contractId !== undefined) updates.contractId = req.body.contractId ? Number(req.body.contractId) : null;
+    const scalarFields = ["date","payerName","amount","currency","exchangeRate","amountILS","paymentMethod","chequeNumber","bankName","chequeDate","dueDate","accountHolderName","notes"];
+    for (const f of scalarFields) {
+      if (req.body[f] !== undefined) {
+        updates[f] = req.body[f] != null
+          ? (["amount","exchangeRate","amountILS"].includes(f) ? String(req.body[f]) : req.body[f])
+          : null;
+      }
+    }
+
+    const [updated] = await tx.update(receiptVouchersTable).set(updates).where(eq(receiptVouchersTable.id, id)).returning();
+    return updated ?? null;
+  });
+
   if (!v) { res.status(404).json({ error: "Not found" }); return; }
   await logAction(user, "UPDATE", "receipt_voucher", v.id);
   res.json({ ...v, amount: Number(v.amount), exchangeRate: Number(v.exchangeRate), amountILS: Number(v.amountILS), previousBalance: toNum(v.previousBalance), newBalance: toNum(v.newBalance) });
