@@ -3,20 +3,33 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Riviera Building Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: dashboard
+  - name: units
+  - name: tenants
+  - name: contracts
+  - name: receiptVouchers
+  - name: paymentVouchers
+  - name: cashFund
+  - name: bankAccounts
+  - name: cheques
+  - name: accountStatements
+  - name: documents
+  - name: auditLog
+  - name: settings
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +37,1859 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Auth ───────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      responses:
+        "200":
+          description: Logged out
+
+  # ─── Dashboard ──────────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getDashboardRecentActivity
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # ─── Units ──────────────────────────────────────────────────────────────────
+  /units:
+    get:
+      operationId: listUnits
+      tags: [units]
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unit"
+    post:
+      operationId: createUnit
+      tags: [units]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+
+  /units/{id}:
+    get:
+      operationId: getUnit
+      tags: [units]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateUnit
+      tags: [units]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+    delete:
+      operationId: deleteUnit
+      tags: [units]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Tenants ────────────────────────────────────────────────────────────────
+  /tenants:
+    get:
+      operationId: listTenants
+      tags: [tenants]
+      responses:
+        "200":
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+    post:
+      operationId: createTenant
+      tags: [tenants]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /tenants/{id}:
+    get:
+      operationId: getTenant
+      tags: [tenants]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTenant
+      tags: [tenants]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+    delete:
+      operationId: deleteTenant
+      tags: [tenants]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Contracts ──────────────────────────────────────────────────────────────
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateContract
+      tags: [contracts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+    delete:
+      operationId: deleteContract
+      tags: [contracts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Receipt Vouchers ────────────────────────────────────────────────────────
+  /receipt-vouchers:
+    get:
+      operationId: listReceiptVouchers
+      tags: [receiptVouchers]
+      responses:
+        "200":
+          description: List of receipt vouchers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptVoucher"
+    post:
+      operationId: createReceiptVoucher
+      tags: [receiptVouchers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiptVoucherInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptVoucher"
+
+  /receipt-vouchers/{id}:
+    get:
+      operationId: getReceiptVoucher
+      tags: [receiptVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Receipt voucher
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptVoucher"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateReceiptVoucher
+      tags: [receiptVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiptVoucherUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptVoucher"
+    delete:
+      operationId: deleteReceiptVoucher
+      tags: [receiptVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Payment Vouchers ────────────────────────────────────────────────────────
+  /payment-vouchers:
+    get:
+      operationId: listPaymentVouchers
+      tags: [paymentVouchers]
+      responses:
+        "200":
+          description: List of payment vouchers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentVoucher"
+    post:
+      operationId: createPaymentVoucher
+      tags: [paymentVouchers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentVoucherInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVoucher"
+
+  /payment-vouchers/{id}:
+    get:
+      operationId: getPaymentVoucher
+      tags: [paymentVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment voucher
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVoucher"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePaymentVoucher
+      tags: [paymentVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentVoucherUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVoucher"
+    delete:
+      operationId: deletePaymentVoucher
+      tags: [paymentVouchers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Cash Fund ───────────────────────────────────────────────────────────────
+  /cash-fund:
+    get:
+      operationId: getCashFund
+      tags: [cashFund]
+      responses:
+        "200":
+          description: Cash fund
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashFund"
+
+  /cash-fund/transactions:
+    get:
+      operationId: listCashTransactions
+      tags: [cashFund]
+      responses:
+        "200":
+          description: Cash transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CashTransaction"
+
+  # ─── Bank Accounts ───────────────────────────────────────────────────────────
+  /bank-accounts:
+    get:
+      operationId: listBankAccounts
+      tags: [bankAccounts]
+      responses:
+        "200":
+          description: Bank accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankAccount"
+    post:
+      operationId: createBankAccount
+      tags: [bankAccounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccount"
+
+  /bank-accounts/{id}:
+    get:
+      operationId: getBankAccount
+      tags: [bankAccounts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccount"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateBankAccount
+      tags: [bankAccounts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccount"
+    delete:
+      operationId: deleteBankAccount
+      tags: [bankAccounts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Cheques ─────────────────────────────────────────────────────────────────
+  /cheques:
+    get:
+      operationId: listCheques
+      tags: [cheques]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [incoming, outgoing]
+      responses:
+        "200":
+          description: Cheques
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cheque"
+    post:
+      operationId: createCheque
+      tags: [cheques]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChequeInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cheque"
+
+  /cheques/{id}:
+    get:
+      operationId: getCheque
+      tags: [cheques]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cheque
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cheque"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateCheque
+      tags: [cheques]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChequeUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cheque"
+    delete:
+      operationId: deleteCheque
+      tags: [cheques]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Account Statements ──────────────────────────────────────────────────────
+  /account-statements:
+    get:
+      operationId: listAccountStatements
+      tags: [accountStatements]
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: contractId
+          in: query
+          schema:
+            type: integer
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account statements
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStatementResult"
+
+  # ─── Documents ───────────────────────────────────────────────────────────────
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      parameters:
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createDocument
+      tags: [documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteDocument
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Audit Log ───────────────────────────────────────────────────────────────
+  /audit-log:
+    get:
+      operationId: listAuditLog
+      tags: [auditLog]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogResult"
+
+  # ─── Settings ────────────────────────────────────────────────────────────────
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /settings/exchange-rates:
+    get:
+      operationId: getExchangeRates
+      tags: [settings]
+      responses:
+        "200":
+          description: Current exchange rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRates"
+    patch:
+      operationId: updateExchangeRates
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRatesUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRates"
+
+  /settings/users:
+    get:
+      operationId: listUsers
+      tags: [settings]
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /settings/users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ─── Auth ──────────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, username, name, role]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, viewer]
+        createdAt:
+          type: string
+
+    UserInput:
+      type: object
+      required: [username, name, password, role]
+      properties:
+        username:
+          type: string
+        name:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, viewer]
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        password:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [admin, manager, viewer]
+
+    # ─── Dashboard ─────────────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [totalUnits, occupiedUnits, vacantUnits, totalTenants, activeContracts, monthlyReceiptsILS, monthlyPaymentsILS, cashBalanceILS]
+      properties:
+        totalUnits:
+          type: integer
+        occupiedUnits:
+          type: integer
+        vacantUnits:
+          type: integer
+        totalTenants:
+          type: integer
+        activeContracts:
+          type: integer
+        expiringContractsSoon:
+          type: integer
+        monthlyReceiptsILS:
+          type: number
+        monthlyPaymentsILS:
+          type: number
+        cashBalanceILS:
+          type: number
+        totalBankBalanceILS:
+          type: number
+        pendingCheques:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        entityType:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    # ─── Units ─────────────────────────────────────────────────────────────────
+    Unit:
+      type: object
+      required: [id, unitNumber, floor, type, area, status]
+      properties:
+        id:
+          type: integer
+        unitNumber:
+          type: string
+        floor:
+          type: string
+        type:
+          type: string
+          enum: [office, shop, warehouse, apartment, other]
+        area:
+          type: number
+        status:
+          type: string
+          enum: [vacant, occupied, maintenance]
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    UnitInput:
+      type: object
+      required: [unitNumber, floor, type, area, status]
+      properties:
+        unitNumber:
+          type: string
+        floor:
+          type: string
+        type:
+          type: string
+          enum: [office, shop, warehouse, apartment, other]
+        area:
+          type: number
+        status:
+          type: string
+          enum: [vacant, occupied, maintenance]
+        description:
+          type: ["string", "null"]
+
+    UnitUpdate:
+      type: object
+      properties:
+        unitNumber:
+          type: string
+        floor:
+          type: string
+        type:
+          type: string
+          enum: [office, shop, warehouse, apartment, other]
+        area:
+          type: number
+        status:
+          type: string
+          enum: [vacant, occupied, maintenance]
+        description:
+          type: ["string", "null"]
+
+    # ─── Tenants ───────────────────────────────────────────────────────────────
+    Tenant:
+      type: object
+      required: [id, name, type, phone]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [individual, company]
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        idNumber:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        balance:
+          type: number
+        createdAt:
+          type: string
+
+    TenantInput:
+      type: object
+      required: [name, type, phone]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [individual, company]
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        idNumber:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    TenantUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [individual, company]
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        idNumber:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Contracts ─────────────────────────────────────────────────────────────
+    Contract:
+      type: object
+      required: [id, contractNumber, tenantId, unitId, startDate, endDate, rentAmount, currency, status]
+      properties:
+        id:
+          type: integer
+        contractNumber:
+          type: string
+        tenantId:
+          type: integer
+        tenantName:
+          type: string
+        unitId:
+          type: integer
+        unitNumber:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        rentAmount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        rentAmountILS:
+          type: number
+        paymentFrequency:
+          type: string
+          enum: [monthly, quarterly, yearly]
+        status:
+          type: string
+          enum: [active, expired, terminated]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ContractInput:
+      type: object
+      required: [tenantId, unitId, startDate, endDate, rentAmount, currency, paymentFrequency]
+      properties:
+        tenantId:
+          type: integer
+        unitId:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        rentAmount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        paymentFrequency:
+          type: string
+          enum: [monthly, quarterly, yearly]
+        notes:
+          type: ["string", "null"]
+
+    ContractUpdate:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        rentAmount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        paymentFrequency:
+          type: string
+          enum: [monthly, quarterly, yearly]
+        status:
+          type: string
+          enum: [active, expired, terminated]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Receipt Vouchers ──────────────────────────────────────────────────────
+    ReceiptVoucher:
+      type: object
+      required: [id, voucherNumber, date, payerName, amount, currency, amountILS, paymentMethod]
+      properties:
+        id:
+          type: integer
+        voucherNumber:
+          type: string
+        date:
+          type: string
+        payerName:
+          type: string
+        tenantId:
+          type: ["integer", "null"]
+        tenantName:
+          type: ["string", "null"]
+        contractId:
+          type: ["integer", "null"]
+        contractNumber:
+          type: ["string", "null"]
+        unitNumber:
+          type: ["string", "null"]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        accountHolderName:
+          type: ["string", "null"]
+        previousBalance:
+          type: ["number", "null"]
+        newBalance:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ReceiptVoucherInput:
+      type: object
+      required: [date, payerName, amount, currency, exchangeRate, amountILS, paymentMethod]
+      properties:
+        date:
+          type: string
+        payerName:
+          type: string
+        tenantId:
+          type: ["integer", "null"]
+        contractId:
+          type: ["integer", "null"]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        accountHolderName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ReceiptVoucherUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+        payerName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        accountHolderName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Payment Vouchers ──────────────────────────────────────────────────────
+    PaymentVoucher:
+      type: object
+      required: [id, voucherNumber, date, beneficiaryName, amount, currency, amountILS, paymentMethod, category]
+      properties:
+        id:
+          type: integer
+        voucherNumber:
+          type: string
+        date:
+          type: string
+        beneficiaryName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        category:
+          type: string
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PaymentVoucherInput:
+      type: object
+      required: [date, beneficiaryName, amount, currency, exchangeRate, amountILS, paymentMethod, category]
+      properties:
+        date:
+          type: string
+        beneficiaryName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        category:
+          type: string
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    PaymentVoucherUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+        beneficiaryName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, cheque]
+        category:
+          type: string
+        chequeNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        chequeDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Cash Fund ─────────────────────────────────────────────────────────────
+    CashFund:
+      type: object
+      required: [balanceILS, lastUpdated]
+      properties:
+        balanceILS:
+          type: number
+        lastUpdated:
+          type: string
+
+    CashTransaction:
+      type: object
+      required: [id, date, description, debit, credit, balance, type, referenceId, referenceType]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        description:
+          type: string
+        debit:
+          type: number
+        credit:
+          type: number
+        balance:
+          type: number
+        type:
+          type: string
+        referenceId:
+          type: ["integer", "null"]
+        referenceType:
+          type: ["string", "null"]
+
+    # ─── Bank Accounts ─────────────────────────────────────────────────────────
+    BankAccount:
+      type: object
+      required: [id, bankName, accountNumber, accountName, currency, balanceILS]
+      properties:
+        id:
+          type: integer
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        accountName:
+          type: string
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        balanceILS:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    BankAccountInput:
+      type: object
+      required: [bankName, accountNumber, accountName, currency]
+      properties:
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        accountName:
+          type: string
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        notes:
+          type: ["string", "null"]
+
+    BankAccountUpdate:
+      type: object
+      properties:
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        accountName:
+          type: string
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Cheques ───────────────────────────────────────────────────────────────
+    Cheque:
+      type: object
+      required: [id, chequeNumber, type, amount, currency, amountILS, bankName, chequeDate, dueDate, status, drawerName]
+      properties:
+        id:
+          type: integer
+        chequeNumber:
+          type: string
+        type:
+          type: string
+          enum: [incoming, outgoing]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        bankName:
+          type: string
+        chequeDate:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [pending, deposited, cleared, bounced, cancelled]
+        drawerName:
+          type: string
+        tenantId:
+          type: ["integer", "null"]
+        tenantName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ChequeInput:
+      type: object
+      required: [chequeNumber, type, amount, currency, exchangeRate, amountILS, bankName, chequeDate, dueDate, drawerName]
+      properties:
+        chequeNumber:
+          type: string
+        type:
+          type: string
+          enum: [incoming, outgoing]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        bankName:
+          type: string
+        chequeDate:
+          type: string
+        dueDate:
+          type: string
+        drawerName:
+          type: string
+        tenantId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ChequeUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, deposited, cleared, bounced, cancelled]
+        notes:
+          type: ["string", "null"]
+        dueDate:
+          type: string
+
+    # ─── Account Statements ────────────────────────────────────────────────────
+    AccountStatementEntry:
+      type: object
+      required: [id, date, description, debit, credit, balance, referenceType, referenceId]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        description:
+          type: string
+        debit:
+          type: number
+        credit:
+          type: number
+        balance:
+          type: number
+        referenceType:
+          type: string
+        referenceId:
+          type: integer
+
+    AccountStatementResult:
+      type: object
+      required: [entries, openingBalance, closingBalance, totalDebit, totalCredit]
+      properties:
+        tenantId:
+          type: ["integer", "null"]
+        tenantName:
+          type: ["string", "null"]
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountStatementEntry"
+        openingBalance:
+          type: number
+        closingBalance:
+          type: number
+        totalDebit:
+          type: number
+        totalCredit:
+          type: number
+
+    # ─── Documents ─────────────────────────────────────────────────────────────
+    Document:
+      type: object
+      required: [id, name, entityType, entityId, fileType]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        entityType:
+          type: string
+          enum: [tenant, contract, unit, general]
+        entityId:
+          type: ["integer", "null"]
+        entityName:
+          type: ["string", "null"]
+        fileType:
+          type: string
+        fileSize:
+          type: ["integer", "null"]
+        fileUrl:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DocumentInput:
+      type: object
+      required: [name, entityType, fileType]
+      properties:
+        name:
+          type: string
+        entityType:
+          type: string
+          enum: [tenant, contract, unit, general]
+        entityId:
+          type: ["integer", "null"]
+        fileType:
+          type: string
+        fileSize:
+          type: ["integer", "null"]
+        fileUrl:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Audit Log ─────────────────────────────────────────────────────────────
+    AuditLogEntry:
+      type: object
+      required: [id, action, entityType, userId, userName, createdAt]
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        userId:
+          type: integer
+        userName:
+          type: string
+        details:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    AuditLogResult:
+      type: object
+      required: [entries, total, page, limit]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLogEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # ─── Settings ──────────────────────────────────────────────────────────────
+    Settings:
+      type: object
+      required: [buildingName, buildingAddress, defaultCurrency]
+      properties:
+        buildingName:
+          type: string
+        buildingAddress:
+          type: string
+        defaultCurrency:
+          type: string
+          enum: [ILS, USD, JOD]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        taxNumber:
+          type: ["string", "null"]
+
+    SettingsUpdate:
+      type: object
+      properties:
+        buildingName:
+          type: string
+        buildingAddress:
+          type: string
+        defaultCurrency:
+          type: string
+          enum: [ILS, USD, JOD]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        taxNumber:
+          type: ["string", "null"]
+
+    ExchangeRates:
+      type: object
+      required: [usdToILS, jodToILS, updatedAt]
+      properties:
+        usdToILS:
+          type: number
+        jodToILS:
+          type: number
+        updatedAt:
+          type: string
+
+    ExchangeRatesUpdate:
+      type: object
+      required: [usdToILS, jodToILS]
+      properties:
+        usdToILS:
+          type: number
+        jodToILS:
+          type: number

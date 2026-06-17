@@ -1,6 +1,12 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
+const SESSION_SECRET = process.env["SESSION_SECRET"];
+if (!SESSION_SECRET) {
+  logger.error("SESSION_SECRET environment variable is required but was not set. Refusing to start.");
+  process.exit(1);
+}
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
