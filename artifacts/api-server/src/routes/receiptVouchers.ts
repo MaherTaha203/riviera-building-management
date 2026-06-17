@@ -105,8 +105,14 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
     const oldAmountILS = Number(existing.amountILS);
     const newAmountILS = req.body.amountILS != null ? Number(req.body.amountILS) : oldAmountILS;
 
+    const oldBankName = existing.bankName;
+    const oldMethod = existing.paymentMethod;
+    const newBankName = req.body.bankName !== undefined ? req.body.bankName : oldBankName;
+    const newMethod = req.body.paymentMethod ?? oldMethod;
+
     const tenantChanged = newTenantId !== oldTenantId;
     const amountChanged = newAmountILS !== oldAmountILS;
+    const bankChanged = oldBankName !== newBankName || oldMethod !== newMethod;
 
     if (tenantChanged || amountChanged) {
       // Reverse the old tenant's balance for the old amount
@@ -126,6 +132,27 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
           await tx.update(tenantsTable)
             .set({ balance: String(Number(newTenant.balance) + newAmountILS) })
             .where(eq(tenantsTable.id, newTenantId));
+        }
+      }
+    }
+
+    if (amountChanged || bankChanged) {
+      // Reverse old bank balance (subtract the old receipt amount)
+      if (oldMethod === "bank_transfer" && oldBankName) {
+        const [oldBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, oldBankName));
+        if (oldBa) {
+          await tx.update(bankAccountsTable)
+            .set({ balanceILS: String(Number(oldBa.balanceILS) - oldAmountILS) })
+            .where(eq(bankAccountsTable.id, oldBa.id));
+        }
+      }
+      // Apply new bank balance (add the new receipt amount)
+      if (newMethod === "bank_transfer" && newBankName) {
+        const [newBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, newBankName as string));
+        if (newBa) {
+          await tx.update(bankAccountsTable)
+            .set({ balanceILS: String(Number(newBa.balanceILS) + newAmountILS) })
+            .where(eq(bankAccountsTable.id, newBa.id));
         }
       }
     }
