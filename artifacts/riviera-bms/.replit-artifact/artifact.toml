@@ -14,3 +14,12 @@ BASE_PATH = "/"
 
 [services.development]
 run = "pnpm --filter @workspace/riviera-bms run dev"
+
+[services.production]
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/riviera-bms", "run", "build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+BASE_PATH = "/"
