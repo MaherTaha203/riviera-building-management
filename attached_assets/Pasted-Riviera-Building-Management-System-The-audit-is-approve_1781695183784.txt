@@ -1,0 +1,122 @@
+Riviera Building Management System
+
+The audit is approved.
+
+Important:
+
+Do NOT add new modules.
+
+Do NOT redesign architecture.
+
+Do NOT add Floors module.
+
+Do NOT create enterprise features.
+
+Do NOT create new business workflows.
+
+My goal is:
+
+Finish the current system and make it production-ready.
+
+Focus only on fixing bugs, data integrity issues, and incomplete functionality.
+
+---
+
+Priority 1 — Critical Fixes
+
+Implement and verify:
+
+1. Remove JWT secret fallback.
+   The application must fail to start if SESSION_SECRET is missing.
+
+2. Fix contract deletion.
+   When a contract is deleted:
+
+   * related unit must automatically become vacant.
+
+3. Fix receipt voucher deletion.
+   When a receipt voucher is deleted:
+
+   * tenant balance must be reversed correctly.
+
+4. Fix voucher number generation.
+   Prevent duplicate numbers under concurrent requests.
+
+5. Add proper request validation.
+   Use existing generated Zod schemas.
+   Do not accept raw request bodies.
+
+6. Verify all financial calculations.
+   Review:
+
+   * tenant balances
+   * cash fund
+   * bank balances
+   * contract totals
+
+---
+
+Priority 2 — Completion
+
+Complete only existing modules:
+
+1. Account Statements
+   Include both:
+
+   * receipts
+   * payment vouchers
+
+2. Bank Account Balance Synchronization
+   Bank balances must update automatically from voucher activity.
+
+3. Documents Module
+   Verify whether upload support exists.
+   If missing, implement a simple upload solution.
+   Keep it lightweight.
+
+4. Reports
+   Complete existing reports.
+   No advanced analytics.
+   No BI dashboards.
+   No enterprise reporting.
+
+---
+
+Priority 3 — Verification
+
+Perform:
+
+1. Build verification.
+2. Runtime verification.
+3. Database verification.
+4. Financial consistency verification.
+
+Provide evidence.
+
+---
+
+Important Rules
+
+No new modules.
+
+No Floors module.
+
+No major redesign.
+
+No microservices.
+
+No architecture changes.
+
+Work only on completing and stabilizing the existing Riviera system.
+
+After implementation provide:
+
+1. Change log.
+2. Files modified.
+3. Test results.
+4. Remaining issues.
+5. Production readiness assessment.
+
+Do not stop after coding.
+
+Verify everything.
