@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { db, documentsTable, tenantsTable, contractsTable, unitsTable } from "@workspace/db";
-import { eq, and, SQL } from "drizzle-orm";
+import { eq, and, type SQL } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
+import { validateBody } from "../lib/validate";
+import { CreateDocumentBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -30,7 +32,7 @@ router.get("/documents", authMiddleware, async (req, res): Promise<void> => {
   res.json(docs.map(d => ({ ...d, entityName: d.entityId && nameMap[d.entityType] ? nameMap[d.entityType][d.entityId] ?? null : null })));
 });
 
-router.post("/documents", authMiddleware, async (req, res): Promise<void> => {
+router.post("/documents", authMiddleware, validateBody(CreateDocumentBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const { name, entityType, entityId, fileType, fileSize, fileUrl, notes } = req.body;
   if (!name || !entityType || !fileType) {

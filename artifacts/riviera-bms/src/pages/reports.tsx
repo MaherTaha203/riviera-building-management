@@ -1,5 +1,9 @@
-import { useGetDashboardSummary, useListReceiptVouchers, useListPaymentVouchers, useListContracts, useListCashTransactions } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useGetDashboardSummary, useListReceiptVouchers, useListPaymentVouchers, useListContracts } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatAmount } from "@/lib/format";
 import { BarChart3, TrendingUp, TrendingDown, Building2, FileText, Wallet } from "lucide-react";
 
@@ -8,29 +12,59 @@ export default function Reports() {
   const { data: receipts = [] } = useListReceiptVouchers();
   const { data: payments = [] } = useListPaymentVouchers();
   const { data: contracts = [] } = useListContracts();
-  const { data: txs = [] } = useListCashTransactions();
+
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
+
+  const handleApply = () => {
+    setAppliedFrom(from);
+    setAppliedTo(to);
+  };
+  const handleReset = () => {
+    setFrom("");
+    setTo("");
+    setAppliedFrom("");
+    setAppliedTo("");
+  };
 
   const receiptList = receipts as any[];
   const paymentList = payments as any[];
   const contractList = contracts as any[];
-  const txList = txs as any[];
 
-  const totalReceipts = receiptList.reduce((s: number, v: any) => s + v.amountILS, 0);
-  const totalPayments = paymentList.reduce((s: number, v: any) => s + v.amountILS, 0);
+  const filteredReceipts = receiptList.filter((v: any) => {
+    if (appliedFrom && v.date < appliedFrom) return false;
+    if (appliedTo && v.date > appliedTo) return false;
+    return true;
+  });
+  const filteredPayments = paymentList.filter((v: any) => {
+    if (appliedFrom && v.date < appliedFrom) return false;
+    if (appliedTo && v.date > appliedTo) return false;
+    return true;
+  });
+
+  const totalReceipts = filteredReceipts.reduce((s: number, v: any) => s + Number(v.amountILS), 0);
+  const totalPayments = filteredPayments.reduce((s: number, v: any) => s + Number(v.amountILS), 0);
 
   const paymentsByCategory: Record<string, number> = {};
-  paymentList.forEach((p: any) => {
-    paymentsByCategory[p.category] = (paymentsByCategory[p.category] ?? 0) + p.amountILS;
+  filteredPayments.forEach((p: any) => {
+    paymentsByCategory[p.category] = (paymentsByCategory[p.category] ?? 0) + Number(p.amountILS);
   });
 
   const receiptsByMethod: Record<string, number> = {};
-  receiptList.forEach((r: any) => {
-    const label = r.paymentMethod === "cash" ? "نقداً" : r.paymentMethod === "cheque" ? "شيك" : r.paymentMethod === "bank_transfer" ? "تحويل بنكي" : r.paymentMethod;
-    receiptsByMethod[label] = (receiptsByMethod[label] ?? 0) + r.amountILS;
+  filteredReceipts.forEach((r: any) => {
+    const label =
+      r.paymentMethod === "cash" ? "نقداً" :
+      r.paymentMethod === "cheque" ? "شيك" :
+      r.paymentMethod === "bank_transfer" ? "تحويل بنكي" : r.paymentMethod;
+    receiptsByMethod[label] = (receiptsByMethod[label] ?? 0) + Number(r.amountILS);
   });
 
   const activeContracts = contractList.filter((c: any) => c.status === "active");
-  const totalMonthlyRent = activeContracts.reduce((s: number, c: any) => s + c.rentAmountILS, 0);
+  const totalMonthlyRent = activeContracts.reduce((s: number, c: any) => s + Number(c.rentAmountILS), 0);
+
+  const isFiltered = appliedFrom || appliedTo;
 
   return (
     <div className="space-y-6">
@@ -39,21 +73,45 @@ export default function Reports() {
         <p className="text-muted-foreground mt-1">ملخص إحصائي شامل للعمارة</p>
       </div>
 
-      {/* Overview */}
+      {/* Date range filter */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">فترة التقرير</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+            <div><Label>من تاريخ</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="mt-1" /></div>
+            <div><Label>إلى تاريخ</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="mt-1" /></div>
+            <Button onClick={handleApply} className="w-full">تطبيق</Button>
+            <Button onClick={handleReset} variant="outline" className="w-full">إعادة تعيين</Button>
+          </div>
+          {isFiltered && (
+            <p className="text-xs text-muted-foreground mt-2">
+              تقرير الفترة: {appliedFrom || "البداية"} — {appliedTo || "النهاية"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Overview KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium">إجمالي المقبوضات</CardTitle>
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold text-emerald-600 ltr-nums">{formatAmount(totalReceipts, "ILS")}</div><p className="text-xs text-muted-foreground">{receiptList.length} سند قبض</p></CardContent>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600 ltr-nums">{formatAmount(totalReceipts, "ILS")}</div>
+            <p className="text-xs text-muted-foreground">{filteredReceipts.length} سند قبض</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
             <TrendingDown className="h-4 w-4 text-rose-600" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold text-rose-600 ltr-nums">{formatAmount(totalPayments, "ILS")}</div><p className="text-xs text-muted-foreground">{paymentList.length} سند صرف</p></CardContent>
+          <CardContent>
+            <div className="text-2xl font-bold text-rose-600 ltr-nums">{formatAmount(totalPayments, "ILS")}</div>
+            <p className="text-xs text-muted-foreground">{filteredPayments.length} سند صرف</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
@@ -61,7 +119,9 @@ export default function Reports() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ltr-nums ${totalReceipts - totalPayments >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatAmount(totalReceipts - totalPayments, "ILS")}</div>
+            <div className={`text-2xl font-bold ltr-nums ${totalReceipts - totalPayments >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+              {formatAmount(totalReceipts - totalPayments, "ILS")}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -69,7 +129,10 @@ export default function Reports() {
             <CardTitle className="text-sm font-medium">الإيجار الشهري المتوقع</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold ltr-nums">{formatAmount(totalMonthlyRent, "ILS")}</div><p className="text-xs text-muted-foreground">{activeContracts.length} عقد نشط</p></CardContent>
+          <CardContent>
+            <div className="text-2xl font-bold ltr-nums">{formatAmount(totalMonthlyRent, "ILS")}</div>
+            <p className="text-xs text-muted-foreground">{activeContracts.length} عقد نشط</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
@@ -89,7 +152,9 @@ export default function Reports() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ltr-nums ${Number(summary?.cashBalanceILS ?? 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatAmount(Number(summary?.cashBalanceILS ?? 0), "ILS")}</div>
+            <div className={`text-2xl font-bold ltr-nums ${Number(summary?.cashBalanceILS ?? 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+              {formatAmount(Number(summary?.cashBalanceILS ?? 0), "ILS")}
+            </div>
           </CardContent>
         </Card>
       </div>

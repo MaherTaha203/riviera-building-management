@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, receiptVouchersTable, tenantsTable, contractsTable, unitsTable } from "@workspace/db";
+import { db, receiptVouchersTable, tenantsTable, contractsTable, unitsTable, bankAccountsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
@@ -66,6 +66,14 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
     newBalance: newBalance != null ? String(newBalance) : null,
     notes: notes ?? null,
   }).returning();
+  // Sync bank account balance for bank_transfer
+  if (paymentMethod === "bank_transfer" && bankName) {
+    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));
+    if (bankAccount) {
+      const newBal = Number(bankAccount.balanceILS) + Number(amountILS);
+      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+    }
+  }
   await logAction(user, "CREATE", "receipt_voucher", voucher.id);
   res.status(201).json({ ...voucher, amount: Number(voucher.amount), exchangeRate: Number(voucher.exchangeRate), amountILS: Number(voucher.amountILS), previousBalance: toNum(voucher.previousBalance), newBalance: toNum(voucher.newBalance) });
 });
@@ -101,6 +109,14 @@ router.delete("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise
     if (tenant) {
       const reversed = Number(tenant.balance) - Number(existing.amountILS);
       await db.update(tenantsTable).set({ balance: String(reversed) }).where(eq(tenantsTable.id, existing.tenantId));
+    }
+  }
+  // Reverse bank account balance for bank_transfer
+  if (existing.paymentMethod === "bank_transfer" && existing.bankName) {
+    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, existing.bankName));
+    if (bankAccount) {
+      const newBal = Number(bankAccount.balanceILS) - Number(existing.amountILS);
+      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
     }
   }
   await db.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));

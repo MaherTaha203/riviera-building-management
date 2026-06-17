@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, paymentVouchersTable } from "@workspace/db";
+import { db, paymentVouchersTable, bankAccountsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
@@ -30,6 +30,14 @@ router.post("/payment-vouchers", authMiddleware, validateBody(CreatePaymentVouch
     chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
     notes: notes ?? null,
   }).returning();
+  // Sync bank account balance for bank_transfer (payment reduces bank balance)
+  if (paymentMethod === "bank_transfer" && bankName) {
+    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));
+    if (bankAccount) {
+      const newBal = Number(bankAccount.balanceILS) - Number(amountILS);
+      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+    }
+  }
   await logAction(user, "CREATE", "payment_voucher", voucher.id);
   res.status(201).json({ ...voucher, amount: Number(voucher.amount), exchangeRate: Number(voucher.exchangeRate), amountILS: Number(voucher.amountILS) });
 });
@@ -56,9 +64,19 @@ router.patch("/payment-vouchers/:id", authMiddleware, validateBody(UpdatePayment
 router.delete("/payment-vouchers/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [v] = await db.delete(paymentVouchersTable).where(eq(paymentVouchersTable.id, id)).returning();
-  if (!v) { res.status(404).json({ error: "Not found" }); return; }
-  await logAction(user, "DELETE", "payment_voucher", v.id);
+  // Fetch before delete so we can reverse the bank account balance
+  const [existing] = await db.select().from(paymentVouchersTable).where(eq(paymentVouchersTable.id, id));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  // Reverse bank account balance for bank_transfer (add back the amount)
+  if (existing.paymentMethod === "bank_transfer" && existing.bankName) {
+    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, existing.bankName));
+    if (bankAccount) {
+      const newBal = Number(bankAccount.balanceILS) + Number(existing.amountILS);
+      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+    }
+  }
+  await db.delete(paymentVouchersTable).where(eq(paymentVouchersTable.id, id));
+  await logAction(user, "DELETE", "payment_voucher", existing.id);
   res.sendStatus(204);
 });
 
