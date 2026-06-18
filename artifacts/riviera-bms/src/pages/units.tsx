@@ -48,10 +48,7 @@ export default function Units() {
     setOpen(true);
   };
 
- const payload = {
-  ...form,
-  area: Number(form.area)
-};
+const payload = { ...form, area: Number(form.area) };
     try {
       if (editing) {
         await updateUnit.mutateAsync({ id: editing, data: payload as any });
