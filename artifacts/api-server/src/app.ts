@@ -6,40 +6,30 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-const httpLogger = pinoHttp.default
-  ? pinoHttp.default({
-      logger,
-      serializers: {
-        req(req: Request & { id?: string }) {
-          return {
-            id: req.id,
-            method: req.method,
-            url: req.url?.split("?")[0],
-          };
-        },
-        res(res: Response) {
-          return {
-            statusCode: res.statusCode,
-          };
-        },
+app.use(
+  pinoHttp({
+    logger,
+    serializers: {
+      req(req: Request & { id?: string }) {
+        return {
+          id: req.id,
+          method: req.method,
+          url: req.url?.split("?")[0],
+        };
       },
-    })
-  : pinoHttp({
-      logger,
-      serializers: {
-        req(req: Request & { id?: string }) {
-          return {
-            id: req.id,
-            method: req.method,
-            url: req.url?.split("?")[0],
-          };
-        },
-        res(res: Response) {
-          return {
-            statusCode: res.statusCode,
-          };
-        },
+      res(res: Response) {
+        return {
+          statusCode: res.statusCode,
+        };
       },
-    });
+    },
+  }),
+);
 
-app.use(httpLogger);
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use("/api", router);
+
+export default app;
