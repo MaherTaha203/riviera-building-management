@@ -93,6 +93,23 @@ variant: "destructive",
 }
 };
 
+
+await qc.invalidateQueries({
+  queryKey: ["/api/units"],
+});
+
+setOpen(false);
+```
+
+} catch (e: any) {
+toast({
+title: "خطأ",
+description: e?.message || "حدث خطأ أثناء حفظ البيانات",
+variant: "destructive",
+});
+}
+};
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
