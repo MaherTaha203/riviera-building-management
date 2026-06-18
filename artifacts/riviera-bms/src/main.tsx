@@ -1,8 +1,10 @@
 import { createRoot } from "react-dom/client";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { getToken } from "./lib/auth";
 import App from "./App";
 import "./index.css";
+
+setBaseUrl("https://riviera-api.onrender.com");
 
 setAuthTokenGetter(getToken);
 
