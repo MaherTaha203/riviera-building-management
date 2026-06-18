@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
@@ -37,6 +38,7 @@ export default function Units() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
@@ -63,14 +65,16 @@ export default function Units() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الوحدة؟")) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteUnit.mutateAsync({ id });
+      await deleteUnit.mutateAsync({ id: deleteId });
       qc.invalidateQueries({ queryKey: ["/api/units"] });
       toast({ title: "تم الحذف" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -84,39 +88,58 @@ export default function Units() {
           <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
         </div>
         <Button onClick={openNew} className="flex items-center gap-2">
-          <Plus size={16} />
-          إضافة وحدة
+          <Plus size={16} />إضافة وحدة
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {units.map((u: any) => {
-          const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
-          return (
-            <Card key={u.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2 flex flex-row items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary/10 rounded-md text-primary"><Building2 size={18} /></div>
-                  <div>
-                    <CardTitle className="text-base ltr-nums">وحدة {u.unitNumber}</CardTitle>
-                    <p className="text-xs text-muted-foreground">الطابق {u.floor} • {typeLabels[u.type] ?? u.type}</p>
+      {(units as any[]).length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="p-4 bg-muted rounded-full"><Building2 size={32} className="text-muted-foreground" /></div>
+            <div className="text-center">
+              <p className="font-medium">لا توجد وحدات حالياً</p>
+              <p className="text-sm text-muted-foreground mt-1">ابدأ بإضافة الوحدات في العمارة</p>
+            </div>
+            <Button onClick={openNew} className="flex items-center gap-2">
+              <Plus size={16} />إضافة وحدة
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {(units as any[]).map((u: any) => {
+            const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
+            return (
+              <Card key={u.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-primary/10 rounded-md text-primary"><Building2 size={18} /></div>
+                    <div>
+                      <CardTitle className="text-base ltr-nums">وحدة {u.unitNumber}</CardTitle>
+                      <p className="text-xs text-muted-foreground">الطابق {u.floor} • {typeLabels[u.type] ?? u.type}</p>
+                    </div>
                   </div>
-                </div>
-                <Badge variant={st.variant}>{st.label}</Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground ltr-nums">المساحة: {u.area} م²</p>
-                {u.description && <p className="text-sm mt-1 text-muted-foreground truncate">{u.description}</p>}
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" variant="outline" onClick={() => openEdit(u)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(u.id)}><Trash2 size={14} /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  <Badge variant={st.variant}>{st.label}</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground ltr-nums">المساحة: {u.area} م²</p>
+                  {u.description && <p className="text-sm mt-1 text-muted-foreground truncate">{u.description}</p>}
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(u)} className="flex-1">
+                      <Pencil size={14} className="ml-1" />تعديل
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteId(u.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
+      {/* Form Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
@@ -160,6 +183,20 @@ export default function Units() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirm */}
+      <AlertDialog open={deleteId !== null} onOpenChange={o => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>هل أنت متأكد من حذف هذه الوحدة؟ لا يمكن التراجع عن هذا الإجراء.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">حذف</AlertDialogAction>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
