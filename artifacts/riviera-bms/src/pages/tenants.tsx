@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
@@ -24,6 +25,7 @@ export default function Tenants() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [search, setSearch] = useState("");
 
@@ -45,19 +47,25 @@ export default function Tenants() {
       }
       qc.invalidateQueries({ queryKey: ["/api/tenants"] });
       setOpen(false);
-    } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذا المستأجر؟")) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await del.mutateAsync({ id });
+      await del.mutateAsync({ id: deleteId });
       qc.invalidateQueries({ queryKey: ["/api/tenants"] });
       toast({ title: "تم الحذف" });
-    } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
   };
 
-  const filtered = tenants.filter((t: any) =>
+  const filtered = (tenants as any[]).filter((t: any) =>
     !search || t.name.includes(search) || t.phone.includes(search)
   );
 
@@ -77,36 +85,54 @@ export default function Tenants() {
         <Input placeholder="بحث بالاسم أو الهاتف..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((t: any) => (
-          <Card key={t.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2 flex flex-row items-start justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-md text-primary"><Users size={18} /></div>
-                <div>
-                  <CardTitle className="text-base">{t.name}</CardTitle>
-                  <Badge variant="outline" className="text-xs mt-0.5">{t.type === "company" ? "شركة" : "فرد"}</Badge>
+      {(tenants as any[]).length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="p-4 bg-muted rounded-full"><Users size={32} className="text-muted-foreground" /></div>
+            <div className="text-center">
+              <p className="font-medium">لا يوجد مستأجرون حالياً</p>
+              <p className="text-sm text-muted-foreground mt-1">ابدأ بإضافة المستأجرين في النظام</p>
+            </div>
+            <Button onClick={openNew} className="flex items-center gap-2">
+              <Plus size={16} />إضافة مستأجر
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((t: any) => (
+            <Card key={t.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-md text-primary"><Users size={18} /></div>
+                  <div>
+                    <CardTitle className="text-base">{t.name}</CardTitle>
+                    <Badge variant="outline" className="text-xs mt-0.5">{t.type === "company" ? "شركة" : "فرد"}</Badge>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone size={13} /><span className="ltr-nums">{t.phone}</span></div>
-              {t.email && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Mail size={13} /><span>{t.email}</span></div>}
-              <div className="flex items-center gap-2 text-sm"><CreditCard size={13} />
-                <span className={`font-medium ltr-nums ${Number(t.balance) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                  {formatAmount(Number(t.balance), "ILS")}
-                </span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" variant="outline" onClick={() => openEdit(t)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(t.id)}><Trash2 size={14} /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {filtered.length === 0 && <div className="col-span-3 text-center py-12 text-muted-foreground">لا توجد نتائج</div>}
-      </div>
+              </CardHeader>
+              <CardContent className="space-y-1.5">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone size={13} /><span className="ltr-nums">{t.phone}</span></div>
+                {t.email && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Mail size={13} /><span>{t.email}</span></div>}
+                <div className="flex items-center gap-2 text-sm"><CreditCard size={13} />
+                  <span className={`font-medium ltr-nums ${Number(t.balance) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    {formatAmount(Number(t.balance), "ILS")}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(t)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
+                  <Button size="sm" variant="destructive" onClick={() => setDeleteId(t.id)}><Trash2 size={14} /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {filtered.length === 0 && search && (
+            <div className="col-span-3 text-center py-12 text-muted-foreground">لا توجد نتائج للبحث</div>
+          )}
+        </div>
+      )}
 
+      {/* Form Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader><DialogTitle>{editing ? "تعديل مستأجر" : "إضافة مستأجر جديد"}</DialogTitle></DialogHeader>
@@ -137,6 +163,20 @@ export default function Tenants() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirm */}
+      <AlertDialog open={deleteId !== null} onOpenChange={o => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>هل أنت متأكد من حذف هذا المستأجر؟ سيتم حذف جميع البيانات المرتبطة به.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">حذف</AlertDialogAction>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
