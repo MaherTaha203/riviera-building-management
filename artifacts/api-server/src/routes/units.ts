@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, unitsTable } from "@workspace/db";
+import { db, unitsTable, contractsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
@@ -52,6 +52,12 @@ router.patch("/units/:id", authMiddleware, validateBody(UpdateUnitBody), async (
 router.delete("/units/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  // Referential integrity: block deletion while contracts still reference this unit.
+  const [depContract] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.unitId, id)).limit(1);
+  if (depContract) {
+    res.status(409).json({ error: "لا يمكن حذف الوحدة لارتباطها بعقود" });
+    return;
+  }
   const [unit] = await db.delete(unitsTable).where(eq(unitsTable.id, id)).returning();
   if (!unit) { res.status(404).json({ error: "Unit not found" }); return; }
   await logAction(user, "DELETE", "unit", unit.id);

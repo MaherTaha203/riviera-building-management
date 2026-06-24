@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, tenantsTable } from "@workspace/db";
+import { db, tenantsTable, contractsTable, receiptVouchersTable, chequesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
@@ -53,6 +53,15 @@ router.patch("/tenants/:id", authMiddleware, validateBody(UpdateTenantBody), asy
 router.delete("/tenants/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  // Referential integrity: block deletion while financial/contractual records still reference this tenant,
+  // otherwise they become orphans that corrupt account statements and balances.
+  const [depContract] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.tenantId, id)).limit(1);
+  const [depReceipt] = await db.select({ id: receiptVouchersTable.id }).from(receiptVouchersTable).where(eq(receiptVouchersTable.tenantId, id)).limit(1);
+  const [depCheque] = await db.select({ id: chequesTable.id }).from(chequesTable).where(eq(chequesTable.tenantId, id)).limit(1);
+  if (depContract || depReceipt || depCheque) {
+    res.status(409).json({ error: "لا يمكن حذف المستأجر لارتباطه بعقود أو سندات أو شيكات" });
+    return;
+  }
   const [tenant] = await db.delete(tenantsTable).where(eq(tenantsTable.id, id)).returning();
   if (!tenant) { res.status(404).json({ error: "Tenant not found" }); return; }
   await logAction(user, "DELETE", "tenant", tenant.id);

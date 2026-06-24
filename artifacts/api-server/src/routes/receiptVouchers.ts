@@ -39,6 +39,16 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
+  // Referential integrity: a linked tenant/contract must exist, otherwise the voucher
+  // dangles and skews the tenant balance / account statement it should belong to.
+  if (tenantId) {
+    const [tenantRef] = await db.select({ id: tenantsTable.id }).from(tenantsTable).where(eq(tenantsTable.id, Number(tenantId)));
+    if (!tenantRef) { res.status(400).json({ error: "Tenant not found" }); return; }
+  }
+  if (contractId) {
+    const [contractRef] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.id, Number(contractId)));
+    if (!contractRef) { res.status(400).json({ error: "Contract not found" }); return; }
+  }
   // Atomically generate voucher number + insert + update tenant balance in one transaction.
   // pg_advisory_xact_lock inside generateReceiptVoucherNumber serializes concurrent callers.
   const voucher = await db.transaction(async (tx) => {
