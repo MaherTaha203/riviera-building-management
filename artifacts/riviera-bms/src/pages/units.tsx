@@ -48,67 +48,22 @@ export default function Units() {
     setOpen(true);
   };
 
-const handleSave = async () => {
-const payload = {
-...form,
-area: Number(form.area),
-};
-
-try {
-if (editing) {
-await updateUnit.mutateAsync({
-id: editing,
-data: payload as any,
-});
-
-```
-  toast({
-    title: "تم التحديث",
-    description: "تم تحديث الوحدة بنجاح",
-  });
-} else {
-  await createUnit.mutateAsync({
-    data: payload as any,
-  });
-
-  toast({
-    title: "تمت الإضافة",
-    description: "تمت إضافة الوحدة بنجاح",
-  });
-}
-
-await qc.invalidateQueries({
-  queryKey: ["/api/units"],
-});
-
-setOpen(false);
-```
-
-} catch (e: any) {
-toast({
-title: "خطأ",
-description: e?.message || "حدث خطأ أثناء حفظ البيانات",
-variant: "destructive",
-});
-}
-};
-
-
-await qc.invalidateQueries({
-  queryKey: ["/api/units"],
-});
-
-setOpen(false);
-```
-
-} catch (e: any) {
-toast({
-title: "خطأ",
-description: e?.message || "حدث خطأ أثناء حفظ البيانات",
-variant: "destructive",
-});
-}
-};
+  const handleSave = async () => {
+    const payload = { ...form, area: Number(form.area) };
+    try {
+      if (editing) {
+        await updateUnit.mutateAsync({ id: editing, data: payload as any });
+        toast({ title: "تم التحديث", description: "تم تحديث الوحدة بنجاح" });
+      } else {
+        await createUnit.mutateAsync({ data: payload as any });
+        toast({ title: "تمت الإضافة", description: "تمت إضافة الوحدة بنجاح" });
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/units"] });
+      setOpen(false);
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e?.message || "حدث خطأ أثناء حفظ البيانات", variant: "destructive" });
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
