@@ -40,6 +40,8 @@ export default function Units() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (u: any) => {
@@ -80,6 +82,12 @@ export default function Units() {
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
 
+  const q = search.trim();
+  const filtered = (units as any[]).filter((u: any) =>
+    (statusFilter === "all" || u.status === statusFilter) &&
+    (!q || String(u.unitNumber).includes(q) || String(u.floor).includes(q) || (u.description ?? "").includes(q))
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -91,6 +99,22 @@ export default function Units() {
           <Plus size={16} />إضافة وحدة
         </Button>
       </div>
+
+      {(units as any[]).length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Input placeholder="بحث برقم الوحدة أو الطابق..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              <SelectItem value="vacant">شاغرة</SelectItem>
+              <SelectItem value="occupied">مؤجرة</SelectItem>
+              <SelectItem value="maintenance">صيانة</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground ltr-nums">{filtered.length} / {(units as any[]).length}</span>
+        </div>
+      )}
 
       {(units as any[]).length === 0 ? (
         <Card>
@@ -105,9 +129,13 @@ export default function Units() {
             </Button>
           </CardContent>
         </Card>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">لا توجد وحدات مطابقة للبحث</CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(units as any[]).map((u: any) => {
+          {filtered.map((u: any) => {
             const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
             return (
               <Card key={u.id} className="hover:shadow-md transition-shadow">
