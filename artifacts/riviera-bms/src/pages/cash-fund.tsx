@@ -3,20 +3,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
+import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 
 export default function CashFund() {
   const { data: fund, isLoading } = useGetCashFund();
   const { data: transactions = [], isLoading: txLoading } = useListCashTransactions();
+  const print = usePrint();
 
   if (isLoading) return <div className="p-8 text-center animate-pulse text-muted-foreground">جاري التحميل...</div>;
 
   const txList = transactions as any[];
 
+  const printCashFund = () => {
+    const totalCredit = txList.reduce((s: number, t: any) => s + t.credit, 0);
+    const totalDebit = txList.reduce((s: number, t: any) => s + t.debit, 0);
+    print(
+      <div>
+        <div className="print-meta">
+          <span className="ltr-nums">رصيد الصندوق: {fmtMoney(fund?.balanceILS, "ILS")}</span>
+          <span className="ltr-nums">إجمالي المقبوضات: {fmtMoney(totalCredit, "ILS")}</span>
+          <span className="ltr-nums">إجمالي المصروفات: {fmtMoney(totalDebit, "ILS")}</span>
+        </div>
+        <ReportTable
+          columns={[
+            { label: "التاريخ", render: (t: any) => <span className="ltr-nums">{fmtDate(t.date)}</span> },
+            { label: "البيان", render: (t: any) => t.description },
+            { label: "مدين (قبض)", render: (t: any) => <span className="ltr-nums">{t.credit > 0 ? fmtMoney(t.credit, "ILS") : "-"}</span> },
+            { label: "دائن (صرف)", render: (t: any) => <span className="ltr-nums">{t.debit > 0 ? fmtMoney(t.debit, "ILS") : "-"}</span> },
+            { label: "الرصيد", render: (t: any) => <span className="ltr-nums">{fmtMoney(t.balance, "ILS")}</span> },
+          ]}
+          rows={txList}
+          emptyText="لا توجد حركات"
+          footer={<tr><td colSpan={3}>الإجمالي</td><td className="ltr-nums">{fmtMoney(totalCredit, "ILS")}</td><td className="ltr-nums">{fmtMoney(totalDebit, "ILS")}</td></tr>}
+        />
+      </div>,
+      { title: "كشف حساب الصندوق النقدي" },
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">الصندوق النقدي</h1>
-        <p className="text-muted-foreground mt-1">كشف حساب الصندوق</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">الصندوق النقدي</h1>
+          <p className="text-muted-foreground mt-1">كشف حساب الصندوق</p>
+        </div>
+        <PrintButton onClick={printCashFund} label="طباعة الصندوق" size="default" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
