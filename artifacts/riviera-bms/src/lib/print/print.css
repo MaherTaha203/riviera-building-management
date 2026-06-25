@@ -1,0 +1,164 @@
+/* Unified print stylesheet. The printable document is rendered into a
+   #print-root element appended to <body>; on screen it is hidden, and when
+   printing we hide the entire app and show only that document. */
+
+#print-root {
+  display: none;
+}
+
+@media print {
+  /* Hide everything attached directly to body (app root, Radix portals,
+     toasts, dialogs) and show only the print document. */
+  body > * {
+    display: none !important;
+  }
+  body > #print-root {
+    display: block !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm 12mm 18mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+}
+
+/* ---- Document design system (shared by every printable) ---- */
+.print-doc {
+  font-family: "Cairo", "Inter", sans-serif;
+  color: #111827;
+  direction: rtl;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.print-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid #1f2937;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.print-masthead .building-name {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.print-masthead .building-meta {
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.print-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 6px 0 12px;
+}
+
+.print-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  font-size: 11px;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.print-table th,
+.print-table td {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  text-align: right;
+}
+.print-table thead {
+  display: table-header-group; /* repeat header on each printed page */
+  background: #f3f4f6;
+}
+.print-table tr {
+  page-break-inside: avoid;
+}
+.print-table tfoot td {
+  font-weight: 700;
+  background: #f9fafb;
+}
+
+.print-kv {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+  margin: 10px 0;
+}
+.print-kv .row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed #e5e7eb;
+  padding: 4px 0;
+}
+.print-kv .label {
+  color: #6b7280;
+}
+.print-kv .value {
+  font-weight: 600;
+}
+
+.print-amount-box {
+  border: 1.5px solid #1f2937;
+  border-radius: 6px;
+  padding: 8px 14px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  margin: 12px 0;
+}
+
+.print-signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+  font-size: 11px;
+}
+.print-signatures .sig {
+  text-align: center;
+  width: 40%;
+}
+.print-signatures .line {
+  border-top: 1px solid #9ca3af;
+  margin-top: 28px;
+  padding-top: 4px;
+}
+
+/* Repeats on every printed page because it is position: fixed. */
+.print-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 4px;
+}
+
+.ltr-nums {
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+}
+.text-end { text-align: left; }
+.text-danger { color: #b91c1c; }
+.text-success { color: #047857; }

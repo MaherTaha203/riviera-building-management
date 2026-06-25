@@ -10,6 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 import { formatAmount } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -69,6 +71,26 @@ export default function Tenants() {
     !search || t.name.includes(search) || t.phone.includes(search)
   );
 
+  const print = usePrint();
+  const tenantColumns = [
+    { label: "الاسم", render: (t: any) => t.name },
+    { label: "النوع", render: (t: any) => (t.type === "company" ? "شركة" : "فرد") },
+    { label: "الهاتف", render: (t: any) => <span className="ltr-nums">{t.phone}</span> },
+    { label: "الرصيد (شيكل)", render: (t: any) => <span className="ltr-nums">{fmtMoney(t.balance, "ILS")}</span> },
+  ];
+  const printList = () => print(
+    <ReportTable columns={tenantColumns} rows={filtered} />,
+    { title: "قائمة المستأجرين" },
+  );
+  const printOutstanding = () => {
+    const owing = (tenants as any[]).filter((t: any) => Number(t.balance) !== 0);
+    print(
+      <ReportTable columns={tenantColumns} rows={owing} emptyText="لا توجد أرصدة مستحقة"
+        footer={<tr><td colSpan={4}>الإجمالي: {fmtMoney(owing.reduce((s, t) => s + Number(t.balance), 0), "ILS")}</td></tr>} />,
+      { title: "تقرير الأرصدة المستحقة" },
+    );
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
 
   return (
@@ -78,7 +100,11 @@ export default function Tenants() {
           <h1 className="text-3xl font-bold">المستأجرون</h1>
           <p className="text-muted-foreground mt-1">إدارة بيانات المستأجرين</p>
         </div>
-        <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة مستأجر</Button>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printOutstanding} label="الأرصدة المستحقة" size="default" />
+          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة مستأجر</Button>
+        </div>
       </div>
 
       <div className="flex gap-3">

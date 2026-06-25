@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePrint, PrintButton } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   occupied: { label: "مؤجرة", variant: "default" },
@@ -88,6 +90,21 @@ export default function Units() {
     (!q || String(u.unitNumber).includes(q) || String(u.floor).includes(q) || (u.description ?? "").includes(q))
   );
 
+  const print = usePrint();
+  const printList = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم الوحدة", render: (u: any) => <span className="ltr-nums">{u.unitNumber}</span> },
+        { label: "الطابق", render: (u: any) => <span className="ltr-nums">{u.floor}</span> },
+        { label: "النوع", render: (u: any) => typeLabels[u.type] ?? u.type },
+        { label: "المساحة (م²)", render: (u: any) => <span className="ltr-nums">{u.area}</span> },
+        { label: "الحالة", render: (u: any) => statusLabels[u.status]?.label ?? u.status },
+      ]}
+      rows={filtered}
+    />,
+    { title: "قائمة الوحدات" },
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -95,9 +112,12 @@ export default function Units() {
           <h1 className="text-3xl font-bold">الوحدات</h1>
           <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
         </div>
-        <Button onClick={openNew} className="flex items-center gap-2">
-          <Plus size={16} />إضافة وحدة
-        </Button>
+        <div className="flex items-center gap-2">
+          {(units as any[]).length > 0 && <PrintButton onClick={printList} label="طباعة القائمة" size="default" />}
+          <Button onClick={openNew} className="flex items-center gap-2">
+            <Plus size={16} />إضافة وحدة
+          </Button>
+        </div>
       </div>
 
       {(units as any[]).length > 0 && (

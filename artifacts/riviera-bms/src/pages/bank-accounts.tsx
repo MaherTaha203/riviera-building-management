@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Landmark } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 import { formatAmount } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -57,13 +59,31 @@ export default function BankAccounts() {
 
   const totalBalance = (accounts as any[]).reduce((s: number, a: any) => s + a.balanceILS, 0);
 
+  const print = usePrint();
+  const printList = () => print(
+    <ReportTable
+      columns={[
+        { label: "البنك", render: (b: any) => b.bankName },
+        { label: "رقم الحساب", render: (b: any) => <span className="ltr-nums">{b.accountNumber}</span> },
+        { label: "اسم الحساب", render: (b: any) => b.accountName },
+        { label: "الرصيد (شيكل)", render: (b: any) => <span className="ltr-nums">{fmtMoney(b.balanceILS, "ILS")}</span> },
+      ]}
+      rows={accounts as any[]}
+      footer={<tr><td colSpan={4}>إجمالي الأرصدة: {fmtMoney((accounts as any[]).reduce((s, b) => s + Number(b.balanceILS), 0), "ILS")}</td></tr>}
+    />,
+    { title: "تقرير الحسابات البنكية" },
+  );
+
   if (isLoading) return <div className="p-8 text-center animate-pulse text-muted-foreground">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">الحسابات البنكية</h1><p className="text-muted-foreground mt-1">إدارة الحسابات المصرفية</p></div>
-        <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة حساب</Button>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printList} label="طباعة التقرير" size="default" />
+          <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة حساب</Button>
+        </div>
       </div>
 
       <Card className="bg-primary/5 border-primary/20">

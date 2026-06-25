@@ -10,7 +10,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Printer } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
+import { ContractDoc, ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -101,13 +103,32 @@ export default function Contracts() {
     }
   };
 
+  const print = usePrint();
+  const printList = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم العقد", render: (c: any) => <span className="ltr-nums">{c.contractNumber}</span> },
+        { label: "المستأجر", render: (c: any) => c.tenantName },
+        { label: "الوحدة", render: (c: any) => <span className="ltr-nums">{c.unitNumber}</span> },
+        { label: "البداية", render: (c: any) => <span className="ltr-nums">{fmtDate(c.startDate)}</span> },
+        { label: "الانتهاء", render: (c: any) => <span className="ltr-nums">{fmtDate(c.endDate)}</span> },
+        { label: "الإيجار (شيكل)", render: (c: any) => <span className="ltr-nums">{fmtMoney(c.rentAmountILS, "ILS")}</span> },
+      ]}
+      rows={contracts as any[]}
+    />,
+    { title: "قائمة العقود" },
+  );
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">العقود</h1><p className="text-muted-foreground mt-1">إدارة عقود الإيجار</p></div>
-        <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة عقد</Button>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة عقد</Button>
+        </div>
       </div>
 
       <Card>
@@ -151,6 +172,7 @@ export default function Contracts() {
                       <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" title="طباعة" onClick={() => print(<ContractDoc c={c} />, { title: `عقد إيجار ${c.contractNumber}`, refNumber: c.contractNumber })}><Printer size={14} /></Button>
                           <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 size={14} /></Button>
                         </div>
