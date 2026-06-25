@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { blockViewerWrites } from "../lib/auth";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import dashboardRouter from "./dashboard";
@@ -16,6 +17,9 @@ import auditLogRouter from "./auditLog";
 import settingsRouter from "./settings";
 
 const router: IRouter = Router();
+
+// Read-only enforcement for `viewer` accounts (before any write route runs).
+router.use(blockViewerWrites);
 
 router.use(healthRouter);
 router.use(authRouter);

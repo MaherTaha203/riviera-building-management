@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, settingsTable, exchangeRatesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { authMiddleware, type JwtPayload } from "../lib/auth";
+import { authMiddleware, requireRole, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
 import { UpdateSettingsBody, UpdateExchangeRatesBody, CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
@@ -68,7 +68,7 @@ router.get("/settings/users", authMiddleware, async (_req, res): Promise<void> =
   res.json(users);
 });
 
-router.post("/settings/users", authMiddleware, validateBody(CreateUserBody), async (req, res): Promise<void> => {
+router.post("/settings/users", authMiddleware, requireRole("admin"), validateBody(CreateUserBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const { username, name, password, role } = req.body;
   if (!username || !name || !password || !role) {
@@ -81,7 +81,7 @@ router.post("/settings/users", authMiddleware, validateBody(CreateUserBody), asy
   res.status(201).json({ id: newUser.id, username: newUser.username, name: newUser.name, role: newUser.role, createdAt: newUser.createdAt });
 });
 
-router.patch("/settings/users/:id", authMiddleware, validateBody(UpdateUserBody), async (req, res): Promise<void> => {
+router.patch("/settings/users/:id", authMiddleware, requireRole("admin"), validateBody(UpdateUserBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const { name, password, role } = req.body;
@@ -95,7 +95,7 @@ router.patch("/settings/users/:id", authMiddleware, validateBody(UpdateUserBody)
   res.json({ id: u.id, username: u.username, name: u.name, role: u.role, createdAt: u.createdAt });
 });
 
-router.delete("/settings/users/:id", authMiddleware, async (req, res): Promise<void> => {
+router.delete("/settings/users/:id", authMiddleware, requireRole("admin"), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (id === user.userId) {
