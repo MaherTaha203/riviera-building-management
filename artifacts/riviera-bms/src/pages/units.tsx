@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePrint, PrintButton } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   occupied: { label: "مؤجرة", variant: "default" },
@@ -40,6 +42,8 @@ export default function Units() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (u: any) => {
@@ -48,67 +52,22 @@ export default function Units() {
     setOpen(true);
   };
 
-const handleSave = async () => {
-const payload = {
-...form,
-area: Number(form.area),
-};
-
-try {
-if (editing) {
-await updateUnit.mutateAsync({
-id: editing,
-data: payload as any,
-});
-
-```
-  toast({
-    title: "تم التحديث",
-    description: "تم تحديث الوحدة بنجاح",
-  });
-} else {
-  await createUnit.mutateAsync({
-    data: payload as any,
-  });
-
-  toast({
-    title: "تمت الإضافة",
-    description: "تمت إضافة الوحدة بنجاح",
-  });
-}
-
-await qc.invalidateQueries({
-  queryKey: ["/api/units"],
-});
-
-setOpen(false);
-```
-
-} catch (e: any) {
-toast({
-title: "خطأ",
-description: e?.message || "حدث خطأ أثناء حفظ البيانات",
-variant: "destructive",
-});
-}
-};
-
-
-await qc.invalidateQueries({
-  queryKey: ["/api/units"],
-});
-
-setOpen(false);
-```
-
-} catch (e: any) {
-toast({
-title: "خطأ",
-description: e?.message || "حدث خطأ أثناء حفظ البيانات",
-variant: "destructive",
-});
-}
-};
+  const handleSave = async () => {
+    const payload = { ...form, area: Number(form.area) };
+    try {
+      if (editing) {
+        await updateUnit.mutateAsync({ id: editing, data: payload as any });
+        toast({ title: "تم التحديث", description: "تم تحديث الوحدة بنجاح" });
+      } else {
+        await createUnit.mutateAsync({ data: payload as any });
+        toast({ title: "تمت الإضافة", description: "تمت إضافة الوحدة بنجاح" });
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/units"] });
+      setOpen(false);
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e?.message || "حدث خطأ أثناء حفظ البيانات", variant: "destructive" });
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -125,6 +84,27 @@ variant: "destructive",
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
 
+  const q = search.trim();
+  const filtered = (units as any[]).filter((u: any) =>
+    (statusFilter === "all" || u.status === statusFilter) &&
+    (!q || String(u.unitNumber).includes(q) || String(u.floor).includes(q) || (u.description ?? "").includes(q))
+  );
+
+  const print = usePrint();
+  const printList = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم الوحدة", render: (u: any) => <span className="ltr-nums">{u.unitNumber}</span> },
+        { label: "الطابق", render: (u: any) => <span className="ltr-nums">{u.floor}</span> },
+        { label: "النوع", render: (u: any) => typeLabels[u.type] ?? u.type },
+        { label: "المساحة (م²)", render: (u: any) => <span className="ltr-nums">{u.area}</span> },
+        { label: "الحالة", render: (u: any) => statusLabels[u.status]?.label ?? u.status },
+      ]}
+      rows={filtered}
+    />,
+    { title: "قائمة الوحدات" },
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -132,10 +112,29 @@ variant: "destructive",
           <h1 className="text-3xl font-bold">الوحدات</h1>
           <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
         </div>
-        <Button onClick={openNew} className="flex items-center gap-2">
-          <Plus size={16} />إضافة وحدة
-        </Button>
+        <div className="flex items-center gap-2">
+          {(units as any[]).length > 0 && <PrintButton onClick={printList} label="طباعة القائمة" size="default" />}
+          <Button onClick={openNew} className="flex items-center gap-2">
+            <Plus size={16} />إضافة وحدة
+          </Button>
+        </div>
       </div>
+
+      {(units as any[]).length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Input placeholder="بحث برقم الوحدة أو الطابق..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              <SelectItem value="vacant">شاغرة</SelectItem>
+              <SelectItem value="occupied">مؤجرة</SelectItem>
+              <SelectItem value="maintenance">صيانة</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground ltr-nums">{filtered.length} / {(units as any[]).length}</span>
+        </div>
+      )}
 
       {(units as any[]).length === 0 ? (
         <Card>
@@ -150,9 +149,13 @@ variant: "destructive",
             </Button>
           </CardContent>
         </Card>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">لا توجد وحدات مطابقة للبحث</CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(units as any[]).map((u: any) => {
+          {filtered.map((u: any) => {
             const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
             return (
               <Card key={u.id} className="hover:shadow-md transition-shadow">

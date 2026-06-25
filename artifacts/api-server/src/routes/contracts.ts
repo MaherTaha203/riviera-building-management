@@ -32,6 +32,11 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
+  // Referential integrity: reject contracts that reference a non-existent tenant or unit.
+  const [tenantRef] = await db.select({ id: tenantsTable.id }).from(tenantsTable).where(eq(tenantsTable.id, Number(tenantId)));
+  if (!tenantRef) { res.status(400).json({ error: "Tenant not found" }); return; }
+  const [unitRef] = await db.select({ id: unitsTable.id }).from(unitsTable).where(eq(unitsTable.id, Number(unitId)));
+  if (!unitRef) { res.status(400).json({ error: "Unit not found" }); return; }
   const rate = Number(exchangeRate ?? 1);
   const amountILS = Number(rentAmount) * rate;
   // Atomically generate contract number + insert in one transaction.

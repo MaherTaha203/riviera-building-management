@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, numeric, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -18,7 +18,12 @@ export const contractsTable = pgTable("contracts", {
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (t) => [
+  // Index the foreign-key columns: every tenant/unit delete checks these for
+  // dependents, and list/statement endpoints filter and join on them.
+  index("contracts_tenant_id_idx").on(t.tenantId),
+  index("contracts_unit_id_idx").on(t.unitId),
+]);
 
 export const insertContractSchema = createInsertSchema(contractsTable).omit({ id: true, createdAt: true, updatedAt: true, contractNumber: true });
 export type InsertContract = z.infer<typeof insertContractSchema>;

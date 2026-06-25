@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatAmount } from "@/lib/format";
 import { BarChart3, TrendingUp, TrendingDown, Building2, FileText, Wallet } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 
 export default function Reports() {
   const { data: summary } = useGetDashboardSummary();
@@ -75,11 +77,57 @@ export default function Reports() {
 
   const isFiltered = appliedFrom || appliedTo;
 
+  // Contracts expiring within the next 60 days (active).
+  const today = new Date().toISOString().split("T")[0];
+  const horizon = new Date(Date.now() + 60 * 86400000).toISOString().split("T")[0];
+  const expiring = contractList
+    .filter((c: any) => c.status === "active" && c.endDate >= today && c.endDate <= horizon)
+    .sort((a: any, b: any) => a.endDate.localeCompare(b.endDate));
+
+  const print = usePrint();
+  const periodLabel = isFiltered ? `${appliedFrom || "البداية"} — ${appliedTo || "النهاية"}` : "كل الفترات";
+  const printSummary = () => print(
+    <div>
+      <div className="print-meta"><span>الفترة: <span className="ltr-nums">{periodLabel}</span></span></div>
+      <table className="print-table">
+        <tbody>
+          <tr><td>إجمالي المقبوضات</td><td className="ltr-nums">{fmtMoney(totalReceipts, "ILS")}</td></tr>
+          <tr><td>إجمالي المصروفات</td><td className="ltr-nums">{fmtMoney(totalPayments, "ILS")}</td></tr>
+          <tr><td>صافي الحركة</td><td className="ltr-nums">{fmtMoney(totalReceipts - totalPayments, "ILS")}</td></tr>
+          <tr><td>الإيجار الشهري المتوقع</td><td className="ltr-nums">{fmtMoney(totalMonthlyRent, "ILS")}</td></tr>
+          <tr><td>نسبة الإشغال</td><td className="ltr-nums">{(summary?.totalUnits ?? 0) > 0 ? Math.round((periodOccupiedUnitIds.size / (summary?.totalUnits ?? 1)) * 100) : 0}%</td></tr>
+          <tr><td>رصيد الصندوق</td><td className="ltr-nums">{fmtMoney(Number(summary?.cashBalanceILS ?? 0), "ILS")}</td></tr>
+        </tbody>
+      </table>
+    </div>,
+    { title: "الملخص المالي" },
+  );
+  const printExpiring = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم العقد", render: (c: any) => <span className="ltr-nums">{c.contractNumber}</span> },
+        { label: "المستأجر", render: (c: any) => c.tenantName },
+        { label: "الوحدة", render: (c: any) => <span className="ltr-nums">{c.unitNumber}</span> },
+        { label: "تاريخ الانتهاء", render: (c: any) => <span className="ltr-nums">{fmtDate(c.endDate)}</span> },
+        { label: "الإيجار (شيكل)", render: (c: any) => <span className="ltr-nums">{fmtMoney(c.rentAmountILS, "ILS")}</span> },
+      ]}
+      rows={expiring}
+      emptyText="لا توجد عقود تنتهي خلال 60 يوماً"
+    />,
+    { title: "العقود المنتهية خلال 60 يوماً" },
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2"><BarChart3 size={28} />التقارير</h1>
-        <p className="text-muted-foreground mt-1">ملخص إحصائي شامل للعمارة</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2"><BarChart3 size={28} />التقارير</h1>
+          <p className="text-muted-foreground mt-1">ملخص إحصائي شامل للعمارة</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printExpiring} label="العقود المنتهية" size="default" />
+          <PrintButton onClick={printSummary} label="طباعة الملخص" size="default" />
+        </div>
       </div>
 
       {/* Date range filter */}

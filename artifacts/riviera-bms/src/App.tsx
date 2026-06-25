@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PrintProvider } from "@/lib/print";
 import { useEffect } from "react";
 import { getToken } from "./lib/auth";
 import NotFound from "@/pages/not-found";
@@ -95,12 +96,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthGuard>
-            <Router />
-          </AuthGuard>
-        </WouterRouter>
-        <Toaster />
+        <PrintProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthGuard>
+              <Router />
+            </AuthGuard>
+          </WouterRouter>
+          <Toaster />
+        </PrintProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

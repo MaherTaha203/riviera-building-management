@@ -10,16 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
+import { ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   pending: "secondary",
-  collected: "default",
+  deposited: "secondary",
+  cleared: "default",
   bounced: "destructive",
   cancelled: "outline",
 };
-const statusLabels: Record<string, string> = { pending: "معلق", collected: "محصل", bounced: "مرتجع", cancelled: "ملغى" };
+const statusLabels: Record<string, string> = { pending: "معلق", deposited: "مودع", cleared: "محصل", bounced: "مرتجع", cancelled: "ملغى" };
 const typeLabels: Record<string, string> = { incoming: "وارد", outgoing: "صادر" };
 
 const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", notes: "" };
@@ -67,13 +70,32 @@ export default function Cheques() {
     } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
   };
 
+  const print = usePrint();
+  const printList = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم الشيك", render: (c: any) => <span className="ltr-nums">{c.chequeNumber}</span> },
+        { label: "النوع", render: (c: any) => typeLabels[c.type] ?? c.type },
+        { label: "البنك", render: (c: any) => c.bankName },
+        { label: "الاستحقاق", render: (c: any) => <span className="ltr-nums">{fmtDate(c.dueDate)}</span> },
+        { label: "المبلغ (شيكل)", render: (c: any) => <span className="ltr-nums">{fmtMoney(c.amountILS, "ILS")}</span> },
+        { label: "الحالة", render: (c: any) => statusLabels[c.status] ?? c.status },
+      ]}
+      rows={cheques as any[]}
+    />,
+    { title: "قائمة الشيكات" },
+  );
+
   if (isLoading) return <div className="p-8 text-center animate-pulse text-muted-foreground">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">الشيكات</h1><p className="text-muted-foreground mt-1">إدارة الشيكات الواردة والصادرة</p></div>
-        <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -112,7 +134,7 @@ export default function Cheques() {
                   <TableCell>
                     {c.status === "pending" && (
                       <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "collected")}>محصل</Button>
+                        <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "cleared")}>محصل</Button>
                         <Button size="sm" variant="ghost" className="text-rose-600 text-xs" onClick={() => changeStatus(c.id, "bounced")}>مرتجع</Button>
                       </div>
                     )}

@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollText } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
+import { usePrint, PrintButton } from "@/lib/print";
+import { AccountStatementDoc } from "@/lib/print/documents";
 
 export default function AccountStatements() {
   const { data: tenants = [] } = useListTenants();
@@ -27,12 +29,21 @@ export default function AccountStatements() {
   };
 
   const entries = (statement as any)?.entries ?? [];
+  const print = usePrint();
+  const isBuilding = !(statement as any)?.tenantName;
+  const printStatement = () => print(
+    <AccountStatementDoc statement={statement} />,
+    { title: isBuilding ? "كشف حساب العمارة" : `كشف حساب: ${(statement as any).tenantName}` },
+  );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2"><ScrollText size={28} />كشف الحساب</h1>
-        <p className="text-muted-foreground mt-1">عرض حركات الحساب لكل مستأجر</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2"><ScrollText size={28} />كشف الحساب</h1>
+          <p className="text-muted-foreground mt-1">عرض حركات الحساب لكل مستأجر</p>
+        </div>
+        {statement && <PrintButton onClick={printStatement} label="طباعة الكشف" size="default" />}
       </div>
 
       <Card>

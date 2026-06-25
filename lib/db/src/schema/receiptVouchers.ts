@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, numeric, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -23,7 +23,12 @@ export const receiptVouchersTable = pgTable("receipt_vouchers", {
   newBalance: numeric("new_balance", { precision: 14, scale: 2 }),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  // Tenant balance maintenance, tenant deletion guards, and account statements
+  // all filter receipt vouchers by these foreign keys.
+  index("receipt_vouchers_tenant_id_idx").on(t.tenantId),
+  index("receipt_vouchers_contract_id_idx").on(t.contractId),
+]);
 
 export const insertReceiptVoucherSchema = createInsertSchema(receiptVouchersTable).omit({ id: true, createdAt: true, voucherNumber: true });
 export type InsertReceiptVoucher = z.infer<typeof insertReceiptVoucherSchema>;

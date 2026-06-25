@@ -10,7 +10,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Printer } from "lucide-react";
+import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
+import { PaymentVoucherDoc, ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -124,6 +126,22 @@ export default function PaymentVouchers() {
     }
   };
 
+  const print = usePrint();
+  const printRegister = () => print(
+    <ReportTable
+      columns={[
+        { label: "رقم السند", render: (v: any) => <span className="ltr-nums">{v.voucherNumber}</span> },
+        { label: "التاريخ", render: (v: any) => <span className="ltr-nums">{fmtDate(v.date)}</span> },
+        { label: "المستفيد", render: (v: any) => v.beneficiaryName },
+        { label: "البند", render: (v: any) => v.category },
+        { label: "المبلغ (شيكل)", render: (v: any) => <span className="ltr-nums">{fmtMoney(v.amountILS, "ILS")}</span> },
+      ]}
+      rows={vouchers as any[]}
+      footer={<tr><td colSpan={5}>الإجمالي</td><td className="ltr-nums">{fmtMoney((vouchers as any[]).reduce((s, v) => s + Number(v.amountILS), 0), "ILS")}</td></tr>}
+    />,
+    { title: "سجل سندات الصرف" },
+  );
+
   if (isLoading) return <div className="p-8 text-center animate-pulse text-muted-foreground">جاري التحميل...</div>;
 
   return (
@@ -133,9 +151,12 @@ export default function PaymentVouchers() {
           <h1 className="text-3xl font-bold">سندات الصرف</h1>
           <p className="text-muted-foreground mt-1">تسجيل المصروفات والمدفوعات</p>
         </div>
-        <Button onClick={openNew} className="flex items-center gap-2">
-          <Plus size={16} />إصدار سند صرف
-        </Button>
+        <div className="flex items-center gap-2">
+          <PrintButton onClick={printRegister} label="طباعة السجل" size="default" />
+          <Button onClick={openNew} className="flex items-center gap-2">
+            <Plus size={16} />إصدار سند صرف
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -165,6 +186,9 @@ export default function PaymentVouchers() {
                   <TableCell className="text-muted-foreground text-sm">{v.notes ?? "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" title="طباعة" onClick={() => print(<PaymentVoucherDoc v={v} />, { title: `سند صرف ${v.voucherNumber}`, refNumber: v.voucherNumber })}>
+                        <Printer size={14} />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
                         <Pencil size={14} />
                       </Button>

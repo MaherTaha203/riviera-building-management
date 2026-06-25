@@ -1,0 +1,37 @@
+name: CI
+
+# Typecheck + build gate. This is the guard that would have caught the
+# units.ts/units.tsx file corruption that previously shipped to a branch:
+# both turned into TypeScript syntax errors that `pnpm run typecheck` rejects.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # mockup-sandbox's vite.config.ts requires these at config-load time.
+    env:
+      PORT: "5000"
+      BASE_PATH: "/"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (all packages)
+        run: pnpm run typecheck
+
+      - name: Build (all packages)
+        run: pnpm run build
