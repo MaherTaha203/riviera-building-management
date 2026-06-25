@@ -60,7 +60,8 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
       if (tenant) {
         previousBalance = Number(tenant.balance);
         newBalance = previousBalance + Number(amountILS);
-        await tx.update(tenantsTable).set({ balance: String(newBalance) }).where(eq(tenantsTable.id, Number(tenantId)));
+        // Atomic increment (col = col + delta) — safe under concurrency, no lost updates.
+        await tx.update(tenantsTable).set({ balance: sql`${tenantsTable.balance} + ${Number(amountILS)}` }).where(eq(tenantsTable.id, Number(tenantId)));
       }
     }
     const [inserted] = await tx.insert(receiptVouchersTable).values({
@@ -84,8 +85,9 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
   if (paymentMethod === "bank_transfer" && bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));
     if (bankAccount) {
-      const newBal = Number(bankAccount.balanceILS) + Number(amountILS);
-      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+      // Atomic increment — concurrent bank_transfer receipts to the same bank
+      // previously lost updates via read-modify-write outside the transaction.
+      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${Number(amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
     }
   }
   await logAction(user, "CREATE", "receipt_voucher", voucher.id);
@@ -130,7 +132,7 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
         const [oldTenant] = await tx.select().from(tenantsTable).where(eq(tenantsTable.id, oldTenantId));
         if (oldTenant) {
           await tx.update(tenantsTable)
-            .set({ balance: String(Number(oldTenant.balance) - oldAmountILS) })
+            .set({ balance: sql`${tenantsTable.balance} - ${oldAmountILS}` })
             .where(eq(tenantsTable.id, oldTenantId));
         }
       }
@@ -140,7 +142,7 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
         const [newTenant] = await tx.select().from(tenantsTable).where(eq(tenantsTable.id, newTenantId));
         if (newTenant) {
           await tx.update(tenantsTable)
-            .set({ balance: String(Number(newTenant.balance) + newAmountILS) })
+            .set({ balance: sql`${tenantsTable.balance} + ${newAmountILS}` })
             .where(eq(tenantsTable.id, newTenantId));
         }
       }
@@ -152,7 +154,7 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
         const [oldBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, oldBankName));
         if (oldBa) {
           await tx.update(bankAccountsTable)
-            .set({ balanceILS: String(Number(oldBa.balanceILS) - oldAmountILS) })
+            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${oldAmountILS}` })
             .where(eq(bankAccountsTable.id, oldBa.id));
         }
       }
@@ -161,7 +163,7 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
         const [newBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, newBankName as string));
         if (newBa) {
           await tx.update(bankAccountsTable)
-            .set({ balanceILS: String(Number(newBa.balanceILS) + newAmountILS) })
+            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${newAmountILS}` })
             .where(eq(bankAccountsTable.id, newBa.id));
         }
       }
@@ -199,16 +201,14 @@ router.delete("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise
   if (existing.tenantId) {
     const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, existing.tenantId));
     if (tenant) {
-      const reversed = Number(tenant.balance) - Number(existing.amountILS);
-      await db.update(tenantsTable).set({ balance: String(reversed) }).where(eq(tenantsTable.id, existing.tenantId));
+      await db.update(tenantsTable).set({ balance: sql`${tenantsTable.balance} - ${Number(existing.amountILS)}` }).where(eq(tenantsTable.id, existing.tenantId));
     }
   }
   // Reverse bank account balance for bank_transfer
   if (existing.paymentMethod === "bank_transfer" && existing.bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, existing.bankName));
     if (bankAccount) {
-      const newBal = Number(bankAccount.balanceILS) - Number(existing.amountILS);
-      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${Number(existing.amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
     }
   }
   await db.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));

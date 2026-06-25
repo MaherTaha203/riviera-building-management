@@ -39,8 +39,8 @@ router.post("/payment-vouchers", authMiddleware, validateBody(CreatePaymentVouch
   if (paymentMethod === "bank_transfer" && bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));
     if (bankAccount) {
-      const newBal = Number(bankAccount.balanceILS) - Number(amountILS);
-      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+      // Atomic decrement — safe under concurrency (no read-modify-write race).
+      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${Number(amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
     }
   }
   await logAction(user, "CREATE", "payment_voucher", voucher.id);
@@ -80,7 +80,7 @@ router.patch("/payment-vouchers/:id", authMiddleware, validateBody(UpdatePayment
         const [oldBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, oldBankName!));
         if (oldBa) {
           await tx.update(bankAccountsTable)
-            .set({ balanceILS: String(Number(oldBa.balanceILS) + oldAmountILS) })
+            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${oldAmountILS}` })
             .where(eq(bankAccountsTable.id, oldBa.id));
         }
       }
@@ -89,7 +89,7 @@ router.patch("/payment-vouchers/:id", authMiddleware, validateBody(UpdatePayment
         const [newBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, newBankName as string));
         if (newBa) {
           await tx.update(bankAccountsTable)
-            .set({ balanceILS: String(Number(newBa.balanceILS) - newAmountILS) })
+            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${newAmountILS}` })
             .where(eq(bankAccountsTable.id, newBa.id));
         }
       }
@@ -123,8 +123,7 @@ router.delete("/payment-vouchers/:id", authMiddleware, async (req, res): Promise
   if (existing.paymentMethod === "bank_transfer" && existing.bankName) {
     const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, existing.bankName));
     if (bankAccount) {
-      const newBal = Number(bankAccount.balanceILS) + Number(existing.amountILS);
-      await db.update(bankAccountsTable).set({ balanceILS: String(newBal) }).where(eq(bankAccountsTable.id, bankAccount.id));
+      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${Number(existing.amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
     }
   }
   await db.delete(paymentVouchersTable).where(eq(paymentVouchersTable.id, id));
