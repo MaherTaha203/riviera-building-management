@@ -1,7 +1,17 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
-const JWT_SECRET = process.env.SESSION_SECRET!;
+// Fail fast on a misconfigured deploy: without a signing secret the server would
+// still boot and pass health checks, but every login/token verification would
+// throw at runtime ("secretOrPrivateKey must have a value"). Mirror the
+// DATABASE_URL guard in @workspace/db so misconfiguration is caught at startup.
+const secret = process.env.SESSION_SECRET;
+if (!secret) {
+  throw new Error(
+    "SESSION_SECRET must be set. Refusing to start without a JWT signing secret.",
+  );
+}
+const JWT_SECRET: string = secret;
 
 export interface JwtPayload {
   userId: number;
