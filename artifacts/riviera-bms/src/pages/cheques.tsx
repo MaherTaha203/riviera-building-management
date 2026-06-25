@@ -17,11 +17,12 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   pending: "secondary",
-  collected: "default",
+  deposited: "secondary",
+  cleared: "default",
   bounced: "destructive",
   cancelled: "outline",
 };
-const statusLabels: Record<string, string> = { pending: "معلق", collected: "محصل", bounced: "مرتجع", cancelled: "ملغى" };
+const statusLabels: Record<string, string> = { pending: "معلق", deposited: "مودع", cleared: "محصل", bounced: "مرتجع", cancelled: "ملغى" };
 const typeLabels: Record<string, string> = { incoming: "وارد", outgoing: "صادر" };
 
 const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", notes: "" };
@@ -133,7 +134,7 @@ export default function Cheques() {
                   <TableCell>
                     {c.status === "pending" && (
                       <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "collected")}>محصل</Button>
+                        <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "cleared")}>محصل</Button>
                         <Button size="sm" variant="ghost" className="text-rose-600 text-xs" onClick={() => changeStatus(c.id, "bounced")}>مرتجع</Button>
                       </div>
                     )}
