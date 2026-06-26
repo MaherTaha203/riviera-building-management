@@ -7,6 +7,7 @@
  */
 import type { ContractUpdateCurrency } from './contractUpdateCurrency';
 import type { ContractUpdatePaymentFrequency } from './contractUpdatePaymentFrequency';
+import type { ContractUpdatePaymentMethod } from './contractUpdatePaymentMethod';
 import type { ContractUpdateStatus } from './contractUpdateStatus';
 
 export interface ContractUpdate {
@@ -19,4 +20,12 @@ export interface ContractUpdate {
   status?: ContractUpdateStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
+  paymentCount?: number | null;
+  /** @nullable */
+  additionalTerms?: string | null;
+  /** @nullable */
+  paymentMethod?: ContractUpdatePaymentMethod;
 }

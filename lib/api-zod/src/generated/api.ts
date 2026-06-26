@@ -230,6 +230,10 @@ export const ListContractsResponseItem = zod.object({
   "paymentFrequency": zod.enum(['monthly', 'quarterly', 'yearly']).optional(),
   "status": zod.enum(['active', 'expired', 'terminated']),
   "notes": zod.string().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "paymentCount": zod.number().nullish(),
+  "additionalTerms": zod.string().nullish(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('cheque'),zod.literal('bank_transfer'),zod.literal(null)]).nullish(),
   "createdAt": zod.string().optional()
 })
 export const ListContractsResponse = zod.array(ListContractsResponseItem)
@@ -244,7 +248,11 @@ export const CreateContractBody = zod.object({
   "currency": zod.enum(['ILS', 'USD', 'JOD']),
   "exchangeRate": zod.number().optional(),
   "paymentFrequency": zod.enum(['monthly', 'quarterly', 'yearly']),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "paymentCount": zod.number().nullish(),
+  "additionalTerms": zod.string().nullish(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('cheque'),zod.literal('bank_transfer'),zod.literal(null)]).nullish()
 })
 
 
@@ -268,6 +276,10 @@ export const GetContractResponse = zod.object({
   "paymentFrequency": zod.enum(['monthly', 'quarterly', 'yearly']).optional(),
   "status": zod.enum(['active', 'expired', 'terminated']),
   "notes": zod.string().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "paymentCount": zod.number().nullish(),
+  "additionalTerms": zod.string().nullish(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('cheque'),zod.literal('bank_transfer'),zod.literal(null)]).nullish(),
   "createdAt": zod.string().optional()
 })
 
@@ -284,7 +296,11 @@ export const UpdateContractBody = zod.object({
   "exchangeRate": zod.number().optional(),
   "paymentFrequency": zod.enum(['monthly', 'quarterly', 'yearly']).optional(),
   "status": zod.enum(['active', 'expired', 'terminated']).optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "paymentCount": zod.number().nullish(),
+  "additionalTerms": zod.string().nullish(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('cheque'),zod.literal('bank_transfer'),zod.literal(null)]).nullish()
 })
 
 export const UpdateContractResponse = zod.object({
@@ -303,6 +319,10 @@ export const UpdateContractResponse = zod.object({
   "paymentFrequency": zod.enum(['monthly', 'quarterly', 'yearly']).optional(),
   "status": zod.enum(['active', 'expired', 'terminated']),
   "notes": zod.string().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "paymentCount": zod.number().nullish(),
+  "additionalTerms": zod.string().nullish(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('cheque'),zod.literal('bank_transfer'),zod.literal(null)]).nullish(),
   "createdAt": zod.string().optional()
 })
 

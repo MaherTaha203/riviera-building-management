@@ -7,6 +7,7 @@
  */
 import type { ContractInputCurrency } from './contractInputCurrency';
 import type { ContractInputPaymentFrequency } from './contractInputPaymentFrequency';
+import type { ContractInputPaymentMethod } from './contractInputPaymentMethod';
 
 export interface ContractInput {
   tenantId: number;
@@ -19,4 +20,12 @@ export interface ContractInput {
   paymentFrequency: ContractInputPaymentFrequency;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
+  paymentCount?: number | null;
+  /** @nullable */
+  additionalTerms?: string | null;
+  /** @nullable */
+  paymentMethod?: ContractInputPaymentMethod;
 }

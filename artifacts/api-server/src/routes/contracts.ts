@@ -20,6 +20,7 @@ router.get("/contracts", authMiddleware, async (_req, res): Promise<void> => {
     rentAmount: Number(c.rentAmount),
     exchangeRate: Number(c.exchangeRate),
     rentAmountILS: Number(c.rentAmountILS),
+    depositAmount: c.depositAmount != null ? Number(c.depositAmount) : null,
     tenantName: tenantMap[c.tenantId] ?? "",
     unitNumber: unitMap[c.unitId] ?? "",
   })));
@@ -27,7 +28,7 @@ router.get("/contracts", authMiddleware, async (_req, res): Promise<void> => {
 
 router.post("/contracts", authMiddleware, validateBody(CreateContractBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
-  const { tenantId, unitId, startDate, endDate, rentAmount, currency, exchangeRate, paymentFrequency, notes } = req.body;
+  const { tenantId, unitId, startDate, endDate, rentAmount, currency, exchangeRate, paymentFrequency, notes, depositAmount, paymentCount, additionalTerms, paymentMethod } = req.body;
   if (!tenantId || !unitId || !startDate || !endDate || rentAmount == null || !currency) {
     res.status(400).json({ error: "Missing required fields" });
     return;
@@ -47,26 +48,30 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
       rentAmount: String(rentAmount), currency, exchangeRate: String(rate),
       rentAmountILS: String(amountILS), paymentFrequency: paymentFrequency ?? "monthly",
       status: "active", notes: notes ?? null,
+      depositAmount: depositAmount != null ? String(depositAmount) : null,
+      paymentCount: paymentCount != null ? Number(paymentCount) : null,
+      additionalTerms: additionalTerms ?? null,
+      paymentMethod: paymentMethod ?? null,
     }).returning();
     return inserted;
   });
   // Mark unit as occupied (outside transaction; non-critical if this fails separately)
   await db.update(unitsTable).set({ status: "occupied" }).where(eq(unitsTable.id, Number(unitId)));
   await logAction(user, "CREATE", "contract", contract.id);
-  res.status(201).json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), tenantName: "", unitNumber: "" });
+  res.status(201).json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), depositAmount: contract.depositAmount != null ? Number(contract.depositAmount) : null, tenantName: "", unitNumber: "" });
 });
 
 router.get("/contracts/:id", authMiddleware, async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const [contract] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
-  res.json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS) });
+  res.json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), depositAmount: contract.depositAmount != null ? Number(contract.depositAmount) : null });
 });
 
 router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { startDate, endDate, rentAmount, currency, exchangeRate, paymentFrequency, status, notes } = req.body;
+  const { startDate, endDate, rentAmount, currency, exchangeRate, paymentFrequency, status, notes, depositAmount, paymentCount, additionalTerms, paymentMethod } = req.body;
   // Fetch existing to get current rentAmount / exchangeRate for ILS recomputation
   const [existing] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
   if (!existing) { res.status(404).json({ error: "Contract not found" }); return; }
@@ -79,6 +84,10 @@ router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody),
   if (paymentFrequency != null) updates.paymentFrequency = paymentFrequency;
   if (status != null) updates.status = status;
   if (notes !== undefined) updates.notes = notes;
+  if (depositAmount !== undefined) updates.depositAmount = depositAmount != null ? String(depositAmount) : null;
+  if (paymentCount !== undefined) updates.paymentCount = paymentCount != null ? Number(paymentCount) : null;
+  if (additionalTerms !== undefined) updates.additionalTerms = additionalTerms;
+  if (paymentMethod !== undefined) updates.paymentMethod = paymentMethod;
   // Recompute rentAmountILS whenever either component changes (use existing value for the unchanged one)
   if (rentAmount != null || exchangeRate != null) {
     const effectiveRent = rentAmount != null ? Number(rentAmount) : Number(existing.rentAmount);
@@ -88,7 +97,7 @@ router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody),
   const [contract] = await db.update(contractsTable).set(updates).where(eq(contractsTable.id, id)).returning();
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
   await logAction(user, "UPDATE", "contract", contract.id);
-  res.json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS) });
+  res.json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), depositAmount: contract.depositAmount != null ? Number(contract.depositAmount) : null });
 });
 
 router.delete("/contracts/:id", authMiddleware, async (req, res): Promise<void> => {

@@ -1262,6 +1262,15 @@ components:
           enum: [active, expired, terminated]
         notes:
           type: ["string", "null"]
+        depositAmount:
+          type: ["number", "null"]
+        paymentCount:
+          type: ["integer", "null"]
+        additionalTerms:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+          enum: [cash, cheque, bank_transfer, null]
         createdAt:
           type: string
 
@@ -1289,6 +1298,15 @@ components:
           enum: [monthly, quarterly, yearly]
         notes:
           type: ["string", "null"]
+        depositAmount:
+          type: ["number", "null"]
+        paymentCount:
+          type: ["integer", "null"]
+        additionalTerms:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+          enum: [cash, cheque, bank_transfer, null]
 
     ContractUpdate:
       type: object
@@ -1312,6 +1330,15 @@ components:
           enum: [active, expired, terminated]
         notes:
           type: ["string", "null"]
+        depositAmount:
+          type: ["number", "null"]
+        paymentCount:
+          type: ["integer", "null"]
+        additionalTerms:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+          enum: [cash, cheque, bank_transfer, null]
 
     # ─── Receipt Vouchers ──────────────────────────────────────────────────────
     ReceiptVoucher:

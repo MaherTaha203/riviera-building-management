@@ -16,6 +16,10 @@ export const contractsTable = pgTable("contracts", {
   paymentFrequency: text("payment_frequency").notNull().default("monthly"),
   status: text("status").notNull().default("active"),
   notes: text("notes"),
+  depositAmount: numeric("deposit_amount", { precision: 14, scale: 2 }),
+  paymentCount: integer("payment_count"),
+  additionalTerms: text("additional_terms"),
+  paymentMethod: text("payment_method"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
