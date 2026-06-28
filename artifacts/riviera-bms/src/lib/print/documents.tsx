@@ -123,20 +123,27 @@ export function PaymentVoucherDoc({ v }: { v: any }) {
 
 const freqLabels: Record<string, string> = { monthly: "شهري", quarterly: "ربع سنوي", yearly: "سنوي" };
 
+const payMethodLabels: Record<string, string> = { cash: "نقداً", cheque: "شيك", bank_transfer: "تحويل بنكي" };
+
 export function ContractDoc({ c }: { c: any }) {
+  const items: any[] = [
+    ["المستأجر", c.tenantName ?? "-"],
+    ["الوحدة", c.unitNumber ?? "-"],
+    ["تاريخ البداية", <span className="ltr-nums">{fmtDate(c.startDate)}</span>],
+    ["تاريخ النهاية", <span className="ltr-nums">{fmtDate(c.endDate)}</span>],
+    ["قيمة الإيجار", <span className="ltr-nums">{fmtMoney(c.rentAmount, c.currency)}</span>],
+    ["العملة", c.currency],
+    ["سعر الصرف", <span className="ltr-nums">{c.exchangeRate}</span>],
+    ["دورية الدفع", freqLabels[c.paymentFrequency] ?? c.paymentFrequency],
+  ];
+  if (c.depositAmount != null) items.push(["مبلغ التأمين", <span className="ltr-nums">{fmtMoney(c.depositAmount, c.currency)}</span>]);
+  if (c.paymentCount != null) items.push(["عدد الدفعات", <span className="ltr-nums">{c.paymentCount}</span>]);
+  if (c.paymentMethod) items.push(["طريقة الدفع", payMethodLabels[c.paymentMethod] ?? c.paymentMethod]);
   return (
     <div>
-      <KV items={[
-        ["المستأجر", c.tenantName ?? "-"],
-        ["الوحدة", c.unitNumber ?? "-"],
-        ["تاريخ البداية", <span className="ltr-nums">{fmtDate(c.startDate)}</span>],
-        ["تاريخ النهاية", <span className="ltr-nums">{fmtDate(c.endDate)}</span>],
-        ["قيمة الإيجار", <span className="ltr-nums">{fmtMoney(c.rentAmount, c.currency)}</span>],
-        ["العملة", c.currency],
-        ["سعر الصرف", <span className="ltr-nums">{c.exchangeRate}</span>],
-        ["دورية الدفع", freqLabels[c.paymentFrequency] ?? c.paymentFrequency],
-      ]} />
+      <KV items={items} />
       <div className="print-amount-box ltr-nums">الإيجار بالشيقل: {fmtMoney(c.rentAmountILS, "ILS")}</div>
+      {c.additionalTerms && <p>شروط إضافية: {c.additionalTerms}</p>}
       {c.notes && <p>ملاحظات: {c.notes}</p>}
       <div className="print-signatures">
         <div className="sig"><div className="line">الطرف الأول (المؤجر)</div></div>

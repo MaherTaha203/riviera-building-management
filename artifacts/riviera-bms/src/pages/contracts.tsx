@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useListContracts, useCreateContract, useUpdateContract, useDeleteContract, useListTenants, useListUnits, useGetExchangeRates } from "@workspace/api-client-react";
+import { useState, useRef } from "react";
+import { useListContracts, useCreateContract, useUpdateContract, useDeleteContract, useListTenants, useListUnits, useGetExchangeRates, useListDocuments, useCreateDocument, useDeleteDocument } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, FileText, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Printer, Paperclip, Eye, Download } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { ContractDoc, ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -22,7 +22,18 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   terminated: { label: "ملغى", variant: "destructive" },
 };
 
-const empty = { tenantId: "", unitId: "", startDate: "", endDate: "", rentAmount: "", currency: "ILS", exchangeRate: "1", paymentFrequency: "monthly", notes: "" };
+const empty = { tenantId: "", unitId: "", startDate: "", endDate: "", rentAmount: "", currency: "ILS", exchangeRate: "1", paymentFrequency: "monthly", notes: "", depositAmount: "", paymentCount: "", paymentMethod: "", additionalTerms: "" };
+
+const payMethodLabels: Record<string, string> = { cash: "نقداً", cheque: "شيك", bank_transfer: "تحويل بنكي" };
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("فشل قراءة الملف"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function Contracts() {
   const { data: contracts = [], isLoading } = useListContracts();
@@ -39,6 +50,74 @@ export default function Contracts() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...empty });
+
+  // Contract attachments — reuse the Documents module (entityType="contract").
+  const [attachContract, setAttachContract] = useState<any | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const createDoc = useCreateDocument();
+  const delDoc = useDeleteDocument();
+  const { data: attachments = [], isLoading: attachLoading } = useListDocuments(
+    attachContract ? { entityType: "contract", entityId: attachContract.id } : undefined,
+    { query: { enabled: !!attachContract } } as any,
+  );
+
+  const handleAttachUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !attachContract) return;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!["pdf", "jpg", "jpeg", "png"].includes(ext)) {
+      toast({ title: "نوع ملف غير مدعوم", description: "يُسمح فقط بـ PDF أو JPG أو PNG", variant: "destructive" });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      await createDoc.mutateAsync({
+        data: {
+          name: file.name,
+          entityType: "contract",
+          entityId: attachContract.id,
+          fileType: ext === "jpeg" ? "jpg" : ext,
+          fileUrl: dataUrl,
+        } as any,
+      });
+      qc.invalidateQueries({ queryKey: ["/api/documents"] });
+      toast({ title: "تم رفع المرفق" });
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAttachDelete = async (id: number) => {
+    try {
+      await delDoc.mutateAsync({ id });
+      qc.invalidateQueries({ queryKey: ["/api/documents"] });
+      toast({ title: "تم حذف المرفق" });
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const viewAttachment = (doc: any) => {
+    if (!doc.fileUrl) return;
+    const w = window.open();
+    if (w) {
+      w.document.write(`<html><body style="margin:0"><iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+      w.document.close();
+    }
+  };
+
+  const downloadAttachment = (doc: any) => {
+    if (!doc.fileUrl) return;
+    const a = document.createElement("a");
+    a.href = doc.fileUrl;
+    a.download = doc.name || "attachment";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
 
   const rateForCurrency = (cur: string) =>
     cur === "USD" ? Number(rates?.usdToILS ?? 3.7) :
@@ -60,6 +139,10 @@ export default function Contracts() {
       rentAmount: String(c.rentAmount), currency: c.currency,
       exchangeRate: String(c.exchangeRate), paymentFrequency: c.paymentFrequency,
       notes: c.notes ?? "",
+      depositAmount: c.depositAmount != null ? String(c.depositAmount) : "",
+      paymentCount: c.paymentCount != null ? String(c.paymentCount) : "",
+      paymentMethod: c.paymentMethod ?? "",
+      additionalTerms: c.additionalTerms ?? "",
     });
     setOpen(true);
   };
@@ -72,6 +155,10 @@ export default function Contracts() {
       rentAmount: Number(form.rentAmount),
       exchangeRate: Number(form.exchangeRate),
       rentAmountILS: amountILS,
+      depositAmount: form.depositAmount !== "" ? Number(form.depositAmount) : null,
+      paymentCount: form.paymentCount !== "" ? Number(form.paymentCount) : null,
+      paymentMethod: form.paymentMethod || null,
+      additionalTerms: form.additionalTerms || null,
     };
     try {
       if (editing) {
@@ -173,6 +260,7 @@ export default function Contracts() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button size="sm" variant="ghost" title="طباعة" onClick={() => print(<ContractDoc c={c} />, { title: `عقد إيجار ${c.contractNumber}`, refNumber: c.contractNumber })}><Printer size={14} /></Button>
+                          <Button size="sm" variant="ghost" title="المرفقات" onClick={() => setAttachContract(c)}><Paperclip size={14} /></Button>
                           <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 size={14} /></Button>
                         </div>
@@ -244,6 +332,23 @@ export default function Contracts() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>مبلغ التأمين</Label><Input type="number" value={form.depositAmount} onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div><Label>عدد الدفعات</Label><Input type="number" value={form.paymentCount} onChange={e => setForm(f => ({ ...f, paymentCount: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div>
+                <Label>طريقة الدفع</Label>
+                <Select value={form.paymentMethod || "none"} onValueChange={v => setForm(f => ({ ...f, paymentMethod: v === "none" ? "" : v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    <SelectItem value="cash">نقداً</SelectItem>
+                    <SelectItem value="cheque">شيك</SelectItem>
+                    <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div><Label>شروط إضافية</Label><Input value={form.additionalTerms} onChange={e => setForm(f => ({ ...f, additionalTerms: e.target.value }))} className="mt-1" /></div>
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2">
@@ -266,6 +371,58 @@ export default function Contracts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Contract Attachments */}
+      <Dialog open={attachContract !== null} onOpenChange={o => { if (!o) setAttachContract(null); }}>
+        <DialogContent className="sm:max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip size={18} />مرفقات العقد {attachContract?.contractNumber}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>رفع مرفق (PDF أو JPG أو PNG)</Label>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleAttachUpload}
+                disabled={createDoc.isPending}
+                className="mt-1 text-sm"
+              />
+              {createDoc.isPending && <p className="text-xs text-muted-foreground mt-1">جاري الرفع...</p>}
+            </div>
+            <div className="border rounded-md">
+              {attachLoading ? (
+                <div className="p-6 text-center text-sm text-muted-foreground animate-pulse">جاري التحميل...</div>
+              ) : (attachments as any[]).length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">لا توجد مرفقات لهذا العقد</div>
+              ) : (
+                <ul className="divide-y">
+                  {(attachments as any[]).map((d: any) => (
+                    <li key={d.id} className="flex items-center justify-between gap-2 p-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={14} className="text-muted-foreground shrink-0" />
+                        <span className="truncate text-sm">{d.name}</span>
+                        <Badge variant="outline" className="uppercase text-[10px]">{d.fileType}</Badge>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {d.fileUrl && <Button size="sm" variant="ghost" title="عرض" onClick={() => viewAttachment(d)}><Eye size={14} /></Button>}
+                        {d.fileUrl && <Button size="sm" variant="ghost" title="تنزيل" onClick={() => downloadAttachment(d)}><Download size={14} /></Button>}
+                        <Button size="sm" variant="ghost" className="text-destructive" title="حذف" onClick={() => handleAttachDelete(d.id)}><Trash2 size={14} /></Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex-row-reverse">
+            <Button variant="outline" onClick={() => setAttachContract(null)}>إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

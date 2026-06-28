@@ -281,6 +281,18 @@ export const ContractStatus = {
   terminated: 'terminated',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ContractPaymentMethod = typeof ContractPaymentMethod[keyof typeof ContractPaymentMethod] | null;
+
+
+export const ContractPaymentMethod = {
+  cash: 'cash',
+  cheque: 'cheque',
+  bank_transfer: 'bank_transfer',
+} as const;
+
 export interface Contract {
   id: number;
   contractNumber: string;
@@ -298,6 +310,14 @@ export interface Contract {
   status: ContractStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
+  paymentCount?: number | null;
+  /** @nullable */
+  additionalTerms?: string | null;
+  /** @nullable */
+  paymentMethod?: ContractPaymentMethod;
   createdAt?: string;
 }
 
@@ -319,6 +339,18 @@ export const ContractInputPaymentFrequency = {
   yearly: 'yearly',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ContractInputPaymentMethod = typeof ContractInputPaymentMethod[keyof typeof ContractInputPaymentMethod] | null;
+
+
+export const ContractInputPaymentMethod = {
+  cash: 'cash',
+  cheque: 'cheque',
+  bank_transfer: 'bank_transfer',
+} as const;
+
 export interface ContractInput {
   tenantId: number;
   unitId: number;
@@ -330,6 +362,14 @@ export interface ContractInput {
   paymentFrequency: ContractInputPaymentFrequency;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
+  paymentCount?: number | null;
+  /** @nullable */
+  additionalTerms?: string | null;
+  /** @nullable */
+  paymentMethod?: ContractInputPaymentMethod;
 }
 
 export type ContractUpdateCurrency = typeof ContractUpdateCurrency[keyof typeof ContractUpdateCurrency];
@@ -359,6 +399,18 @@ export const ContractUpdateStatus = {
   terminated: 'terminated',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ContractUpdatePaymentMethod = typeof ContractUpdatePaymentMethod[keyof typeof ContractUpdatePaymentMethod] | null;
+
+
+export const ContractUpdatePaymentMethod = {
+  cash: 'cash',
+  cheque: 'cheque',
+  bank_transfer: 'bank_transfer',
+} as const;
+
 export interface ContractUpdate {
   startDate?: string;
   endDate?: string;
@@ -369,6 +421,14 @@ export interface ContractUpdate {
   status?: ContractUpdateStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
+  paymentCount?: number | null;
+  /** @nullable */
+  additionalTerms?: string | null;
+  /** @nullable */
+  paymentMethod?: ContractUpdatePaymentMethod;
 }
 
 export type ReceiptVoucherCurrency = typeof ReceiptVoucherCurrency[keyof typeof ReceiptVoucherCurrency];
