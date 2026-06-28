@@ -32,7 +32,7 @@ export default function AccountStatements() {
   const print = usePrint();
   const isBuilding = !(statement as any)?.tenantName;
   const printStatement = () => print(
-    <AccountStatementDoc statement={statement} />,
+    <AccountStatementDoc statement={statement} from={queryParams.from} to={queryParams.to} />,
     { title: isBuilding ? "كشف حساب العمارة" : `كشف حساب: ${(statement as any).tenantName}` },
   );
 
