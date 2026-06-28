@@ -43,3 +43,45 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     res.status(401).json({ error: "Invalid token" });
   }
 }
+
+/**
+ * Authorize by role. Must be used AFTER authMiddleware (which populates req.user).
+ * Responds 403 when the authenticated user's role is not in the allowed set.
+ */
+export function requireRole(...roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as Request & { user?: JwtPayload }).user;
+    if (!user || !roles.includes(user.role)) {
+      res.status(403).json({ error: "ليس لديك صلاحية للقيام بهذا الإجراء" });
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * Global guard: make `viewer` accounts read-only. Applied once at the top of the
+ * API router. Lets all safe methods (GET/HEAD/OPTIONS) and the auth endpoints
+ * (login/logout) through; for any other write it rejects viewers with 403.
+ * Invalid/absent tokens are left for the downstream authMiddleware to handle.
+ */
+export function blockViewerWrites(req: Request, res: Response, next: NextFunction): void {
+  const safe = req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS";
+  if (safe || req.path.startsWith("/auth/")) {
+    next();
+    return;
+  }
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const payload = verifyToken(authHeader.slice(7));
+      if (payload.role === "viewer") {
+        res.status(403).json({ error: "حسابك للاطّلاع فقط ولا يمكنه إجراء تعديلات" });
+        return;
+      }
+    } catch {
+      // Leave invalid-token handling to authMiddleware on the matched route.
+    }
+  }
+  next();
+}

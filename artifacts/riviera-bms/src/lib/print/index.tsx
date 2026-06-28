@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useGetSettings } from "@workspace/api-client-react";
-import { getUser } from "@/lib/auth";
+import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
+import { getUser, getToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import "./print.css";
@@ -57,7 +57,12 @@ function usePrintRoot(): HTMLElement | null {
 
 export function PrintProvider({ children }: { children: ReactNode }) {
   const printRoot = usePrintRoot();
-  const { data: settings } = useGetSettings();
+  // Only fetch settings (for the print masthead) when authenticated — otherwise
+  // this provider, which is mounted above the router, fires an unauthenticated
+  // GET /settings (401) on the login page.
+  const { data: settings } = useGetSettings({
+    query: { queryKey: getGetSettingsQueryKey(), enabled: !!getToken() },
+  });
   const [doc, setDoc] = useState<{ body: ReactNode; opts: PrintOptions } | null>(null);
 
   // Clear the print document once the print dialog closes.

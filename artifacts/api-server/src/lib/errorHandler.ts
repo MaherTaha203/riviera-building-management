@@ -74,6 +74,21 @@ export function errorHandler(
     return;
   }
 
+  // Body-parser and other errors that carry an explicit HTTP status (e.g.
+  // PayloadTooLargeError 413, malformed JSON 400) — surface it as clean JSON
+  // instead of a generic 500.
+  const status = (err as { status?: number; statusCode?: number })?.status
+    ?? (err as { statusCode?: number })?.statusCode;
+  if (typeof status === "number" && status >= 400 && status < 500) {
+    const message = status === 413
+      ? "حجم الملف كبير جداً"
+      : status === 400
+        ? "طلب غير صالح"
+        : "تعذّر إتمام الطلب";
+    res.status(status).json({ error: message });
+    return;
+  }
+
   req.log?.error({ err }, "Unhandled error");
   res.status(500).json({ error: "Internal Server Error" });
 }
