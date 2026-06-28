@@ -15,6 +15,13 @@ export function fmtMoney(value: unknown, currency = "ILS"): string {
   return `${s} ${currency}`;
 }
 
+// Plain tabular number (no currency suffix) — used inside ledger/summary tables
+// where the column header already implies the currency, so cells stay on one
+// line and align cleanly.
+export function fmtNum(value: unknown): string {
+  return Number(value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function fmtDate(value: unknown): string {
   if (!value) return "-";
   const d = new Date(value as string);
@@ -119,28 +126,40 @@ function PrintLayout({
   const printedBy = user?.name || user?.username || "—";
   const now = new Date();
   const printedAt = `${now.toLocaleDateString("en-GB")} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  // Brand monogram derived from the building name (the system has no stored
+  // logo asset). Takes the first letter of up to two words.
+  const monogram = buildingName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase() || "R";
 
   return (
     <div className="print-doc">
       <div className="print-masthead">
-        <div>
-          <div className="building-name">{buildingName}</div>
-          {buildingAddress && <div className="building-meta">{buildingAddress}</div>}
-          {(phone || taxNumber) && (
-            <div className="building-meta">
-              {phone && <span>هاتف: <span className="ltr-nums">{phone}</span></span>}
-              {phone && taxNumber && <span> • </span>}
-              {taxNumber && <span>الرقم الضريبي: <span className="ltr-nums">{taxNumber}</span></span>}
-            </div>
-          )}
+        <div className="brand">
+          <div className="print-logo">{monogram}</div>
+          <div>
+            <div className="building-name">{buildingName}</div>
+            {buildingAddress && <div className="building-meta">{buildingAddress}</div>}
+            {(phone || taxNumber) && (
+              <div className="building-meta">
+                {phone && <span>هاتف: <span className="ltr-nums">{phone}</span></span>}
+                {phone && taxNumber && <span> • </span>}
+                {taxNumber && <span>الرقم الضريبي: <span className="ltr-nums">{taxNumber}</span></span>}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="building-meta text-end">
-          {refNumber && <div>رقم المستند: <span className="ltr-nums">{refNumber}</span></div>}
-          <div>تاريخ الطباعة: <span className="ltr-nums">{printedAt}</span></div>
+        <div className="building-meta docmeta text-end">
+          {refNumber && <div>رقم المستند: <b className="ltr-nums">{refNumber}</b></div>}
+          <div>تاريخ الطباعة: <b className="ltr-nums">{printedAt}</b></div>
         </div>
       </div>
 
-      <div className="print-title">{title}</div>
+      <div className="print-title"><span>{title}</span></div>
 
       {children}
 

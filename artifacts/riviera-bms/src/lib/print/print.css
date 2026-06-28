@@ -27,39 +27,135 @@
   }
 }
 
-/* ---- Document design system (shared by every printable) ---- */
+/* ---- Document design system (shared by every printable) ----
+   Corporate Riviera palette: deep navy (--primary 222 47% 11%) + gold accent
+   (--accent 43 74% 49%). Kept in sync with the app theme. */
 .print-doc {
+  --p-navy: #11182b;
+  --p-navy-soft: #eef0f4;
+  --p-gold: #c1991f;
+  --p-ink: #1d2530;
+  --p-muted: #6b7480;
+  --p-faint: #9aa2ad;
+  --p-line: #e4e7ec;
+  --p-soft: #f2f4f7;
+  --p-rule: #c7ccd4;
+  --p-pos: #15803d;
+  --p-neg: #b3261e;
+
   font-family: "Cairo", "Inter", sans-serif;
-  color: #111827;
+  color: var(--p-ink);
   direction: rtl;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
+/* ---- Masthead ---- */
 .print-masthead {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 2px solid #1f2937;
-  padding-bottom: 10px;
-  margin-bottom: 14px;
+  border-bottom: 2px solid var(--p-navy);
+  padding-bottom: 11px;
+  margin-bottom: 4px;
 }
-
-.print-masthead .building-name {
-  font-size: 20px;
+.print-masthead .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.print-masthead .print-logo {
+  width: 50px;
+  height: 50px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--p-navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
   font-weight: 800;
+  letter-spacing: 0.5px;
+  border: 2px solid var(--p-gold);
 }
-
+.print-masthead .building-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--p-navy);
+  letter-spacing: 0.2px;
+}
 .print-masthead .building-meta {
-  font-size: 11px;
-  color: #4b5563;
+  font-size: 10.5px;
+  color: var(--p-muted);
+  line-height: 1.7;
+}
+.print-masthead .docmeta b {
+  color: var(--p-ink);
+  font-weight: 700;
 }
 
+/* ---- Title ---- */
 .print-title {
   text-align: center;
+  margin: 14px 0 4px;
+}
+.print-title span {
+  display: inline-block;
   font-size: 16px;
+  font-weight: 800;
+  color: var(--p-navy);
+  letter-spacing: 0.3px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid var(--p-gold);
+}
+
+/* ---- Context bar (tenant/contract/period info strips) ---- */
+.print-ctx {
+  display: grid;
+  margin-top: 14px;
+  border: 1px solid var(--p-line);
+}
+.print-ctx.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.print-ctx.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.print-ctx.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.print-ctx .c {
+  padding: 8px 12px;
+  border-left: 1px solid var(--p-line);
+}
+.print-ctx .c:last-child { border-left: none; }
+.print-ctx .l {
+  font-size: 10px;
+  color: var(--p-faint);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.print-ctx .v {
+  font-size: 12.5px;
+  color: var(--p-ink);
   font-weight: 700;
-  margin: 6px 0 12px;
+}
+
+/* ---- Info bar (opening balance / period) ---- */
+.print-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 9px;
+  padding: 8px 14px;
+  background: #fafbfc;
+  border: 1px solid var(--p-line);
+}
+.print-bar .t { font-weight: 600; }
+.print-bar .v { font-weight: 800; color: var(--p-ink); }
+
+/* ---- Section heading ---- */
+.print-sec {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--p-navy);
+  margin: 18px 2px 7px;
+  letter-spacing: 0.2px;
 }
 
 .print-meta {
@@ -69,75 +165,179 @@
   gap: 6px 24px;
   font-size: 11px;
   color: #374151;
-  margin-bottom: 12px;
+  margin: 12px 0;
 }
 
+/* ---- Tables ---- */
 .print-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
-}
-.print-table th,
-.print-table td {
-  border: 1px solid #d1d5db;
-  padding: 6px 8px;
-  text-align: right;
+  table-layout: fixed;
 }
 .print-table thead {
   display: table-header-group; /* repeat header on each printed page */
-  background: #f3f4f6;
 }
-.print-table tr {
-  page-break-inside: avoid;
+.print-table th {
+  display: table-cell; /* override global .ltr-nums { display:inline-block } on cells */
+  background: var(--p-navy-soft);
+  color: #27313f;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: right;
+  padding: 7px 9px;
+  border-bottom: 1.5px solid var(--p-rule);
+  border-top: 1px solid var(--p-line);
+  white-space: nowrap;
 }
+.print-table td {
+  display: table-cell; /* override global .ltr-nums { display:inline-block } on cells */
+  padding: 5.5px 9px;
+  border-bottom: 1px solid var(--p-soft);
+  text-align: right;
+  vertical-align: middle;
+}
+.print-table tbody tr:nth-child(even) td { background: #fcfcfd; }
+.print-table tr { page-break-inside: avoid; }
 .print-table tfoot td {
   font-weight: 700;
-  background: #f9fafb;
+  border-top: 2px solid var(--p-rule);
+  background: #fff;
+}
+.print-table .num,
+.print-table .ltr-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.print-table th.r, .print-table td.r { text-align: left; }
+.print-table th.c, .print-table td.c { text-align: center; }
+.print-table .vno { color: #27313f; font-weight: 600; }
+.print-table .t-pos { color: var(--p-pos); font-weight: 600; }
+.print-table .t-neg { color: var(--p-neg); font-weight: 600; }
+.print-table .dash { color: #d0d4da; }
+
+/* Running-balance: the strongest column of a ledger */
+.print-table th.col-bal {
+  background: #e6e9ef;
+  color: var(--p-navy);
+  border-right: 2px solid var(--p-rule);
+  border-left: 1px solid var(--p-rule);
+}
+.print-table td.col-bal {
+  background: #f3f5f9 !important;
+  border-right: 2px solid var(--p-rule);
+  border-left: 1px solid var(--p-rule);
+  font-weight: 700;
+  color: var(--p-ink);
+}
+.print-table tfoot td.col-bal {
+  background: #e6e9ef !important;
+  border-right: 2px solid var(--p-rule);
+  border-top: 2.5px double var(--p-rule);
+  color: var(--p-navy);
+  font-weight: 800;
 }
 
+/* ---- Key/value (vouchers, contract) ---- */
 .print-kv {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 24px;
-  margin: 10px 0;
+  margin: 14px 0 0;
+  border: 1px solid var(--p-line);
 }
 .print-kv .row {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px dashed #e5e7eb;
-  padding: 4px 0;
+  gap: 10px;
+  border-bottom: 1px solid var(--p-soft);
+  padding: 7px 12px;
 }
-.print-kv .label {
-  color: #6b7280;
-}
-.print-kv .value {
-  font-weight: 600;
-}
+.print-kv .label { color: var(--p-muted); }
+.print-kv .value { font-weight: 700; text-align: left; }
 
+/* ---- Emphasized amount band ---- */
 .print-amount-box {
-  border: 1.5px solid #1f2937;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--p-navy);
+  color: #fff;
   border-radius: 6px;
-  padding: 8px 14px;
-  text-align: center;
-  font-size: 15px;
+  padding: 11px 16px;
+  margin: 12px 0 0;
   font-weight: 800;
-  margin: 12px 0;
+}
+.print-amount-box .v { font-size: 16px; letter-spacing: 0.3px; }
+
+/* ---- Notes ---- */
+.print-note {
+  margin-top: 11px;
+  padding: 8px 12px;
+  background: #fafbfc;
+  border: 1px solid var(--p-line);
+  font-size: 11.5px;
+}
+.print-note b { color: var(--p-muted); font-weight: 700; }
+
+/* ---- Attachments ---- */
+.print-att {
+  margin-top: 8px;
+  border: 1px solid var(--p-line);
+}
+.print-att .it {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--p-soft);
+  font-size: 11.5px;
+}
+.print-att .it:last-child { border-bottom: none; }
+.print-att .ext {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--p-navy);
+  padding: 1px 7px;
+  border-radius: 3px;
 }
 
+/* ---- Summary cards (financial summary) ---- */
+.print-sgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.print-scard {
+  border: 1px solid var(--p-line);
+  padding: 11px 13px;
+}
+.print-scard .l { font-size: 11px; color: var(--p-muted); font-weight: 600; }
+.print-scard .v { font-size: 17px; font-weight: 800; margin-top: 4px; }
+.print-scard.em { background: var(--p-navy-soft); border-color: var(--p-rule); }
+.print-scard.em .v { color: var(--p-navy); }
+
+/* ---- Signatures ---- */
 .print-signatures {
   display: flex;
   justify-content: space-between;
+  gap: 50px;
   margin-top: 40px;
   font-size: 11px;
+  padding: 0 16px;
 }
 .print-signatures .sig {
+  flex: 1;
   text-align: center;
-  width: 40%;
 }
 .print-signatures .line {
-  border-top: 1px solid #9ca3af;
+  border-top: 1px solid #9aa2ad;
   margin-top: 28px;
-  padding-top: 4px;
+  padding-top: 5px;
+  color: var(--p-muted);
 }
 
 /* Repeats on every printed page because it is position: fixed. */
@@ -149,8 +349,8 @@
   display: flex;
   justify-content: space-between;
   font-size: 9px;
-  color: #6b7280;
-  border-top: 1px solid #e5e7eb;
+  color: var(--p-faint);
+  border-top: 1px solid var(--p-line);
   padding-top: 4px;
 }
 
@@ -158,7 +358,8 @@
   direction: ltr;
   unicode-bidi: embed;
   display: inline-block;
+  font-variant-numeric: tabular-nums;
 }
 .text-end { text-align: left; }
-.text-danger { color: #b91c1c; }
-.text-success { color: #047857; }
+.text-danger { color: #b3261e; }
+.text-success { color: #15803d; }

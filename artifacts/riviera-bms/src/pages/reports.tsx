@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { formatAmount } from "@/lib/format";
 import { BarChart3, TrendingUp, TrendingDown, Building2, FileText, Wallet } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
-import { ReportTable } from "@/lib/print/documents";
+import { ReportTable, FinancialSummaryDoc } from "@/lib/print/documents";
 
 export default function Reports() {
   const { data: summary } = useGetDashboardSummary();
@@ -86,20 +86,18 @@ export default function Reports() {
 
   const print = usePrint();
   const periodLabel = isFiltered ? `${appliedFrom || "البداية"} — ${appliedTo || "النهاية"}` : "كل الفترات";
+  const occupancyPct = (summary?.totalUnits ?? 0) > 0 ? Math.round((periodOccupiedUnitIds.size / (summary?.totalUnits ?? 1)) * 100) : 0;
   const printSummary = () => print(
-    <div>
-      <div className="print-meta"><span>الفترة: <span className="ltr-nums">{periodLabel}</span></span></div>
-      <table className="print-table">
-        <tbody>
-          <tr><td>إجمالي المقبوضات</td><td className="ltr-nums">{fmtMoney(totalReceipts, "ILS")}</td></tr>
-          <tr><td>إجمالي المصروفات</td><td className="ltr-nums">{fmtMoney(totalPayments, "ILS")}</td></tr>
-          <tr><td>صافي الحركة</td><td className="ltr-nums">{fmtMoney(totalReceipts - totalPayments, "ILS")}</td></tr>
-          <tr><td>الإيجار الشهري المتوقع</td><td className="ltr-nums">{fmtMoney(totalMonthlyRent, "ILS")}</td></tr>
-          <tr><td>نسبة الإشغال</td><td className="ltr-nums">{(summary?.totalUnits ?? 0) > 0 ? Math.round((periodOccupiedUnitIds.size / (summary?.totalUnits ?? 1)) * 100) : 0}%</td></tr>
-          <tr><td>رصيد الصندوق</td><td className="ltr-nums">{fmtMoney(Number(summary?.cashBalanceILS ?? 0), "ILS")}</td></tr>
-        </tbody>
-      </table>
-    </div>,
+    <FinancialSummaryDoc
+      periodLabel={periodLabel}
+      totalReceipts={totalReceipts}
+      totalPayments={totalPayments}
+      totalMonthlyRent={totalMonthlyRent}
+      occupancyPct={occupancyPct}
+      cashBalance={Number(summary?.cashBalanceILS ?? 0)}
+      paymentsByCategory={Object.entries(paymentsByCategory).sort((a, b) => b[1] - a[1])}
+      receiptsByMethod={Object.entries(receiptsByMethod).sort((a, b) => b[1] - a[1])}
+    />,
     { title: "الملخص المالي" },
   );
   const printExpiring = () => print(

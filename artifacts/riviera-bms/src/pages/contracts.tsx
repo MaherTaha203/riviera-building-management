@@ -60,6 +60,13 @@ export default function Contracts() {
     attachContract ? { entityType: "contract", entityId: attachContract.id } : undefined,
     { query: { enabled: !!attachContract } } as any,
   );
+  // All contract attachments, grouped by contract id, so the printed contract
+  // can list its attached files (reuses the existing Documents module).
+  const { data: allContractDocs = [] } = useListDocuments({ entityType: "contract" });
+  const attachmentsByContract = (allContractDocs as any[]).reduce((acc: Record<number, any[]>, d: any) => {
+    if (d.entityId != null) (acc[d.entityId] ??= []).push(d);
+    return acc;
+  }, {} as Record<number, any[]>);
 
   const handleAttachUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -259,7 +266,7 @@ export default function Contracts() {
                       <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" title="طباعة" onClick={() => print(<ContractDoc c={c} />, { title: `عقد إيجار ${c.contractNumber}`, refNumber: c.contractNumber })}><Printer size={14} /></Button>
+                          <Button size="sm" variant="ghost" title="طباعة" onClick={() => print(<ContractDoc c={c} attachments={attachmentsByContract[c.id] ?? []} />, { title: `عقد إيجار ${c.contractNumber}`, refNumber: c.contractNumber })}><Printer size={14} /></Button>
                           <Button size="sm" variant="ghost" title="المرفقات" onClick={() => setAttachContract(c)}><Paperclip size={14} /></Button>
                           <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 size={14} /></Button>
