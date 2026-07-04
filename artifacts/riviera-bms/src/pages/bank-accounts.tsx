@@ -80,7 +80,7 @@ export default function BankAccounts() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold">الحسابات البنكية</h1><p className="text-muted-foreground mt-1">إدارة الحسابات المصرفية</p></div>
+        <div><h1 className="text-2xl font-extrabold tracking-tight">الحسابات البنكية</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الحسابات المصرفية</p></div>
         <div className="flex items-center gap-2">
           <PrintExportButton
             prints={[{ label: "طباعة التقرير", onClick: printList }]}

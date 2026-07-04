@@ -41,8 +41,8 @@ export default function AccountStatements() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><ScrollText size={28} />كشف الحساب</h1>
-          <p className="text-muted-foreground mt-1">عرض حركات الحساب لكل مستأجر</p>
+          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2"><ScrollText size={28} />كشف الحساب</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">عرض حركات الحساب لكل مستأجر</p>
         </div>
         {statement && <PrintExportButton
           prints={[{ label: "طباعة الكشف", onClick: printStatement }]}

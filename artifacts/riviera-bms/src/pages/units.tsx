@@ -110,8 +110,8 @@ export default function Units() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">الوحدات</h1>
-          <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">الوحدات</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">إدارة وحدات عمارة الريفييرا</p>
         </div>
         <div className="flex items-center gap-2">
           <PrintExportButton

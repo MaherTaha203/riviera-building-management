@@ -120,8 +120,8 @@ export default function Reports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><BarChart3 size={28} />التقارير</h1>
-          <p className="text-muted-foreground mt-1">ملخص إحصائي شامل للعمارة</p>
+          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2"><BarChart3 size={28} />التقارير</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">ملخص إحصائي شامل للعمارة</p>
         </div>
         <div className="flex items-center gap-2">
           <PrintExportButton

@@ -108,7 +108,7 @@ export default function Cheques() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold">الشيكات</h1><p className="text-muted-foreground mt-1">إدارة الشيكات الواردة والصادرة</p></div>
+        <div><h1 className="text-2xl font-extrabold tracking-tight">الشيكات</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الشيكات الواردة والصادرة</p></div>
         <div className="flex items-center gap-2">
           <PrintExportButton
             prints={[{ label: "طباعة القائمة", onClick: printList }]}

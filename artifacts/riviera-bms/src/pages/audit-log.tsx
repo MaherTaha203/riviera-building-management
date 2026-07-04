@@ -34,8 +34,8 @@ export default function AuditLog() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">سجل التدقيق</h1>
-          <p className="text-muted-foreground mt-1">تتبع جميع العمليات المنجزة في النظام</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">سجل التدقيق</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">تتبع جميع العمليات المنجزة في النظام</p>
         </div>
         <PrintExportButton
           exportSpec={{ filename: "audit-log", headers: ["التاريخ","المستخدم","العملية","الكيان","المعرف","تفاصيل"],

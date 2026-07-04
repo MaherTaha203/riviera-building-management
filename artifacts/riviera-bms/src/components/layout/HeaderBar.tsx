@@ -200,8 +200,7 @@ function NotificationsBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="relative h-9 w-9 rounded-[7px] border flex items-center justify-center text-white/90 transition-colors hover:bg-[hsl(222,47%,24%)]"
-          style={{ background: NAVY_18, borderColor: NAVY_24 }}
+          className="relative h-9 w-9 rounded-[7px] flex items-center justify-center text-white/75 transition-colors hover:bg-[hsl(222,47%,18%)] hover:text-white"
           title="التنبيهات"
         >
           <Bell size={16} />
@@ -249,11 +248,11 @@ function HeaderClock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="hidden md:flex flex-col items-start leading-tight">
-      <span className="text-[15px] font-semibold text-white ltr-nums" style={{ direction: "ltr" }}>
+    <div className="hidden md:flex flex-col items-start leading-tight select-none">
+      <span className="text-[13px] font-medium text-white/85 ltr-nums" style={{ direction: "ltr" }}>
         {now.toLocaleTimeString("en-GB")}
       </span>
-      <span className="text-[10.5px] text-white/55">
+      <span className="text-[10px] text-white/45">
         {now.toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
       </span>
     </div>
@@ -263,17 +262,16 @@ function HeaderClock() {
 // FX chips — real rates from the existing exchange-rates endpoint.
 function FxChips() {
   const { data: rates } = useGetExchangeRates();
-  const chip = (cur: string, val: unknown, lbl: string) => (
-    <div className="flex items-center gap-2 rounded-[7px] border px-2.5 py-1 leading-tight" style={{ background: NAVY_18, borderColor: NAVY_24 }}>
-      <span className="text-[10px] font-extrabold tracking-wider text-secondary">{cur}</span>
-      <span className="text-[12.5px] font-semibold text-white ltr-nums" style={{ direction: "ltr" }}>₪ {Number(val ?? 0).toFixed(2)}</span>
-      <span className="text-[9.5px] text-white/50">{lbl}</span>
+  const chip = (cur: string, val: unknown) => (
+    <div className="flex items-center gap-1.5 leading-none select-none">
+      <span className="text-[9.5px] font-bold tracking-wider text-secondary/90">{cur}</span>
+      <span className="text-[12px] font-medium text-white/80 ltr-nums" style={{ direction: "ltr" }}>₪ {Number(val ?? 0).toFixed(2)}</span>
     </div>
   );
   return (
-    <div className="hidden xl:flex items-center gap-2">
-      {chip("USD", rates?.usdToILS, "دولار")}
-      {chip("JOD", rates?.jodToILS, "دينار")}
+    <div className="hidden xl:flex items-center gap-4">
+      {chip("USD", rates?.usdToILS)}
+      {chip("JOD", rates?.jodToILS)}
     </div>
   );
 }
@@ -281,12 +279,12 @@ function FxChips() {
 function UserChip() {
   const user = getUser();
   return (
-    <div className="hidden sm:flex items-center gap-2.5 rounded-lg border py-1 pr-3 pl-1.5" style={{ background: NAVY_18, borderColor: NAVY_24 }}>
+    <div className="hidden sm:flex items-center gap-2.5 select-none">
       <div className="text-right leading-tight">
-        <div className="text-[12px] font-bold text-white">{user?.name || user?.username || "المستخدم"}</div>
-        <div className="text-[10px] text-white/50 capitalize">{user?.role || ""}</div>
+        <div className="text-[12px] font-semibold text-white/90">{user?.name || user?.username || "المستخدم"}</div>
+        <div className="text-[9.5px] text-white/40 capitalize">{user?.role || ""}</div>
       </div>
-      <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center font-extrabold text-[12.5px] text-primary"
+      <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center font-extrabold text-[12px] text-primary"
         style={{ background: "linear-gradient(135deg, hsl(43,74%,49%), hsl(43,74%,38%))" }}>
         {(user?.name || user?.username || "U").charAt(0)}
       </div>
@@ -294,11 +292,11 @@ function UserChip() {
   );
 }
 
-const SEP = <div className="hidden md:block w-px h-[26px]" style={{ background: NAVY_24 }} />;
+const SEP = <div className="hidden md:block w-px h-[22px] bg-white/10" />;
 
 export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="h-[58px] shrink-0 bg-sidebar border-b border-sidebar-border flex items-center gap-3 px-3 sm:px-[18px]">
+    <header className="h-[58px] shrink-0 bg-sidebar border-b border-sidebar-border flex items-center gap-4 px-3 sm:px-5">
       {onMenuClick && (
         <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden text-white hover:bg-[hsl(222,47%,24%)] hover:text-white" title="القائمة" onClick={onMenuClick}>
           <Menu size={18} />

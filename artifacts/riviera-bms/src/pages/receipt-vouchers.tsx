@@ -183,8 +183,8 @@ export default function ReceiptVouchers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">سندات القبض</h1>
-          <p className="text-muted-foreground mt-1">تسجيل المبالغ المقبوضة</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">سندات القبض</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">تسجيل المبالغ المقبوضة</p>
         </div>
         <div className="flex items-center gap-2">
           <PrintExportButton

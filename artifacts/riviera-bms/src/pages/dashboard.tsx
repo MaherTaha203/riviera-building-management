@@ -41,7 +41,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Liquidity hero (navy, gold edge) ── */}
-      <div className="relative overflow-hidden rounded-[14px] bg-sidebar text-white shadow-[0_10px_28px_-10px_rgba(15,23,42,0.35)] grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
+      <div className="relative overflow-hidden rounded-[14px] bg-sidebar text-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.25)] grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
         <span className="absolute inset-y-0 right-0 w-1 bg-secondary" aria-hidden="true" />
         <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)]">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">رصيد الصندوق</div>
@@ -75,10 +75,10 @@ export default function Dashboard() {
         <div className="space-y-5 min-w-0">
           {/* KPI row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><Building2 size={14} />الإشغال</div>
-                <div className="text-[22px] font-semibold ltr-nums text-left">{s.occupiedUnits} / {s.totalUnits}</div>
+            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+              <CardContent className="pt-3.5 pb-3.5 px-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><Building2 size={14} />الإشغال</div>
+                <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{s.occupiedUnits} / {s.totalUnits}</div>
                 <div className="mt-2.5 h-1.5 rounded-[3px] bg-muted overflow-hidden">
                   <div className="h-full bg-primary rounded-[3px]" style={{ width: `${occPct}%` }} />
                 </div>
@@ -87,17 +87,17 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><Users size={14} />المستأجرين</div>
-                <div className="text-[22px] font-semibold ltr-nums text-left">{s.totalTenants}</div>
+            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+              <CardContent className="pt-3.5 pb-3.5 px-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><Users size={14} />المستأجرين</div>
+                <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{s.totalTenants}</div>
                 <div className="text-[11px] text-muted-foreground mt-2">إجمالي المستأجرين</div>
               </CardContent>
             </Card>
-            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><FileText size={14} />العقود النشطة</div>
-                <div className="text-[22px] font-semibold ltr-nums text-left">{s.activeContracts}</div>
+            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+              <CardContent className="pt-3.5 pb-3.5 px-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><FileText size={14} />العقود النشطة</div>
+                <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{s.activeContracts}</div>
                 <div className="text-[11px] text-muted-foreground mt-2">
                   <span className="text-amber-600 font-medium ltr-nums">{s.expiringContractsSoon || 0}</span> تنتهي خلال 30 يوماً
                 </div>
@@ -169,6 +169,29 @@ export default function Dashboard() {
         <div className="space-y-5">
           <Card>
             <CardHeader className="border-b py-3.5 px-5">
+              <CardTitle className="text-[12px] font-extrabold flex items-center gap-2"><Activity size={14} />أحدث الحركات</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoadingActivities ? (
+                <div className="p-6 text-center text-sm text-muted-foreground animate-pulse">جاري التحميل...</div>
+              ) : ((activities as any[]) ?? []).length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">لا توجد حركات</div>
+              ) : ((activities as any[]) ?? []).slice(0, 8).map((a: any) => (
+                <div key={a.id} className="flex gap-2.5 px-4 py-2.5 border-b last:border-b-0">
+                  <span className={`w-[7px] h-[7px] rounded-full mt-1.5 shrink-0 ${a.type === "CREATE" ? "bg-emerald-600" : a.type === "DELETE" ? "bg-rose-600" : "bg-primary"}`} />
+                  <span className="min-w-0">
+                    <span className="block text-[12px] font-semibold truncate">{a.description}</span>
+                    <span className="block text-[10.5px] text-muted-foreground ltr-nums" style={{ direction: "ltr", textAlign: "right" }}>
+                      {a.type} · {formatDate(a.createdAt)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="border-b py-3.5 px-5">
               <CardTitle className="text-[12px] font-extrabold flex items-center gap-2">
                 <AlertTriangle size={14} className="text-amber-600" />
                 يتطلب انتباهك
@@ -192,29 +215,6 @@ export default function Dashboard() {
                     {n.detail && <span className="block text-[10.5px] text-muted-foreground truncate ltr-nums">{n.detail}</span>}
                   </span>
                 </button>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="border-b py-3.5 px-5">
-              <CardTitle className="text-[12px] font-extrabold flex items-center gap-2"><Activity size={14} />أحدث الحركات</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoadingActivities ? (
-                <div className="p-6 text-center text-sm text-muted-foreground animate-pulse">جاري التحميل...</div>
-              ) : ((activities as any[]) ?? []).length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">لا توجد حركات</div>
-              ) : ((activities as any[]) ?? []).slice(0, 8).map((a: any) => (
-                <div key={a.id} className="flex gap-2.5 px-4 py-2.5 border-b last:border-b-0">
-                  <span className={`w-[7px] h-[7px] rounded-full mt-1.5 shrink-0 ${a.type === "CREATE" ? "bg-emerald-600" : a.type === "DELETE" ? "bg-rose-600" : "bg-primary"}`} />
-                  <span className="min-w-0">
-                    <span className="block text-[12px] font-semibold truncate">{a.description}</span>
-                    <span className="block text-[10.5px] text-muted-foreground ltr-nums" style={{ direction: "ltr", textAlign: "right" }}>
-                      {a.type} · {formatDate(a.createdAt)}
-                    </span>
-                  </span>
-                </div>
               ))}
             </CardContent>
           </Card>
