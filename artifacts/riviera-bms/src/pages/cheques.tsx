@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { FilterBar } from "@/components/FilterBar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -40,6 +41,21 @@ export default function Cheques() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
+
+  // Advanced combinable filters (V1.1 §8) — combined with the type buttons above.
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+  const [fStatus, setFStatus] = useState("all");
+  const [fBank, setFBank] = useState("all");
+  const resetFilters = () => { setFFrom(""); setFTo(""); setFStatus("all"); setFBank("all"); };
+  const banks = useMemo(() => [...new Set((cheques as any[]).map((c: any) => c.bankName).filter(Boolean))].sort(), [cheques]);
+  const filtered = useMemo(() => (cheques as any[]).filter((c: any) => {
+    if (fFrom && c.dueDate < fFrom) return false;
+    if (fTo && c.dueDate > fTo) return false;
+    if (fStatus !== "all" && c.status !== fStatus) return false;
+    if (fBank !== "all" && c.bankName !== fBank) return false;
+    return true;
+  }), [cheques, fFrom, fTo, fStatus, fBank]);
 
   const rateForCurrency = (cur: string) => cur === "USD" ? Number(rates?.usdToILS ?? 3.7) : cur === "JOD" ? Number(rates?.jodToILS ?? 5.22) : 1;
   const amountILS = Number(form.amount) * Number(form.exchangeRate);
@@ -82,7 +98,7 @@ export default function Cheques() {
         { label: "المبلغ (شيكل)", render: (c: any) => <span className="ltr-nums">{fmtMoney(c.amountILS, "ILS")}</span> },
         { label: "الحالة", render: (c: any) => statusLabels[c.status] ?? c.status },
       ]}
-      rows={cheques as any[]}
+      rows={filtered}
     />,
     { title: "قائمة الشيكات" },
   );
@@ -95,7 +111,7 @@ export default function Cheques() {
         <div><h1 className="text-3xl font-bold">الشيكات</h1><p className="text-muted-foreground mt-1">إدارة الشيكات الواردة والصادرة</p></div>
         <div className="flex items-center gap-2">
           <ExcelExportButton filename="cheques" headers={["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"]}
-            getRows={() => (cheques as any[]).map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status])} />
+            getRows={() => filtered.map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status])} />
           <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
           <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
         </div>
@@ -108,6 +124,18 @@ export default function Cheques() {
           </Button>
         ))}
       </div>
+
+      <FilterBar
+        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo} dateLabel="الاستحقاق"
+        selects={[
+          { key: "status", label: "الحالة", value: fStatus, onChange: setFStatus,
+            options: [{ value: "all", label: "الكل" }, { value: "pending", label: "معلق" }, { value: "cleared", label: "محصّل" }, { value: "bounced", label: "مرتجع" }] },
+          { key: "bank", label: "البنك", value: fBank, onChange: setFBank,
+            options: [{ value: "all", label: "الكل" }, ...banks.map((b) => ({ value: b, label: b }))] },
+        ]}
+        onReset={resetFilters}
+        resultCount={filtered.length}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -125,7 +153,7 @@ export default function Cheques() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(cheques as any[]).map((c: any) => (
+              {filtered.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-mono ltr-nums text-sm">{c.chequeNumber}</TableCell>
                   <TableCell><Badge variant={c.type === "incoming" ? "default" : "outline"}>{typeLabels[c.type]}</Badge></TableCell>
