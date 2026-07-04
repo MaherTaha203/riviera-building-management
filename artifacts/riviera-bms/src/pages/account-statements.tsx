@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useListAccountStatements, useListTenants } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,9 +44,11 @@ export default function AccountStatements() {
           <h1 className="text-3xl font-bold flex items-center gap-2"><ScrollText size={28} />كشف الحساب</h1>
           <p className="text-muted-foreground mt-1">عرض حركات الحساب لكل مستأجر</p>
         </div>
-        {statement && <ExcelExportButton filename="account-statement" headers={["التاريخ","البيان","مدين","دائن","الرصيد"]}
-          getRows={() => entries.map((e: any) => [e.date, e.description, e.debit, e.credit, e.balance])} />}
-        {statement && <PrintButton onClick={printStatement} label="طباعة الكشف" size="default" />}
+        {statement && <PrintExportButton
+          prints={[{ label: "طباعة الكشف", onClick: printStatement }]}
+          exportSpec={{ filename: "account-statement", headers: ["التاريخ","البيان","مدين","دائن","الرصيد"],
+            getRows: () => entries.map((e: any) => [e.date, e.description, e.debit, e.credit, e.balance]) }}
+        />}
       </div>
 
       <Card>

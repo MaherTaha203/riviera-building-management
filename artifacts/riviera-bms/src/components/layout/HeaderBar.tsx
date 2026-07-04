@@ -2,15 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useListTenants, useListUnits, useListContracts, useListReceiptVouchers,
-  useListPaymentVouchers, useListCheques, useListBankAccounts,
+  useListPaymentVouchers, useListCheques, useListBankAccounts, useGetExchangeRates,
 } from "@workspace/api-client-react";
-import { Input } from "@/components/ui/input";
+import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Search, Bell, Users, Home, FileText, Receipt, CreditCard, Files, Landmark, Menu,
 } from "lucide-react";
 import { formatDate } from "@/lib/format";
+
+// Approved design tokens (identity: navy sidebar family)
+const NAVY_18 = "hsl(222,47%,18%)";
+const NAVY_24 = "hsl(222,47%,24%)";
 
 // ---------------------------------------------------------------------------
 // Global search (V1.1 §1) — searches tenants / units / contracts / receipt
@@ -101,14 +105,15 @@ function GlobalSearch() {
   };
 
   return (
-    <div ref={boxRef} className="relative w-full max-w-md">
-      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-      <Input
+    <div ref={boxRef} className="relative w-full max-w-[340px]">
+      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" />
+      <input
         value={q}
         onChange={e => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => { setArmed(true); setOpen(true); }}
         placeholder="بحث شامل... (مستأجر، وحدة، عقد، سند، شيك)"
-        className="pr-9 h-9"
+        className="w-full h-9 rounded-[7px] border text-[12.5px] text-white placeholder:text-white/45 pr-9 pl-3 outline-none transition-colors focus:border-secondary"
+        style={{ background: NAVY_18, borderColor: NAVY_24 }}
         data-global-search
       />
       {open && q.trim().length >= 2 && (
@@ -141,12 +146,11 @@ function GlobalSearch() {
 }
 
 // ---------------------------------------------------------------------------
-// Notifications center (V1.1 §3) — derived live from existing data:
-// contracts expiring within 30 days, cheques due within 7 days, bounced
-// cheques, and tenants with an overdue (negative) balance.
+// Notifications (V1.1 §3) — derived live from existing data. Exported so the
+// dashboard's "يتطلب انتباهك" rail (approved design) reuses the same source.
 // ---------------------------------------------------------------------------
 
-interface Notice {
+export interface Notice {
   key: string;
   icon: any;
   path: string;
@@ -155,7 +159,7 @@ interface Notice {
   tone: "warn" | "danger";
 }
 
-function useNotices(): Notice[] {
+export function useNotices(): Notice[] {
   const { data: contracts = [] } = useListContracts();
   const { data: cheques = [] } = useListCheques();
   const { data: tenants = [] } = useListTenants();
@@ -195,14 +199,18 @@ function NotificationsBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" title="التنبيهات">
-          <Bell size={17} />
+        <button
+          className="relative h-9 w-9 rounded-[7px] border flex items-center justify-center text-white/90 transition-colors hover:bg-[hsl(222,47%,24%)]"
+          style={{ background: NAVY_18, borderColor: NAVY_24 }}
+          title="التنبيهات"
+        >
+          <Bell size={16} />
           {notices.length > 0 && (
-            <span className="absolute -top-0.5 -left-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center leading-none">
+            <span className="absolute -top-1 -left-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center leading-none ltr-nums">
               {notices.length > 99 ? "99+" : notices.length}
             </span>
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0" dir="rtl">
         <div className="px-3 py-2 border-b text-sm font-semibold">التنبيهات ({notices.length})</div>
@@ -231,18 +239,79 @@ function NotificationsBell() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Live clock + Arabic date (approved header design)
+// ---------------------------------------------------------------------------
+function HeaderClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="hidden md:flex flex-col items-start leading-tight">
+      <span className="text-[15px] font-semibold text-white ltr-nums" style={{ direction: "ltr" }}>
+        {now.toLocaleTimeString("en-GB")}
+      </span>
+      <span className="text-[10.5px] text-white/55">
+        {now.toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+      </span>
+    </div>
+  );
+}
+
+// FX chips — real rates from the existing exchange-rates endpoint.
+function FxChips() {
+  const { data: rates } = useGetExchangeRates();
+  const chip = (cur: string, val: unknown, lbl: string) => (
+    <div className="flex items-center gap-2 rounded-[7px] border px-2.5 py-1 leading-tight" style={{ background: NAVY_18, borderColor: NAVY_24 }}>
+      <span className="text-[10px] font-extrabold tracking-wider text-secondary">{cur}</span>
+      <span className="text-[12.5px] font-semibold text-white ltr-nums" style={{ direction: "ltr" }}>₪ {Number(val ?? 0).toFixed(2)}</span>
+      <span className="text-[9.5px] text-white/50">{lbl}</span>
+    </div>
+  );
+  return (
+    <div className="hidden xl:flex items-center gap-2">
+      {chip("USD", rates?.usdToILS, "دولار")}
+      {chip("JOD", rates?.jodToILS, "دينار")}
+    </div>
+  );
+}
+
+function UserChip() {
+  const user = getUser();
+  return (
+    <div className="hidden sm:flex items-center gap-2.5 rounded-lg border py-1 pr-3 pl-1.5" style={{ background: NAVY_18, borderColor: NAVY_24 }}>
+      <div className="text-right leading-tight">
+        <div className="text-[12px] font-bold text-white">{user?.name || user?.username || "المستخدم"}</div>
+        <div className="text-[10px] text-white/50 capitalize">{user?.role || ""}</div>
+      </div>
+      <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center font-extrabold text-[12.5px] text-primary"
+        style={{ background: "linear-gradient(135deg, hsl(43,74%,49%), hsl(43,74%,38%))" }}>
+        {(user?.name || user?.username || "U").charAt(0)}
+      </div>
+    </div>
+  );
+}
+
+const SEP = <div className="hidden md:block w-px h-[26px]" style={{ background: NAVY_24 }} />;
+
 export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="h-14 shrink-0 border-b bg-background flex items-center gap-2 px-3 sm:gap-3 sm:px-4">
+    <header className="h-[58px] shrink-0 bg-sidebar border-b border-sidebar-border flex items-center gap-3 px-3 sm:px-[18px]">
       {onMenuClick && (
-        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden" title="القائمة" onClick={onMenuClick}>
+        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden text-white hover:bg-[hsl(222,47%,24%)] hover:text-white" title="القائمة" onClick={onMenuClick}>
           <Menu size={18} />
         </Button>
       )}
       <GlobalSearch />
-      <div className="mr-auto flex items-center gap-1">
-        <NotificationsBell />
-      </div>
+      <div className="flex-1" />
+      <HeaderClock />
+      {SEP}
+      <FxChips />
+      {SEP}
+      <NotificationsBell />
+      <UserChip />
     </header>
   );
 }

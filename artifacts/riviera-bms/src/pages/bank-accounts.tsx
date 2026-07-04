@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useListBankAccounts, useCreateBankAccount, useUpdateBankAccount, useDeleteBankAccount } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Landmark } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
@@ -82,9 +82,11 @@ export default function BankAccounts() {
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">الحسابات البنكية</h1><p className="text-muted-foreground mt-1">إدارة الحسابات المصرفية</p></div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="bank-accounts" headers={["اسم الحساب","البنك","رقم الحساب","العملة","الرصيد (شيكل)"]}
-            getRows={() => (accounts as any[]).map((a: any) => [a.accountName, a.bankName, a.accountNumber, a.currency, Number(a.balanceILS)])} />
-          <PrintButton onClick={printList} label="طباعة التقرير" size="default" />
+          <PrintExportButton
+            prints={[{ label: "طباعة التقرير", onClick: printList }]}
+            exportSpec={{ filename: "bank-accounts", headers: ["اسم الحساب","البنك","رقم الحساب","العملة","الرصيد (شيكل)"],
+              getRows: () => (accounts as any[]).map((a: any) => [a.accountName, a.bankName, a.accountNumber, a.currency, Number(a.balanceILS)]) }}
+          />
           <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة حساب</Button>
         </div>
       </div>

@@ -170,3 +170,19 @@
   direction: ltr;
   display: inline-block;
 }
+
+/* ── Approved floating design (Concept 4): tables inside the app shell ──
+   Scoped to #root so the print document (#print-root) keeps its own system. */
+#root thead th {
+  background: hsl(40 20% 97%);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: hsl(var(--muted-foreground));
+}
+#root tbody tr {
+  transition: background-color 0.12s;
+}
+#root tbody tr:hover {
+  background: hsl(43 74% 97.5%);
+}

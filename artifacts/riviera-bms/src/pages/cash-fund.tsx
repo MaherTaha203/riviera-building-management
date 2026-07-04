@@ -1,5 +1,5 @@
 import { useGetCashFund, useListCashTransactions } from "@workspace/api-client-react";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
@@ -30,9 +30,11 @@ export default function CashFund() {
           <h1 className="text-3xl font-bold">الصندوق النقدي</h1>
           <p className="text-muted-foreground mt-1">كشف حساب الصندوق</p>
         </div>
-        <ExcelExportButton filename="cash-fund" headers={["التاريخ","البيان","مقبوضات","مدفوعات","الرصيد"]}
-            getRows={() => txList.map((t: any) => [t.date, t.description, t.credit, t.debit, t.balance])} />
-        <PrintButton onClick={printCashFund} label="طباعة الصندوق" size="default" />
+        <PrintExportButton
+          prints={[{ label: "طباعة الصندوق", onClick: printCashFund }]}
+          exportSpec={{ filename: "cash-fund", headers: ["التاريخ","البيان","مقبوضات","مدفوعات","الرصيد"],
+            getRows: () => txList.map((t: any) => [t.date, t.description, t.credit, t.debit, t.balance]) }}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

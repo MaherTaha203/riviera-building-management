@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListTenants, useCreateTenant, useUpdateTenant, useDeleteTenant } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
@@ -106,10 +106,14 @@ export default function Tenants() {
           <p className="text-muted-foreground mt-1">إدارة بيانات المستأجرين</p>
         </div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="tenants" headers={["الاسم","النوع","الهاتف","البريد","رقم الهوية","الرصيد (شيكل)"]}
-            getRows={() => (tenants as any[]).map((t: any) => [t.name, t.type, t.phone ?? "", t.email ?? "", t.idNumber ?? "", Number(t.balance)])} />
-          <PrintButton onClick={printOutstanding} label="الأرصدة المستحقة" size="default" />
-          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <PrintExportButton
+            prints={[
+              { label: "طباعة القائمة", onClick: printList },
+              { label: "الأرصدة المستحقة", onClick: printOutstanding },
+            ]}
+            exportSpec={{ filename: "tenants", headers: ["الاسم","النوع","الهاتف","البريد","رقم الهوية","الرصيد (شيكل)"],
+              getRows: () => (tenants as any[]).map((t: any) => [t.name, t.type, t.phone ?? "", t.email ?? "", t.idNumber ?? "", Number(t.balance)]) }}
+          />
           <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة مستأجر</Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef } from "react";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { FilterBar } from "@/components/FilterBar";
 
 import { useListDocuments, useCreateDocument, useDeleteDocument, useListTenants, useListContracts, useListUnits } from "@workspace/api-client-react";
@@ -137,8 +137,10 @@ export default function Documents() {
           <h1 className="text-3xl font-bold">المستندات</h1>
           <p className="text-muted-foreground mt-1">إدارة الملفات والوثائق</p>
         </div>
-        <ExcelExportButton filename="documents" headers={["الاسم","النوع","المرتبط بـ","نوع الملف","التاريخ","ملاحظات"]}
-          getRows={() => filteredDocs.map((d: any) => [d.name, d.entityType, d.entityName ?? "", d.fileType, d.createdAt, d.notes ?? ""])} />
+        <PrintExportButton
+          exportSpec={{ filename: "documents", headers: ["الاسم","النوع","المرتبط بـ","نوع الملف","التاريخ","ملاحظات"],
+            getRows: () => filteredDocs.map((d: any) => [d.name, d.entityType, d.entityName ?? "", d.fileType, d.createdAt, d.notes ?? ""]) }}
+        />
         <Button onClick={() => { setForm({ ...emptyForm }); setFileLabel(""); setOpen(true); }} className="flex items-center gap-2">
           <Plus size={16} />إضافة مستند
         </Button>

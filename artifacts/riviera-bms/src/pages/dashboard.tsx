@@ -1,143 +1,224 @@
-import { useGetDashboardSummary, useGetDashboardRecentActivity } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetDashboardRecentActivity, useListReceiptVouchers } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { formatAmount, formatDate } from "@/lib/format";
-import { Building2, Users, FileText, Wallet, Receipt, CreditCard, Activity } from "lucide-react";
+import { Building2, Users, FileText, Activity, AlertTriangle } from "lucide-react";
+import { useNotices } from "@/components/layout/HeaderBar";
+
+// Approved dashboard design — Concept 4 "خط السيولة":
+// navy liquidity hero (cash / banks / pending cheques / monthly net) with a
+// gold edge, then KPIs + month flow + latest receipts, and a permanent
+// "يتطلب انتباهك" attention rail. Same data, same endpoints — UI only.
+
+const methodLabels: Record<string, string> = { cash: "نقدي", cheque: "شيك", bank_transfer: "حوالة بنكية", other: "أخرى" };
 
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: activities, isLoading: isLoadingActivities } = useGetDashboardRecentActivity();
+  const { data: receipts = [] } = useListReceiptVouchers();
+  const notices = useNotices();
+  const [, navigate] = useLocation();
 
-  if (isLoadingSummary) {
+  if (isLoadingSummary || !summary) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
   }
 
-  if (!summary) return null;
+  const s = summary as any;
+  const monthlyNet = Number(s.monthlyReceiptsILS) - Number(s.monthlyPaymentsILS);
+  const totalFlow = Number(s.monthlyReceiptsILS) + Number(s.monthlyPaymentsILS);
+  const netPct = totalFlow > 0 ? Math.max(4, Math.round((Number(s.monthlyReceiptsILS) / totalFlow) * 100)) : 0;
+  const occPct = s.totalUnits > 0 ? Math.round((s.occupiedUnits / s.totalUnits) * 100) : 0;
+  const monthLabel = new Date().toLocaleDateString("ar", { month: "long", year: "numeric" });
+  const latestReceipts = (receipts as any[]).slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">لوحة التحكم</h1>
-        <p className="text-muted-foreground mt-1">نظرة عامة على أداء عمارة الريفييرا</p>
+        <h1 className="text-2xl font-extrabold tracking-tight">لوحة التحكم</h1>
+        <p className="text-muted-foreground mt-1 text-[12.5px]">خط السيولة أولاً — ثم ما يتطلب انتباهك</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الوحدات المؤجرة / الإجمالي</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold ltr-nums">
-              {summary.occupiedUnits} / {summary.totalUnits}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-emerald-500 font-medium ltr-nums">{summary.vacantUnits}</span> وحدات شاغرة
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">المستأجرين</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold ltr-nums">{summary.totalTenants}</div>
-            <p className="text-xs text-muted-foreground mt-1">إجمالي المستأجرين</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">العقود النشطة</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold ltr-nums">{summary.activeContracts}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-amber-500 font-medium ltr-nums">{summary.expiringContractsSoon || 0}</span> تنتهي قريباً
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">رصيد الصندوق</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold ltr-nums">{formatAmount(summary.cashBalanceILS, "ILS")}</div>
-            <p className="text-xs text-muted-foreground mt-1">الرصيد النقدي المتوفر</p>
-          </CardContent>
-        </Card>
+      {/* ── Liquidity hero (navy, gold edge) ── */}
+      <div className="relative overflow-hidden rounded-[14px] bg-sidebar text-white shadow-[0_10px_28px_-10px_rgba(15,23,42,0.35)] grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
+        <span className="absolute inset-y-0 right-0 w-1 bg-secondary" aria-hidden="true" />
+        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)]">
+          <div className="text-[10.5px] font-bold text-white/55 mb-1.5">رصيد الصندوق</div>
+          <div className="text-[24px] font-semibold text-secondary ltr-nums text-left">{formatAmount(Number(s.cashBalanceILS), "ILS")}</div>
+          <div className="text-[10.5px] text-white/50 mt-1">الرصيد النقدي المتوفر</div>
+        </div>
+        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)]">
+          <div className="text-[10.5px] font-bold text-white/55 mb-1.5">الحسابات البنكية</div>
+          <div className="text-[24px] font-semibold ltr-nums text-left">{formatAmount(Number(s.totalBankBalanceILS), "ILS")}</div>
+          <div className="text-[10.5px] text-white/50 mt-1">إجمالي الأرصدة</div>
+        </div>
+        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)] mt-4 lg:mt-0">
+          <div className="text-[10.5px] font-bold text-white/55 mb-1.5">شيكات معلّقة</div>
+          <div className="text-[24px] font-semibold ltr-nums text-left">{s.pendingCheques}</div>
+          <div className="text-[10.5px] text-white/50 mt-1">بانتظار الاستحقاق</div>
+        </div>
+        <div className="px-4 lg:px-[22px] mt-4 lg:mt-0">
+          <div className="text-[10.5px] font-bold text-white/55 mb-1.5">صافي حركة الشهر — {monthLabel}</div>
+          <div className="text-[24px] font-semibold text-secondary ltr-nums text-left">{formatAmount(monthlyNet, "ILS")}</div>
+          <div className="mt-2 h-[5px] rounded-[3px] bg-[hsl(222,47%,18%)] overflow-hidden flex">
+            <div className="bg-secondary rounded-[3px]" style={{ width: `${netPct}%` }} />
+          </div>
+          <div className="text-[10.5px] text-white/50 mt-1.5">
+            مقبوضات <span className="ltr-nums">{formatAmount(Number(s.monthlyReceiptsILS), "ILS")}</span> · مصروفات <span className="ltr-nums">{formatAmount(Number(s.monthlyPaymentsILS), "ILS")}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-semibold">حركة الشهر الحالي</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-md text-emerald-600 dark:text-emerald-400">
-                  <Receipt size={20} />
+      {/* ── Body: main column + attention rail ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
+        <div className="space-y-5 min-w-0">
+          {/* KPI row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><Building2 size={14} />الإشغال</div>
+                <div className="text-[22px] font-semibold ltr-nums text-left">{s.occupiedUnits} / {s.totalUnits}</div>
+                <div className="mt-2.5 h-1.5 rounded-[3px] bg-muted overflow-hidden">
+                  <div className="h-full bg-primary rounded-[3px]" style={{ width: `${occPct}%` }} />
                 </div>
-                <span className="font-medium">المقبوضات</span>
-              </div>
-              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 ltr-nums">
-                {formatAmount(summary.monthlyReceiptsILS, "ILS")}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-100 dark:border-rose-900/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-rose-100 dark:bg-rose-900/50 rounded-md text-rose-600 dark:text-rose-400">
-                  <CreditCard size={20} />
+                <div className="text-[11px] text-muted-foreground mt-2">
+                  <span className="text-emerald-600 font-medium ltr-nums">{s.vacantUnits}</span> وحدات شاغرة · <span className="ltr-nums">{occPct}٪</span> إشغال
                 </div>
-                <span className="font-medium">المصروفات</span>
-              </div>
-              <span className="text-lg font-bold text-rose-600 dark:text-rose-400 ltr-nums">
-                {formatAmount(summary.monthlyPaymentsILS, "ILS")}
-              </span>
-            </div>
+              </CardContent>
+            </Card>
+            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><Users size={14} />المستأجرين</div>
+                <div className="text-[22px] font-semibold ltr-nums text-left">{s.totalTenants}</div>
+                <div className="text-[11px] text-muted-foreground mt-2">إجمالي المستأجرين</div>
+              </CardContent>
+            </Card>
+            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_12px_24px_-10px_rgba(15,23,42,0.13)]">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 text-[11.5px] font-bold text-muted-foreground mb-2.5"><FileText size={14} />العقود النشطة</div>
+                <div className="text-[22px] font-semibold ltr-nums text-left">{s.activeContracts}</div>
+                <div className="text-[11px] text-muted-foreground mt-2">
+                  <span className="text-amber-600 font-medium ltr-nums">{s.expiringContractsSoon || 0}</span> تنتهي خلال 30 يوماً
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
-              <span className="font-medium">صافي الحركة</span>
-              <span className="text-lg font-bold ltr-nums" dir="ltr">
-                {formatAmount(summary.monthlyReceiptsILS - summary.monthlyPaymentsILS, "ILS")}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Month flow */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b py-3.5 px-5">
+              <CardTitle className="text-[13.5px] font-extrabold">حركة الشهر الحالي</CardTitle>
+              <span className="text-[11px] text-muted-foreground">{monthLabel}</span>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-3 text-center py-3.5 px-5">
+                <div className="border-l px-2">
+                  <div className="text-[10.5px] text-muted-foreground font-bold mb-1">المقبوضات</div>
+                  <div className="text-base font-semibold text-emerald-600 ltr-nums">{formatAmount(Number(s.monthlyReceiptsILS), "ILS")}</div>
+                </div>
+                <div className="border-l px-2">
+                  <div className="text-[10.5px] text-muted-foreground font-bold mb-1">المصروفات</div>
+                  <div className="text-base font-semibold text-rose-600 ltr-nums">{formatAmount(Number(s.monthlyPaymentsILS), "ILS")}</div>
+                </div>
+                <div className="px-2">
+                  <div className="text-[10.5px] text-muted-foreground font-bold mb-1">صافي الحركة</div>
+                  <div className="text-base font-semibold ltr-nums">{formatAmount(monthlyNet, "ILS")}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Activity className="w-5 h-5 text-muted-foreground" />
-              أحدث الحركات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingActivities ? (
-              <div className="text-center text-muted-foreground py-8 animate-pulse">جاري التحميل...</div>
-            ) : activities && activities.length > 0 ? (
-              <div className="space-y-4">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
-                    <p className="text-sm font-medium">{activity.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="ltr-nums">{formatDate(activity.createdAt)}</span>
-                      <span>•</span>
-                      <span className="capitalize">{activity.type.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-8 text-sm">
-                لا توجد حركات حديثة
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Latest receipt vouchers */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b py-3.5 px-5">
+              <CardTitle className="text-[13.5px] font-extrabold">آخر سندات القبض</CardTitle>
+              <span className="text-[11px] text-muted-foreground">أحدث 5 سندات</span>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>رقم السند</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>الدافع</TableHead>
+                    <TableHead className="text-left">المبلغ</TableHead>
+                    <TableHead>طريقة الدفع</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {latestReceipts.map((v: any) => (
+                    <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate("/receipt-vouchers")}>
+                      <TableCell className="font-mono text-sm ltr-nums">{v.voucherNumber}</TableCell>
+                      <TableCell className="ltr-nums">{formatDate(v.date)}</TableCell>
+                      <TableCell>{v.payerName}</TableCell>
+                      <TableCell className="text-left font-medium ltr-nums">{formatAmount(Number(v.amountILS), "ILS")}</TableCell>
+                      <TableCell><Badge variant="outline">{methodLabels[v.paymentMethod] ?? v.paymentMethod}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                  {latestReceipts.length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">لا توجد سندات</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Attention rail */}
+        <div className="space-y-5">
+          <Card>
+            <CardHeader className="border-b py-3.5 px-5">
+              <CardTitle className="text-[12px] font-extrabold flex items-center gap-2">
+                <AlertTriangle size={14} className="text-amber-600" />
+                يتطلب انتباهك
+                <span className="ltr-nums bg-secondary text-primary text-[10px] font-extrabold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1.5">
+                  {notices.length > 99 ? "99+" : notices.length}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 max-h-[340px] overflow-y-auto">
+              {notices.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">لا توجد تنبيهات</div>
+              ) : notices.slice(0, 30).map(n => (
+                <button
+                  key={n.key}
+                  onClick={() => navigate(n.path)}
+                  className="w-full flex gap-2.5 px-4 py-3 border-b last:border-b-0 text-start hover:bg-[hsl(43,74%,97%)] transition-colors"
+                >
+                  <span className={`w-[3px] self-stretch rounded-[2px] shrink-0 ${n.tone === "danger" ? "bg-destructive" : "bg-secondary"}`} />
+                  <span className="min-w-0">
+                    <span className="block text-[12px] font-bold truncate">{n.text}</span>
+                    {n.detail && <span className="block text-[10.5px] text-muted-foreground truncate ltr-nums">{n.detail}</span>}
+                  </span>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="border-b py-3.5 px-5">
+              <CardTitle className="text-[12px] font-extrabold flex items-center gap-2"><Activity size={14} />أحدث الحركات</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoadingActivities ? (
+                <div className="p-6 text-center text-sm text-muted-foreground animate-pulse">جاري التحميل...</div>
+              ) : ((activities as any[]) ?? []).length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">لا توجد حركات</div>
+              ) : ((activities as any[]) ?? []).slice(0, 8).map((a: any) => (
+                <div key={a.id} className="flex gap-2.5 px-4 py-2.5 border-b last:border-b-0">
+                  <span className={`w-[7px] h-[7px] rounded-full mt-1.5 shrink-0 ${a.type === "CREATE" ? "bg-emerald-600" : a.type === "DELETE" ? "bg-rose-600" : "bg-primary"}`} />
+                  <span className="min-w-0">
+                    <span className="block text-[12px] font-semibold truncate">{a.description}</span>
+                    <span className="block text-[10.5px] text-muted-foreground ltr-nums" style={{ direction: "ltr", textAlign: "right" }}>
+                      {a.type} · {formatDate(a.createdAt)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
