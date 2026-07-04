@@ -176,7 +176,7 @@ function PrintLayout({
 // ---------------------------------------------------------------------------
 export function PrintButton(props: { onClick: () => void; label?: string; size?: "sm" | "default"; variant?: "outline" | "default" }) {
   return (
-    <Button type="button" variant={props.variant ?? "outline"} size={props.size ?? "sm"} onClick={props.onClick} className="flex items-center gap-1 no-print">
+    <Button type="button" variant={props.variant ?? "outline"} size={props.size ?? "sm"} onClick={props.onClick} className="flex items-center gap-1 no-print" data-print-btn>
       <Printer size={14} />
       {props.label ?? "طباعة"}
     </Button>

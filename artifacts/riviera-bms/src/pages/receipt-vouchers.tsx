@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListReceiptVouchers, useCreateReceiptVoucher, useUpdateReceiptVoucher, useDeleteReceiptVoucher, useListTenants, useListContracts, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,9 @@ export default function ReceiptVouchers() {
     });
     setOpen(true);
   };
+
+  // F-key / header shortcut: open the "add new" dialog (V1.1 §2)
+  useOpenNewSignal("/receipt-vouchers", openNew);
 
   const handleSave = async () => {
     const payload = {
@@ -304,7 +308,7 @@ export default function ReceiptVouchers() {
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2">
-            <Button onClick={handleSave} disabled={create.isPending || update.isPending}>
+            <Button data-save-btn onClick={handleSave} disabled={create.isPending || update.isPending}>
               {editing ? "حفظ التعديلات" : "إصدار السند"}
             </Button>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
