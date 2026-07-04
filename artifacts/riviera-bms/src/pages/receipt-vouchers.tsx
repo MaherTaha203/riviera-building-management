@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -169,6 +170,8 @@ export default function ReceiptVouchers() {
           <p className="text-muted-foreground mt-1">تسجيل المبالغ المقبوضة</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExcelExportButton filename="receipt-vouchers" headers={["رقم السند","التاريخ","المستلم من","المستأجر","المبلغ","العملة","المبلغ (شيكل)","طريقة الدفع"]}
+            getRows={() => (vouchers as any[]).map((v: any) => [v.voucherNumber, v.date, v.payerName, v.tenantName ?? "", Number(v.amount), v.currency, Number(v.amountILS), v.paymentMethod])} />
           <PrintButton onClick={printRegister} label="طباعة السجل" size="default" />
           <Button onClick={openNew} className="flex items-center gap-2">
             <Plus size={16} />إصدار سند قبض

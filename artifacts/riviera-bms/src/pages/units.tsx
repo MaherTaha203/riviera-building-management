@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -113,6 +114,8 @@ export default function Units() {
           <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExcelExportButton filename="units" headers={["رقم الوحدة","الطابق","النوع","المساحة","الحالة","الوصف"]}
+            getRows={() => (units as any[]).map((u: any) => [u.unitNumber, u.floor, u.type, u.area, u.status, u.description ?? ""])} />
           {(units as any[]).length > 0 && <PrintButton onClick={printList} label="طباعة القائمة" size="default" />}
           <Button onClick={openNew} className="flex items-center gap-2">
             <Plus size={16} />إضافة وحدة

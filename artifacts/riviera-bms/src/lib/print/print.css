@@ -340,6 +340,16 @@
   color: var(--p-muted);
 }
 
+/* Bulk printing (V1.1 §7): each document starts on a fresh A4 page. */
+.print-break {
+  break-after: page;
+  page-break-after: always;
+}
+.print-break:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
 /* Repeats on every printed page because it is position: fixed. */
 .print-footer {
   position: fixed;

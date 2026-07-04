@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, FileText, Printer, Paperclip, Eye, Download } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -198,6 +199,18 @@ export default function Contracts() {
   };
 
   const print = usePrint();
+  // Bulk print (V1.1 §7): every contract as a full lease document, one per page.
+  const printAllContracts = () => print(
+    <div>
+      {(contracts as any[]).map((c: any) => (
+        <div key={c.id} className="print-break">
+          <ContractDoc c={c} attachments={attachmentsByContract[c.id] ?? []} />
+        </div>
+      ))}
+    </div>,
+    { title: "جميع عقود الإيجار" },
+  );
+
   const printList = () => print(
     <ReportTable
       columns={[
@@ -220,7 +233,10 @@ export default function Contracts() {
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">العقود</h1><p className="text-muted-foreground mt-1">إدارة عقود الإيجار</p></div>
         <div className="flex items-center gap-2">
+          <ExcelExportButton filename="contracts" headers={["رقم العقد","المستأجر","الوحدة","البداية","الانتهاء","الإيجار (شيكل)","الحالة"]}
+            getRows={() => (contracts as any[]).map((c: any) => [c.contractNumber, c.tenantName, c.unitNumber, c.startDate, c.endDate, Number(c.rentAmountILS), c.status])} />
           <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <PrintButton onClick={printAllContracts} label="طباعة كل العقود" size="default" />
           <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة عقد</Button>
         </div>
       </div>

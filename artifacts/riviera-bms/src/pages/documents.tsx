@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
+
 import { useListDocuments, useCreateDocument, useDeleteDocument, useListTenants, useListContracts, useListUnits } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,6 +115,8 @@ export default function Documents() {
           <h1 className="text-3xl font-bold">المستندات</h1>
           <p className="text-muted-foreground mt-1">إدارة الملفات والوثائق</p>
         </div>
+        <ExcelExportButton filename="documents" headers={["الاسم","النوع","المرتبط بـ","نوع الملف","التاريخ","ملاحظات"]}
+          getRows={() => (docs as any[]).map((d: any) => [d.name, d.entityType, d.entityName ?? "", d.fileType, d.createdAt, d.notes ?? ""])} />
         <Button onClick={() => { setForm({ ...emptyForm }); setFileLabel(""); setOpen(true); }} className="flex items-center gap-2">
           <Plus size={16} />إضافة مستند
         </Button>
