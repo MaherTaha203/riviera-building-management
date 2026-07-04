@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useListAuditLog } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,13 @@ export default function AuditLog() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">سجل التدقيق</h1>
-        <p className="text-muted-foreground mt-1">تتبع جميع العمليات المنجزة في النظام</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">سجل التدقيق</h1>
+          <p className="text-muted-foreground mt-1">تتبع جميع العمليات المنجزة في النظام</p>
+        </div>
+        <ExcelExportButton filename="audit-log" headers={["التاريخ","المستخدم","العملية","الكيان","المعرف","تفاصيل"]}
+          getRows={() => (entries as any[]).map((e: any) => [e.createdAt, e.userName ?? "", e.action, e.entityType, e.entityId ?? "", e.details ?? ""])} />
       </div>
 
       <Card>

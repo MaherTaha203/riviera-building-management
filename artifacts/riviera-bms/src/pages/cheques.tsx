@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -93,6 +94,8 @@ export default function Cheques() {
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold">الشيكات</h1><p className="text-muted-foreground mt-1">إدارة الشيكات الواردة والصادرة</p></div>
         <div className="flex items-center gap-2">
+          <ExcelExportButton filename="cheques" headers={["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"]}
+            getRows={() => (cheques as any[]).map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status])} />
           <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
           <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
         </div>
