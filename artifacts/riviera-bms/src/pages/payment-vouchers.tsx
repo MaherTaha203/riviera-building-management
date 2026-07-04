@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListPaymentVouchers, useCreatePaymentVoucher, useUpdatePaymentVoucher, useDeletePaymentVoucher, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { FilterBar } from "@/components/FilterBar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
@@ -171,13 +171,15 @@ export default function PaymentVouchers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">سندات الصرف</h1>
-          <p className="text-muted-foreground mt-1">تسجيل المصروفات والمدفوعات</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">سندات الصرف</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">تسجيل المصروفات والمدفوعات</p>
         </div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="payment-vouchers" headers={["رقم السند","التاريخ","المستفيد","البند","المبلغ","العملة","المبلغ (شيكل)","طريقة الدفع"]}
-            getRows={() => filtered.map((v: any) => [v.voucherNumber, v.date, v.beneficiaryName, v.category, Number(v.amount), v.currency, Number(v.amountILS), v.paymentMethod])} />
-          <PrintButton onClick={printRegister} label="طباعة السجل" size="default" />
+          <PrintExportButton
+            prints={[{ label: "طباعة السجل", onClick: printRegister }]}
+            exportSpec={{ filename: "payment-vouchers", headers: ["رقم السند","التاريخ","المستفيد","البند","المبلغ","العملة","المبلغ (شيكل)","طريقة الدفع"],
+              getRows: () => filtered.map((v: any) => [v.voucherNumber, v.date, v.beneficiaryName, v.category, Number(v.amount), v.currency, Number(v.amountILS), v.paymentMethod]) }}
+          />
           <Button onClick={openNew} className="flex items-center gap-2">
             <Plus size={16} />إصدار سند صرف
           </Button>

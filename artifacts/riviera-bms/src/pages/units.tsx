@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useListUnits, useCreateUnit, useUpdateUnit, useDeleteUnit } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -110,13 +110,15 @@ export default function Units() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">الوحدات</h1>
-          <p className="text-muted-foreground mt-1">إدارة وحدات عمارة الريفييرا</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">الوحدات</h1>
+          <p className="text-muted-foreground mt-1 text-[12.5px]">إدارة وحدات عمارة الريفييرا</p>
         </div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="units" headers={["رقم الوحدة","الطابق","النوع","المساحة","الحالة","الوصف"]}
-            getRows={() => (units as any[]).map((u: any) => [u.unitNumber, u.floor, u.type, u.area, u.status, u.description ?? ""])} />
-          {(units as any[]).length > 0 && <PrintButton onClick={printList} label="طباعة القائمة" size="default" />}
+          <PrintExportButton
+            prints={[{ label: "طباعة القائمة", onClick: printList }]}
+            exportSpec={{ filename: "units", headers: ["رقم الوحدة","الطابق","النوع","المساحة","الحالة","الوصف"],
+              getRows: () => (units as any[]).map((u: any) => [u.unitNumber, u.floor, u.type, u.area, u.status, u.description ?? ""]) }}
+          />
           <Button onClick={openNew} className="flex items-center gap-2">
             <Plus size={16} />إضافة وحدة
           </Button>

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useListContracts, useCreateContract, useUpdateContract, useDeleteContract, useListTenants, useListUnits, useGetExchangeRates, useListDocuments, useCreateDocument, useDeleteDocument } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, FileText, Printer, Paperclip, Eye, Download } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -231,12 +231,16 @@ export default function Contracts() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold">العقود</h1><p className="text-muted-foreground mt-1">إدارة عقود الإيجار</p></div>
+        <div><h1 className="text-2xl font-extrabold tracking-tight">العقود</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة عقود الإيجار</p></div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="contracts" headers={["رقم العقد","المستأجر","الوحدة","البداية","الانتهاء","الإيجار (شيكل)","الحالة"]}
-            getRows={() => (contracts as any[]).map((c: any) => [c.contractNumber, c.tenantName, c.unitNumber, c.startDate, c.endDate, Number(c.rentAmountILS), c.status])} />
-          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
-          <PrintButton onClick={printAllContracts} label="طباعة كل العقود" size="default" />
+          <PrintExportButton
+            prints={[
+              { label: "طباعة القائمة", onClick: printList },
+              { label: "طباعة كل العقود", onClick: printAllContracts },
+            ]}
+            exportSpec={{ filename: "contracts", headers: ["رقم العقد","المستأجر","الوحدة","البداية","الانتهاء","الإيجار (شيكل)","الحالة"],
+              getRows: () => (contracts as any[]).map((c: any) => [c.contractNumber, c.tenantName, c.unitNumber, c.startDate, c.endDate, Number(c.rentAmountILS), c.status]) }}
+          />
           <Button onClick={openNew} className="flex items-center gap-2"><Plus size={16} />إضافة عقد</Button>
         </div>
       </div>

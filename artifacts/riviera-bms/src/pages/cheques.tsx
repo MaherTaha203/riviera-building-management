@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PrintExportButton } from "@/components/PrintExportButton";
 import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExcelExportButton } from "@/components/ExcelExportButton";
 import { FilterBar } from "@/components/FilterBar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
@@ -108,11 +108,13 @@ export default function Cheques() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold">الشيكات</h1><p className="text-muted-foreground mt-1">إدارة الشيكات الواردة والصادرة</p></div>
+        <div><h1 className="text-2xl font-extrabold tracking-tight">الشيكات</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الشيكات الواردة والصادرة</p></div>
         <div className="flex items-center gap-2">
-          <ExcelExportButton filename="cheques" headers={["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"]}
-            getRows={() => filtered.map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status])} />
-          <PrintButton onClick={printList} label="طباعة القائمة" size="default" />
+          <PrintExportButton
+            prints={[{ label: "طباعة القائمة", onClick: printList }]}
+            exportSpec={{ filename: "cheques", headers: ["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"],
+              getRows: () => filtered.map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status]) }}
+          />
           <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
         </div>
       </div>

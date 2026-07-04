@@ -67,7 +67,9 @@ export function useGlobalShortcuts(navigate: (p: string) => void): void {
       if (mod && key.toLowerCase() === "p") {
         // Route Ctrl+P through the page's primary print button so the
         // unified print template is used instead of printing the raw screen.
-        const btn = document.querySelector<HTMLButtonElement>("[data-print-btn]");
+        // Prefer the unified Print/Export button (approved design); fall back
+        // to a legacy standalone print button if a page still has one.
+        const btn = document.querySelector<HTMLButtonElement>("[data-print-export], [data-print-btn]");
         if (btn) {
           e.preventDefault();
           btn.click();

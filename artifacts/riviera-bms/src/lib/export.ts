@@ -12,10 +12,12 @@ function csvEscape(v: ExportCell): string {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export function downloadCsv(filename: string, headers: string[], rows: ExportCell[][]): void {
+export function downloadCsv(filename: string, headers: string[], rows: ExportCell[][], opts?: { bom?: boolean }): void {
   const lines = [headers, ...rows].map(r => r.map(csvEscape).join(","));
-  // ﻿ BOM → Excel detects UTF-8 and renders Arabic correctly.
-  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  // BOM (default) → Excel detects UTF-8 and renders Arabic correctly.
+  // Plain CSV (bom:false) → clean UTF-8 for other tools.
+  const prefix = opts?.bom === false ? "" : "﻿";
+  const blob = new Blob([prefix + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

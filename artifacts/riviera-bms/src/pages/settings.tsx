@@ -101,7 +101,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold flex items-center gap-2"><SettingsIcon size={28} />الإعدادات</h1><p className="text-muted-foreground mt-1">إعدادات النظام والمستخدمين</p></div>
+      <div><h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2"><SettingsIcon size={28} />الإعدادات</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إعدادات النظام والمستخدمين</p></div>
 
       {/* Building Settings */}
       <Card>
