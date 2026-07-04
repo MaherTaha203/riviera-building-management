@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListTenants, useCreateTenant, useUpdateTenant, useDeleteTenant } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,9 @@ export default function Tenants() {
     setForm({ name: t.name, type: t.type, phone: t.phone, email: t.email ?? "", idNumber: t.idNumber ?? "", address: t.address ?? "", notes: t.notes ?? "" });
     setOpen(true);
   };
+
+  // F-key / header shortcut: open the "add new" dialog (V1.1 §2)
+  useOpenNewSignal("/tenants", openNew);
 
   const handleSave = async () => {
     try {
@@ -184,7 +188,7 @@ export default function Tenants() {
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2">
-            <Button onClick={handleSave} disabled={create.isPending || update.isPending}>{editing ? "حفظ التعديلات" : "إضافة"}</Button>
+            <Button data-save-btn onClick={handleSave} disabled={create.isPending || update.isPending}>{editing ? "حفظ التعديلات" : "إضافة"}</Button>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
           </DialogFooter>
         </DialogContent>

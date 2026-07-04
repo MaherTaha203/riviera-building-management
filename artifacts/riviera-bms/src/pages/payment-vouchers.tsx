@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListPaymentVouchers, useCreatePaymentVoucher, useUpdatePaymentVoucher, useDeletePaymentVoucher, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,9 @@ export default function PaymentVouchers() {
     });
     setOpen(true);
   };
+
+  // F-key / header shortcut: open the "add new" dialog (V1.1 §2)
+  useOpenNewSignal("/payment-vouchers", openNew);
 
   const handleSave = async () => {
     const payload = {
@@ -290,7 +294,7 @@ export default function PaymentVouchers() {
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2">
-            <Button onClick={handleSave} disabled={create.isPending || update.isPending}>
+            <Button data-save-btn onClick={handleSave} disabled={create.isPending || update.isPending}>
               {editing ? "حفظ التعديلات" : "إصدار"}
             </Button>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>

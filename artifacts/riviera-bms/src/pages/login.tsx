@@ -28,89 +28,24 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 /**
- * Zero-asset Riviera brand lockup (inline SVG + text).
- * Kept local to the login page to limit the change to a single file
- * and avoid adding image assets / bundle weight.
+ * Riviera brand lockup — Concept 1 (Champagne Luxury) reference:
+ * Playfair Display solid-gold monogram, spaced RIVIERA wordmark, gold tag,
+ * gold gradient divider. Zero image assets.
  */
 function RivieraLogo() {
   return (
-    <div className="flex flex-col items-center gap-3" aria-label="Riviera Building Management">
-      <svg
-        viewBox="0 0 80 80"
-        className="h-16 w-16"
-        role="img"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <defs>
-          <linearGradient id="riviera-monogram" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#C8A86B" />
-            <stop offset="100%" stopColor="#102A43" />
-          </linearGradient>
-        </defs>
-        <text
-          x="50%"
-          y="56%"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily="Georgia, 'Times New Roman', serif"
-          fontWeight="700"
-          fontSize="62"
-          fill="url(#riviera-monogram)"
-        >
-          R
-        </text>
-      </svg>
-
-      <div className="flex flex-col items-center gap-1">
-        <span className="font-[Inter] text-[28px] font-bold leading-none tracking-[0.32em] text-[#102A43]">
-          RIVIERA
-        </span>
-        <span className="font-[Inter] text-[11px] font-medium tracking-[0.42em] text-[#C8A86B]">
-          BUILDING MANAGEMENT
-        </span>
+    <div className="flex flex-col items-center" aria-label="Riviera Building Management">
+      <div className="font-['Playfair_Display',Georgia,serif] text-[64px] font-bold leading-none text-[#C8A86B]">
+        R
       </div>
-
-      <span className="mt-2 h-px w-16 bg-gradient-to-l from-transparent via-[#C8A86B] to-transparent" />
+      <div className="mt-2.5 font-[Inter] text-[28px] font-bold leading-none tracking-[0.34em] text-[#102A43]">
+        RIVIERA
+      </div>
+      <div className="mt-1.5 font-[Inter] text-[11px] font-semibold tracking-[0.42em] text-[#C8A86B]">
+        BUILDING MANAGEMENT
+      </div>
+      <span className="my-[26px] h-px w-[72px] bg-gradient-to-l from-transparent via-[#C8A86B] to-transparent" />
     </div>
-  );
-}
-
-/** Soft decorative botanical sprig rendered as inline vector (no raster, no asset). */
-function LeafSprig({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 200 200"
-      className={className}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <g fill="none" stroke="#8A9A6B" strokeWidth="2" strokeLinecap="round">
-        <path d="M30 170 C 70 130, 110 90, 170 40" />
-        {[
-          [60, 142],
-          [82, 120],
-          [104, 98],
-          [126, 76],
-          [148, 56],
-        ].map(([x, y], i) => (
-          <g key={i}>
-            <path
-              d={`M${x} ${y} q -18 -10 -30 -4 q 6 14 30 4`}
-              fill="#A8B589"
-              fillOpacity="0.5"
-              stroke="none"
-            />
-            <path
-              d={`M${x} ${y} q 18 10 30 4 q -6 -14 -30 -4`}
-              fill="#C2CBA6"
-              fillOpacity="0.45"
-              stroke="none"
-            />
-          </g>
-        ))}
-      </g>
-    </svg>
   );
 }
 
@@ -159,43 +94,32 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#FCFCFA]">
-      {/* ───────────────── Decorative background (CSS + vector only) ───────────────── */}
+      {/* ── Decorative background — Concept 1 geometry (washes, blobs, gold rings) ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {/* layered radial washes */}
         <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_85%_5%,#F6F3EE_0%,transparent_45%),radial-gradient(100%_100%_at_5%_95%,#F3EFE7_0%,transparent_50%)]" />
 
-        {/* blurred abstract circles */}
-        <div className="absolute -top-32 -start-24 h-[26rem] w-[26rem] rounded-full bg-[#EFE7D6] opacity-60 blur-3xl" />
-        <div className="absolute top-1/3 start-1/4 h-40 w-40 rounded-full bg-white opacity-70 blur-3xl" />
-        <div className="absolute -bottom-32 end-1/4 h-[24rem] w-[24rem] rounded-full bg-[#F1EDE4] opacity-60 blur-3xl" />
+        {/* blurred champagne blobs (physical positions per the reference) */}
+        <div className="absolute -top-[160px] -right-[120px] h-[420px] w-[420px] rounded-full bg-[#EFE7D6] opacity-[0.65] blur-[70px]" />
+        <div className="absolute -bottom-[140px] left-[22%] h-[380px] w-[380px] rounded-full bg-[#F1EDE4] opacity-60 blur-[70px]" />
 
-        {/* very soft golden curves */}
-        <div className="absolute -top-40 -end-40 h-[34rem] w-[34rem] rounded-full border border-[#C8A86B]/15" />
-        <div className="absolute -bottom-56 -start-40 h-[40rem] w-[40rem] rounded-full border border-[#C8A86B]/10" />
-
-        {/* botanical leaves — top-right & bottom-left only */}
-        <LeafSprig className="absolute -top-6 end-0 h-64 w-64 rotate-[18deg] opacity-70" />
-        <LeafSprig className="absolute -bottom-8 start-0 h-72 w-72 -rotate-[200deg] opacity-60" />
+        {/* thin gold rings */}
+        <div className="absolute -top-[230px] -left-[180px] h-[540px] w-[540px] rounded-full border-[1.5px] border-[#C8A86B]/[0.22]" />
+        <div className="absolute -bottom-[280px] -right-[200px] h-[620px] w-[620px] rounded-full border-[1.5px] border-[#C8A86B]/[0.22]" />
       </div>
 
       {/* ───────────────────────────── Content ───────────────────────────── */}
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-16 px-6 py-16 lg:flex-row-reverse lg:gap-20 lg:px-12">
-        {/* Brand column (≈45%) */}
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1160px] flex-col items-center justify-center gap-16 px-6 py-16 lg:flex-row lg:gap-20 lg:px-10">
+        {/* Brand column — first in RTL flow = right side, as in the reference */}
         <section className="flex w-full flex-col items-center text-center duration-700 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none lg:w-[45%]">
           <RivieraLogo />
 
-          <h1 className="mt-10 text-3xl font-bold leading-snug text-[#102A43] sm:text-[34px]">
+          <h1 className="text-[32px] font-bold leading-snug text-[#102A43]">
             مرحباً بك في نظام عمارة الريفيرا
           </h1>
-          <p className="mt-4 max-w-sm text-[15px] leading-8 text-[#64748B]">
+          <p className="mt-3 max-w-[360px] text-[15px] leading-8 text-[#64748B]">
             سجل دخولك للوصول إلى لوحة التحكم وإدارة خدمات العمارة
           </p>
-
-          <span className="mt-8 flex items-center gap-3 text-[#C8A86B]">
-            <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#C8A86B]/70" />
-            <span className="text-xs">✦</span>
-            <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#C8A86B]/70" />
-          </span>
         </section>
 
         {/* Login column (≈55%) */}
@@ -210,7 +134,7 @@ export default function Login() {
             <div
               className={cn(
                 "relative w-full rounded-[30px] border border-white/65 bg-[rgba(255,255,255,0.92)]",
-                "px-8 pb-10 pt-16 backdrop-blur-[20px] sm:px-10",
+                "px-8 pb-11 pt-16 backdrop-blur-[20px] sm:px-10",
                 "shadow-[0_45px_100px_rgba(0,0,0,0.10),0_20px_50px_rgba(0,0,0,0.06),inset_0_4px_10px_rgba(255,255,255,0.8)]",
                 "duration-700 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none"
               )}
@@ -319,10 +243,6 @@ export default function Login() {
                 </form>
               </Form>
             </div>
-
-            <p className="mt-6 text-center text-xs text-[#94A3B8]">
-              نظام إدارة عمارة الريفيرا &copy; {new Date().getFullYear()}
-            </p>
           </div>
         </section>
       </div>
