@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { FilterBar } from "@/components/FilterBar";
 
 import { useListDocuments, useCreateDocument, useDeleteDocument, useListTenants, useListContracts, useListUnits } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +43,27 @@ export default function Documents() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
   const [fileLabel, setFileLabel] = useState("");
+
+  // Document center filters (V1.1 §10): search + file type + date + linked entity.
+  const [fSearch, setFSearch] = useState("");
+  const [fFileType, setFFileType] = useState("all");
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+  const [fEntity, setFEntity] = useState("all");
+  const resetFilters = () => { setFSearch(""); setFFileType("all"); setFFrom(""); setFTo(""); setFEntity("all"); };
+  const filterEntityOptions =
+    entityTypeFilter === "tenant" ? (tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name })) :
+    entityTypeFilter === "contract" ? (contracts as any[]).map((c: any) => ({ value: String(c.id), label: c.contractNumber })) :
+    entityTypeFilter === "unit" ? (units as any[]).map((u: any) => ({ value: String(u.id), label: u.unitNumber })) : [];
+  const filteredDocs = useMemo(() => (docs as any[]).filter((d: any) => {
+    if (fSearch && !String(d.name ?? "").toLowerCase().includes(fSearch.toLowerCase()) && !String(d.notes ?? "").toLowerCase().includes(fSearch.toLowerCase())) return false;
+    if (fFileType !== "all" && d.fileType !== fFileType) return false;
+    const day = String(d.createdAt ?? "").slice(0, 10);
+    if (fFrom && day < fFrom) return false;
+    if (fTo && day > fTo) return false;
+    if (fEntity !== "all" && String(d.entityId ?? "") !== fEntity) return false;
+    return true;
+  }), [docs, fSearch, fFileType, fFrom, fTo, fEntity]);
 
   const entityOptions =
     form.entityType === "tenant" ? (tenants as any[]) :
@@ -116,7 +138,7 @@ export default function Documents() {
           <p className="text-muted-foreground mt-1">إدارة الملفات والوثائق</p>
         </div>
         <ExcelExportButton filename="documents" headers={["الاسم","النوع","المرتبط بـ","نوع الملف","التاريخ","ملاحظات"]}
-          getRows={() => (docs as any[]).map((d: any) => [d.name, d.entityType, d.entityName ?? "", d.fileType, d.createdAt, d.notes ?? ""])} />
+          getRows={() => filteredDocs.map((d: any) => [d.name, d.entityType, d.entityName ?? "", d.fileType, d.createdAt, d.notes ?? ""])} />
         <Button onClick={() => { setForm({ ...emptyForm }); setFileLabel(""); setOpen(true); }} className="flex items-center gap-2">
           <Plus size={16} />إضافة مستند
         </Button>
@@ -128,7 +150,29 @@ export default function Documents() {
             {t === "all" ? "الكل" : entityTypeLabels[t]}
           </Button>
         ))}
+        {entityTypeFilter !== "all" && entityTypeFilter !== "general" && (
+          <div className="w-56">
+            <Select value={fEntity} onValueChange={setFEntity}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="الكيان المرتبط" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الكيانات</SelectItem>
+                {filterEntityOptions.map((o: any) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
+
+      <FilterBar
+        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo} dateLabel="تاريخ الإضافة"
+        search={fSearch} onSearch={setFSearch} searchLabel="بحث بالاسم/الملاحظات"
+        selects={[
+          { key: "ftype", label: "نوع الملف", value: fFileType, onChange: setFFileType,
+            options: [{ value: "all", label: "الكل" }, ...["pdf","docx","jpg","png","xlsx","other"].map(t => ({ value: t, label: t.toUpperCase() }))] },
+        ]}
+        onReset={resetFilters}
+        resultCount={filteredDocs.length}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -145,7 +189,7 @@ export default function Documents() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(docs as any[]).map((d: any) => (
+              {filteredDocs.map((d: any) => (
                 <TableRow key={d.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -171,7 +215,7 @@ export default function Documents() {
                   </TableCell>
                 </TableRow>
               ))}
-              {docs.length === 0 && (
+              {filteredDocs.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">لا توجد مستندات</TableCell>
                 </TableRow>

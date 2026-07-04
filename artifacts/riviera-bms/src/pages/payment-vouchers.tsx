@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useOpenNewSignal } from "@/lib/shortcuts";
 import { useListPaymentVouchers, useCreatePaymentVoucher, useUpdatePaymentVoucher, useDeletePaymentVoucher, useGetExchangeRates } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExcelExportButton } from "@/components/ExcelExportButton";
+import { FilterBar } from "@/components/FilterBar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -55,6 +56,23 @@ export default function PaymentVouchers() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+
+  // Advanced combinable filters (V1.1 §8).
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+  const [fMethod, setFMethod] = useState("all");
+  const [fCurrency, setFCurrency] = useState("all");
+  const [fCategory, setFCategory] = useState("all");
+  const resetFilters = () => { setFFrom(""); setFTo(""); setFMethod("all"); setFCurrency("all"); setFCategory("all"); };
+  const categories = useMemo(() => [...new Set((vouchers as any[]).map((v: any) => v.category).filter(Boolean))].sort(), [vouchers]);
+  const filtered = useMemo(() => (vouchers as any[]).filter((v: any) => {
+    if (fFrom && v.date < fFrom) return false;
+    if (fTo && v.date > fTo) return false;
+    if (fMethod !== "all" && v.paymentMethod !== fMethod) return false;
+    if (fCurrency !== "all" && v.currency !== fCurrency) return false;
+    if (fCategory !== "all" && v.category !== fCategory) return false;
+    return true;
+  }), [vouchers, fFrom, fTo, fMethod, fCurrency, fCategory]);
 
   const rateForCurrency = (cur: string) =>
     cur === "USD" ? Number(rates?.usdToILS ?? 3.7) :
@@ -141,8 +159,8 @@ export default function PaymentVouchers() {
         { label: "البند", render: (v: any) => v.category },
         { label: "المبلغ (شيكل)", render: (v: any) => <span className="ltr-nums">{fmtMoney(v.amountILS, "ILS")}</span> },
       ]}
-      rows={vouchers as any[]}
-      footer={<tr><td colSpan={5}>الإجمالي</td><td className="ltr-nums">{fmtMoney((vouchers as any[]).reduce((s, v) => s + Number(v.amountILS), 0), "ILS")}</td></tr>}
+      rows={filtered}
+      footer={<tr><td colSpan={5}>الإجمالي</td><td className="ltr-nums">{fmtMoney(filtered.reduce((s, v) => s + Number(v.amountILS), 0), "ILS")}</td></tr>}
     />,
     { title: "سجل سندات الصرف" },
   );
@@ -158,13 +176,27 @@ export default function PaymentVouchers() {
         </div>
         <div className="flex items-center gap-2">
           <ExcelExportButton filename="payment-vouchers" headers={["رقم السند","التاريخ","المستفيد","البند","المبلغ","العملة","المبلغ (شيكل)","طريقة الدفع"]}
-            getRows={() => (vouchers as any[]).map((v: any) => [v.voucherNumber, v.date, v.beneficiaryName, v.category, Number(v.amount), v.currency, Number(v.amountILS), v.paymentMethod])} />
+            getRows={() => filtered.map((v: any) => [v.voucherNumber, v.date, v.beneficiaryName, v.category, Number(v.amount), v.currency, Number(v.amountILS), v.paymentMethod])} />
           <PrintButton onClick={printRegister} label="طباعة السجل" size="default" />
           <Button onClick={openNew} className="flex items-center gap-2">
             <Plus size={16} />إصدار سند صرف
           </Button>
         </div>
       </div>
+
+      <FilterBar
+        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo}
+        selects={[
+          { key: "method", label: "طريقة الدفع", value: fMethod, onChange: setFMethod,
+            options: [{ value: "all", label: "الكل" }, { value: "cash", label: "نقداً" }, { value: "bank_transfer", label: "حوالة بنكية" }, { value: "cheque", label: "شيك" }] },
+          { key: "currency", label: "العملة", value: fCurrency, onChange: setFCurrency,
+            options: [{ value: "all", label: "الكل" }, { value: "ILS", label: "ILS" }, { value: "USD", label: "USD" }, { value: "JOD", label: "JOD" }] },
+          { key: "category", label: "البند", value: fCategory, onChange: setFCategory,
+            options: [{ value: "all", label: "الكل" }, ...categories.map((c) => ({ value: c, label: c }))] },
+        ]}
+        onReset={resetFilters}
+        resultCount={filtered.length}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -182,7 +214,7 @@ export default function PaymentVouchers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(vouchers as any[]).map((v: any) => (
+              {filtered.map((v: any) => (
                 <TableRow key={v.id}>
                   <TableCell className="font-mono text-sm ltr-nums">{v.voucherNumber}</TableCell>
                   <TableCell className="ltr-nums">{formatDate(v.date)}</TableCell>
