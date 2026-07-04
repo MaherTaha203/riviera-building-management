@@ -43,7 +43,7 @@ const adminItems = [
   { name: "الإعدادات", path: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [location, setLocation] = useLocation();
   const user = getUser();
 
@@ -55,10 +55,11 @@ export function Sidebar() {
   const NavLink = ({ item }: { item: any }) => {
     const isActive = location === item.path || location.startsWith(`${item.path}/`);
     const Icon = item.icon;
-    
+
     return (
       <Link href={item.path}>
         <div
+          onClick={onNavigate}
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer text-sm font-medium",
             isActive 

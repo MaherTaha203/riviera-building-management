@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Search, Bell, Users, Home, FileText, Receipt, CreditCard, Files, Landmark,
+  Search, Bell, Users, Home, FileText, Receipt, CreditCard, Files, Landmark, Menu,
 } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
@@ -231,9 +231,14 @@ function NotificationsBell() {
   );
 }
 
-export function HeaderBar() {
+export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="h-14 shrink-0 border-b bg-background flex items-center gap-3 px-4">
+    <header className="h-14 shrink-0 border-b bg-background flex items-center gap-2 px-3 sm:gap-3 sm:px-4">
+      {onMenuClick && (
+        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden" title="القائمة" onClick={onMenuClick}>
+          <Menu size={18} />
+        </Button>
+      )}
       <GlobalSearch />
       <div className="mr-auto flex items-center gap-1">
         <NotificationsBell />
