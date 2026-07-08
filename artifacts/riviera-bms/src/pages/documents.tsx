@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistedView } from "@/lib/usePersistedView";
 
 import { useListDocuments, useCreateDocument, useDeleteDocument, useListTenants, useListContracts, useListUnits } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +33,10 @@ export default function Documents() {
   const { data: tenants = [] } = useListTenants();
   const { data: contracts = [] } = useListContracts();
   const { data: units = [] } = useListUnits();
-  const [entityTypeFilter, setEntityTypeFilter] = useState("all");
+  // Entity-type tab drives the query and persists on its own slot.
+  const [entityTypeView, setEntityTypeView] = usePersistedView("documents", "entityType", { entityType: "all" });
+  const entityTypeFilter = entityTypeView.entityType;
+  const setEntityTypeFilter = (v: string) => setEntityTypeView({ entityType: v });
   const { data: docs = [], isLoading } = useListDocuments(entityTypeFilter !== "all" ? { entityType: entityTypeFilter } : undefined);
   const create = useCreateDocument();
   const del = useDeleteDocument();
@@ -45,12 +49,9 @@ export default function Documents() {
   const [fileLabel, setFileLabel] = useState("");
 
   // Document center filters (V1.1 §10): search + file type + date + linked entity.
-  const [fSearch, setFSearch] = useState("");
-  const [fFileType, setFFileType] = useState("all");
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fEntity, setFEntity] = useState("all");
-  const resetFilters = () => { setFSearch(""); setFFileType("all"); setFFrom(""); setFTo(""); setFEntity("all"); };
+  const [view, setView, resetFilters] = usePersistedView("documents", "filters",
+    { search: "", fileType: "all", from: "", to: "", entity: "all" });
+  const { search: fSearch, fileType: fFileType, from: fFrom, to: fTo, entity: fEntity } = view;
   const filterEntityOptions =
     entityTypeFilter === "tenant" ? (tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name })) :
     entityTypeFilter === "contract" ? (contracts as any[]).map((c: any) => ({ value: String(c.id), label: c.contractNumber })) :
@@ -154,7 +155,7 @@ export default function Documents() {
         ))}
         {entityTypeFilter !== "all" && entityTypeFilter !== "general" && (
           <div className="w-56">
-            <Select value={fEntity} onValueChange={setFEntity}>
+            <Select value={fEntity} onValueChange={v => setView({ entity: v })}>
               <SelectTrigger className="h-9"><SelectValue placeholder="الكيان المرتبط" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الكيانات</SelectItem>
@@ -166,10 +167,10 @@ export default function Documents() {
       </div>
 
       <FilterBar
-        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo} dateLabel="تاريخ الإضافة"
-        search={fSearch} onSearch={setFSearch} searchLabel="بحث بالاسم/الملاحظات"
+        from={fFrom} to={fTo} onFrom={v => setView({ from: v })} onTo={v => setView({ to: v })} dateLabel="تاريخ الإضافة"
+        search={fSearch} onSearch={v => setView({ search: v })} searchLabel="بحث بالاسم/الملاحظات"
         selects={[
-          { key: "ftype", label: "نوع الملف", value: fFileType, onChange: setFFileType,
+          { key: "ftype", label: "نوع الملف", value: fFileType, onChange: v => setView({ fileType: v }),
             options: [{ value: "all", label: "الكل" }, ...["pdf","docx","jpg","png","xlsx","other"].map(t => ({ value: t, label: t.toUpperCase() }))] },
         ]}
         onReset={resetFilters}

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistedView } from "@/lib/usePersistedView";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -30,7 +31,10 @@ const typeLabels: Record<string, string> = { incoming: "وارد", outgoing: "ص
 const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", notes: "" };
 
 export default function Cheques() {
-  const [typeFilter, setTypeFilter] = useState("all");
+  // Type tab (وارد/صادر) drives the query and persists on its own slot.
+  const [typeView, setTypeView] = usePersistedView("cheques", "type", { type: "all" });
+  const typeFilter = typeView.type;
+  const setTypeFilter = (v: string) => setTypeView({ type: v });
   const { data: cheques = [], isLoading } = useListCheques(typeFilter !== "all" ? { type: typeFilter as any } : undefined);
   const { data: tenants = [] } = useListTenants();
   const { data: rates } = useGetExchangeRates();
@@ -43,11 +47,9 @@ export default function Cheques() {
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8) — combined with the type buttons above.
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fStatus, setFStatus] = useState("all");
-  const [fBank, setFBank] = useState("all");
-  const resetFilters = () => { setFFrom(""); setFTo(""); setFStatus("all"); setFBank("all"); };
+  const [view, setView, resetFilters] = usePersistedView("cheques", "filters",
+    { from: "", to: "", status: "all", bank: "all" });
+  const { from: fFrom, to: fTo, status: fStatus, bank: fBank } = view;
   const banks = useMemo(() => [...new Set((cheques as any[]).map((c: any) => c.bankName).filter(Boolean))].sort(), [cheques]);
   const filtered = useMemo(() => (cheques as any[]).filter((c: any) => {
     if (fFrom && c.dueDate < fFrom) return false;
@@ -128,11 +130,11 @@ export default function Cheques() {
       </div>
 
       <FilterBar
-        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo} dateLabel="الاستحقاق"
+        from={fFrom} to={fTo} onFrom={v => setView({ from: v })} onTo={v => setView({ to: v })} dateLabel="الاستحقاق"
         selects={[
-          { key: "status", label: "الحالة", value: fStatus, onChange: setFStatus,
+          { key: "status", label: "الحالة", value: fStatus, onChange: v => setView({ status: v }),
             options: [{ value: "all", label: "الكل" }, { value: "pending", label: "معلق" }, { value: "cleared", label: "محصّل" }, { value: "bounced", label: "مرتجع" }] },
-          { key: "bank", label: "البنك", value: fBank, onChange: setFBank,
+          { key: "bank", label: "البنك", value: fBank, onChange: v => setView({ bank: v }),
             options: [{ value: "all", label: "الكل" }, ...banks.map((b) => ({ value: b, label: b }))] },
         ]}
         onReset={resetFilters}
