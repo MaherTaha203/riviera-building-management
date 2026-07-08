@@ -167,7 +167,7 @@ export default function Units() {
           {filtered.map((u: any) => {
             const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
             return (
-              <Card key={u.id} className="hover:shadow-md transition-shadow">
+              <Card key={u.id} className="transition-colors hover:border-[hsl(214,32%,84%)]">
                 <CardHeader className="pb-2 flex flex-row items-start justify-between">
                   <div className="flex items-center gap-2">
                     <div className="p-2 bg-primary/10 rounded-md text-primary"><Building2 size={18} /></div>
@@ -185,7 +185,7 @@ export default function Units() {
                     <Button size="sm" variant="outline" onClick={() => openEdit(u)} className="flex-1">
                       <Pencil size={14} className="ml-1" />تعديل
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setDeleteId(u.id)}>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(u.id)}>
                       <Trash2 size={14} />
                     </Button>
                   </div>
