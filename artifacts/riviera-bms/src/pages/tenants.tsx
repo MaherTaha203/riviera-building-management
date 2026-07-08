@@ -141,7 +141,7 @@ export default function Tenants() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((t: any) => (
-            <Card key={t.id} className="hover:shadow-md transition-shadow">
+            <Card key={t.id} className="transition-colors hover:border-[hsl(214,32%,84%)]">
               <CardHeader className="pb-2 flex flex-row items-start justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-md text-primary"><Users size={18} /></div>
@@ -161,7 +161,7 @@ export default function Tenants() {
                 </div>
                 <div className="flex gap-2 mt-3">
                   <Button size="sm" variant="outline" onClick={() => openEdit(t)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleteId(t.id)}><Trash2 size={14} /></Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(t.id)}><Trash2 size={14} /></Button>
                 </div>
               </CardContent>
             </Card>

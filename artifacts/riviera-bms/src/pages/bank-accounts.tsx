@@ -100,7 +100,7 @@ export default function BankAccounts() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(accounts as any[]).map((a: any) => (
-          <Card key={a.id} className="hover:shadow-md transition-shadow">
+          <Card key={a.id} className="transition-colors hover:border-[hsl(214,32%,84%)]">
             <CardHeader className="pb-2 flex flex-row items-start justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-primary/10 rounded-md text-primary"><Landmark size={18} /></div>
@@ -117,7 +117,7 @@ export default function BankAccounts() {
               {a.notes && <p className="text-xs text-muted-foreground mt-1">{a.notes}</p>}
               <div className="flex gap-2 mt-3">
                 <Button size="sm" variant="outline" onClick={() => openEdit(a)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)}><Trash2 size={14} /></Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(a.id)}><Trash2 size={14} /></Button>
               </div>
             </CardContent>
           </Card>
