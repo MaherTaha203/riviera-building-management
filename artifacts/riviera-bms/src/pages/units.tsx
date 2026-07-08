@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { usePersistentState } from "@/lib/usePersistentState";
+import { usePersistedView } from "@/lib/usePersistedView";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePrint, PrintButton } from "@/lib/print";
@@ -44,8 +44,8 @@ export default function Units() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
-  const [search, setSearch] = usePersistentState("units:search", "");
-  const [statusFilter, setStatusFilter] = usePersistentState("units:status", "all");
+  const [view, setView, resetView] = usePersistedView("units", "filters", { search: "", status: "all" });
+  const { search, status: statusFilter } = view;
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (u: any) => {
@@ -128,8 +128,8 @@ export default function Units() {
 
       {(units as any[]).length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
-          <Input placeholder="بحث برقم الوحدة أو الطابق..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Input placeholder="بحث برقم الوحدة أو الطابق..." value={search} onChange={e => setView({ search: e.target.value })} className="max-w-sm" />
+          <Select value={statusFilter} onValueChange={v => setView({ status: v })}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل الحالات</SelectItem>
@@ -138,6 +138,9 @@ export default function Units() {
               <SelectItem value="maintenance">صيانة</SelectItem>
             </SelectContent>
           </Select>
+          {(search !== "" || statusFilter !== "all") && (
+            <Button variant="outline" size="sm" onClick={resetView}>إعادة تعيين</Button>
+          )}
           <span className="text-sm text-muted-foreground ltr-nums">{filtered.length} / {(units as any[]).length}</span>
         </div>
       )}

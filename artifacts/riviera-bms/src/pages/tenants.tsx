@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { usePersistentState } from "@/lib/usePersistentState";
+import { usePersistedView } from "@/lib/usePersistedView";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
@@ -32,7 +32,8 @@ export default function Tenants() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
-  const [search, setSearch] = usePersistentState("tenants:search", "");
+  const [view, setView, resetView] = usePersistedView("tenants", "filters", { search: "" });
+  const { search } = view;
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (t: any) => {
@@ -119,8 +120,9 @@ export default function Tenants() {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <Input placeholder="بحث بالاسم أو الهاتف..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+      <div className="flex items-center gap-3">
+        <Input placeholder="بحث بالاسم أو الهاتف..." value={search} onChange={e => setView({ search: e.target.value })} className="max-w-sm" />
+        {search !== "" && <Button variant="outline" size="sm" onClick={resetView}>إعادة تعيين</Button>}
       </div>
 
       {(tenants as any[]).length === 0 ? (

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
-import { usePersistentState } from "@/lib/usePersistentState";
+import { usePersistedView } from "@/lib/usePersistedView";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -61,12 +61,9 @@ export default function ReceiptVouchers() {
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8) — client-side over the loaded list.
-  const [fFrom, setFFrom] = usePersistentState("receipt-vouchers:from", "");
-  const [fTo, setFTo] = usePersistentState("receipt-vouchers:to", "");
-  const [fMethod, setFMethod] = usePersistentState("receipt-vouchers:method", "all");
-  const [fCurrency, setFCurrency] = usePersistentState("receipt-vouchers:currency", "all");
-  const [fTenant, setFTenant] = usePersistentState("receipt-vouchers:tenant", "all");
-  const resetFilters = () => { setFFrom(""); setFTo(""); setFMethod("all"); setFCurrency("all"); setFTenant("all"); };
+  const [view, setView, resetFilters] = usePersistedView("receipts", "filters",
+    { from: "", to: "", method: "all", currency: "all", tenant: "all" });
+  const { from: fFrom, to: fTo, method: fMethod, currency: fCurrency, tenant: fTenant } = view;
   const filtered = useMemo(() => (vouchers as any[]).filter((v: any) => {
     if (fFrom && v.date < fFrom) return false;
     if (fTo && v.date > fTo) return false;
@@ -200,13 +197,13 @@ export default function ReceiptVouchers() {
       </div>
 
       <FilterBar
-        from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo}
+        from={fFrom} to={fTo} onFrom={v => setView({ from: v })} onTo={v => setView({ to: v })}
         selects={[
-          { key: "method", label: "طريقة الدفع", value: fMethod, onChange: setFMethod,
+          { key: "method", label: "طريقة الدفع", value: fMethod, onChange: v => setView({ method: v }),
             options: [{ value: "all", label: "الكل" }, { value: "cash", label: "نقداً" }, { value: "bank_transfer", label: "حوالة بنكية" }, { value: "cheque", label: "شيك" }] },
-          { key: "currency", label: "العملة", value: fCurrency, onChange: setFCurrency,
+          { key: "currency", label: "العملة", value: fCurrency, onChange: v => setView({ currency: v }),
             options: [{ value: "all", label: "الكل" }, { value: "ILS", label: "ILS" }, { value: "USD", label: "USD" }, { value: "JOD", label: "JOD" }] },
-          { key: "tenant", label: "المستأجر", value: fTenant, onChange: setFTenant,
+          { key: "tenant", label: "المستأجر", value: fTenant, onChange: v => setView({ tenant: v }),
             options: [{ value: "all", label: "الكل" }, ...(tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name }))] },
         ]}
         onReset={resetFilters}
