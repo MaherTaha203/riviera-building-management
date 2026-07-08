@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistentState } from "@/lib/usePersistentState";
 
 import { useListDocuments, useCreateDocument, useDeleteDocument, useListTenants, useListContracts, useListUnits } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +33,7 @@ export default function Documents() {
   const { data: tenants = [] } = useListTenants();
   const { data: contracts = [] } = useListContracts();
   const { data: units = [] } = useListUnits();
-  const [entityTypeFilter, setEntityTypeFilter] = useState("all");
+  const [entityTypeFilter, setEntityTypeFilter] = usePersistentState("documents:entityType", "all");
   const { data: docs = [], isLoading } = useListDocuments(entityTypeFilter !== "all" ? { entityType: entityTypeFilter } : undefined);
   const create = useCreateDocument();
   const del = useDeleteDocument();
@@ -45,11 +46,11 @@ export default function Documents() {
   const [fileLabel, setFileLabel] = useState("");
 
   // Document center filters (V1.1 §10): search + file type + date + linked entity.
-  const [fSearch, setFSearch] = useState("");
-  const [fFileType, setFFileType] = useState("all");
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fEntity, setFEntity] = useState("all");
+  const [fSearch, setFSearch] = usePersistentState("documents:search", "");
+  const [fFileType, setFFileType] = usePersistentState("documents:fileType", "all");
+  const [fFrom, setFFrom] = usePersistentState("documents:from", "");
+  const [fTo, setFTo] = usePersistentState("documents:to", "");
+  const [fEntity, setFEntity] = usePersistentState("documents:entity", "all");
   const resetFilters = () => { setFSearch(""); setFFileType("all"); setFFrom(""); setFTo(""); setFEntity("all"); };
   const filterEntityOptions =
     entityTypeFilter === "tenant" ? (tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name })) :

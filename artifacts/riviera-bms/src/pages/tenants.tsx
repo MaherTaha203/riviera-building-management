@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePersistentState } from "@/lib/usePersistentState";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
@@ -31,7 +32,7 @@ export default function Tenants() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = usePersistentState("tenants:search", "");
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (t: any) => {

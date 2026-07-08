@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistentState } from "@/lib/usePersistentState";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -58,11 +59,11 @@ export default function PaymentVouchers() {
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8).
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fMethod, setFMethod] = useState("all");
-  const [fCurrency, setFCurrency] = useState("all");
-  const [fCategory, setFCategory] = useState("all");
+  const [fFrom, setFFrom] = usePersistentState("payment-vouchers:from", "");
+  const [fTo, setFTo] = usePersistentState("payment-vouchers:to", "");
+  const [fMethod, setFMethod] = usePersistentState("payment-vouchers:method", "all");
+  const [fCurrency, setFCurrency] = usePersistentState("payment-vouchers:currency", "all");
+  const [fCategory, setFCategory] = usePersistentState("payment-vouchers:category", "all");
   const resetFilters = () => { setFFrom(""); setFTo(""); setFMethod("all"); setFCurrency("all"); setFCategory("all"); };
   const categories = useMemo(() => [...new Set((vouchers as any[]).map((v: any) => v.category).filter(Boolean))].sort(), [vouchers]);
   const filtered = useMemo(() => (vouchers as any[]).filter((v: any) => {

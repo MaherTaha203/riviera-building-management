@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistentState } from "@/lib/usePersistentState";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -30,7 +31,7 @@ const typeLabels: Record<string, string> = { incoming: "وارد", outgoing: "ص
 const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", notes: "" };
 
 export default function Cheques() {
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = usePersistentState("cheques:type", "all");
   const { data: cheques = [], isLoading } = useListCheques(typeFilter !== "all" ? { type: typeFilter as any } : undefined);
   const { data: tenants = [] } = useListTenants();
   const { data: rates } = useGetExchangeRates();
@@ -43,10 +44,10 @@ export default function Cheques() {
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8) — combined with the type buttons above.
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fStatus, setFStatus] = useState("all");
-  const [fBank, setFBank] = useState("all");
+  const [fFrom, setFFrom] = usePersistentState("cheques:from", "");
+  const [fTo, setFTo] = usePersistentState("cheques:to", "");
+  const [fStatus, setFStatus] = usePersistentState("cheques:status", "all");
+  const [fBank, setFBank] = usePersistentState("cheques:bank", "all");
   const resetFilters = () => { setFFrom(""); setFTo(""); setFStatus("all"); setFBank("all"); };
   const banks = useMemo(() => [...new Set((cheques as any[]).map((c: any) => c.bankName).filter(Boolean))].sort(), [cheques]);
   const filtered = useMemo(() => (cheques as any[]).filter((c: any) => {

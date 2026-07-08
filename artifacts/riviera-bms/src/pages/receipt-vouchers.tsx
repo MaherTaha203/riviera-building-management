@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
+import { usePersistentState } from "@/lib/usePersistentState";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -60,11 +61,11 @@ export default function ReceiptVouchers() {
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8) — client-side over the loaded list.
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
-  const [fMethod, setFMethod] = useState("all");
-  const [fCurrency, setFCurrency] = useState("all");
-  const [fTenant, setFTenant] = useState("all");
+  const [fFrom, setFFrom] = usePersistentState("receipt-vouchers:from", "");
+  const [fTo, setFTo] = usePersistentState("receipt-vouchers:to", "");
+  const [fMethod, setFMethod] = usePersistentState("receipt-vouchers:method", "all");
+  const [fCurrency, setFCurrency] = usePersistentState("receipt-vouchers:currency", "all");
+  const [fTenant, setFTenant] = usePersistentState("receipt-vouchers:tenant", "all");
   const resetFilters = () => { setFFrom(""); setFTo(""); setFMethod("all"); setFCurrency("all"); setFTenant("all"); };
   const filtered = useMemo(() => (vouchers as any[]).filter((v: any) => {
     if (fFrom && v.date < fFrom) return false;

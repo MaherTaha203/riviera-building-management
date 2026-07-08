@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePersistentState } from "@/lib/usePersistentState";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePrint, PrintButton } from "@/lib/print";
@@ -43,8 +44,8 @@ export default function Units() {
   const [editing, setEditing] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = usePersistentState("units:search", "");
+  const [statusFilter, setStatusFilter] = usePersistentState("units:status", "all");
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm }); setOpen(true); };
   const openEdit = (u: any) => {
