@@ -37,20 +37,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Ping health endpoint (tolerates a cold wake)
+      - name: Ping health endpoint + record latency (Phase 5 TTFB monitor)
         env:
           # Override in repo Settings → Variables if the URL ever changes.
           URL: ${{ vars.KEEP_WARM_URL || 'https://riviera-api.onrender.com/api/healthz' }}
+          # TTFB above this (seconds) means the instance was NOT warm — i.e. the
+          # keep-warm schedule slipped and a user could have hit a cold start.
+          COLD_TTFB_S: "5"
         run: |
           echo "Pinging $URL"
           # --max-time 90 tolerates a full cold start on the first hit after idle.
           # Retry a few times so a single transient blip doesn't fail the run.
-          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          # Capture status + timing (TTFB, total) in one shot.
+          read -r code ttfb total < <(curl -sS -o /dev/null \
+                   -w '%{http_code} %{time_starttransfer} %{time_total}' \
                    --max-time 90 --retry 3 --retry-delay 5 --retry-all-errors \
-                   "$URL" || echo "000")
-          echo "HTTP $code"
+                   "$URL" 2>/dev/null || echo "000 0 0")
+          echo "HTTP $code | TTFB ${ttfb}s | total ${total}s"
+
+          # Phase 5 — write a latency record to the run summary so the Actions
+          # history is a lightweight synthetic-monitoring log.
+          {
+            echo "### keep-warm latency"
+            echo "| time | status | TTFB | total |"
+            echo "| --- | --- | --- | --- |"
+            echo "| $(date -u '+%Y-%m-%d %H:%M:%S') UTC | HTTP $code | ${ttfb}s | ${total}s |"
+          } >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+          # A warm /healthz (no DB) should answer in well under a second. A slow
+          # TTFB is the signal that keep-warm gapped and the container cold-booted.
+          if awk "BEGIN{exit !($ttfb > $COLD_TTFB_S)}"; then
+            echo "::warning::keep-warm TTFB was ${ttfb}s (> ${COLD_TTFB_S}s) — the instance was likely cold; a user could have hit a cold start. Check the schedule cadence or consider an always-on tier."
+          fi
+
           # 2xx/3xx = warm/healthy. Anything else is a real problem worth a red run.
           case "$code" in
-            2*|3*) echo "OK — instance is warm."; exit 0 ;;
+            2*|3*) echo "OK — instance is reachable."; exit 0 ;;
             *) echo "::warning::health check returned $code"; exit 1 ;;
           esac
