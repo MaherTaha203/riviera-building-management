@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePersistedView } from "@/lib/usePersistedView";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePrint, PrintButton } from "@/lib/print";
@@ -64,7 +65,7 @@ export default function Units() {
         await createUnit.mutateAsync({ data: payload as any });
         toast({ title: "تمت الإضافة", description: "تمت إضافة الوحدة بنجاح" });
       }
-      await qc.invalidateQueries({ queryKey: ["/api/units"] });
+      await invalidateFinancial(qc);
       setOpen(false);
     } catch (e: any) {
       toast({ title: "خطأ", description: e?.message || "حدث خطأ أثناء حفظ البيانات", variant: "destructive" });
@@ -75,7 +76,7 @@ export default function Units() {
     if (!deleteId) return;
     try {
       await deleteUnit.mutateAsync({ id: deleteId });
-      qc.invalidateQueries({ queryKey: ["/api/units"] });
+      invalidateFinancial(qc);
       toast({ title: "تم الحذف" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });

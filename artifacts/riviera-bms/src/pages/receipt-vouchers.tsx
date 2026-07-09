@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -134,8 +135,7 @@ export default function ReceiptVouchers() {
         await create.mutateAsync({ data: payload });
         toast({ title: "تم إصدار السند" });
       }
-      qc.invalidateQueries({ queryKey: ["/api/receipt-vouchers"] });
-      qc.invalidateQueries({ queryKey: ["/api/tenants"] });
+      invalidateFinancial(qc);
       setOpen(false);
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
@@ -146,8 +146,7 @@ export default function ReceiptVouchers() {
     if (!deleteId) return;
     try {
       await del.mutateAsync({ id: deleteId });
-      qc.invalidateQueries({ queryKey: ["/api/receipt-vouchers"] });
-      qc.invalidateQueries({ queryKey: ["/api/tenants"] });
+      invalidateFinancial(qc);
       toast({ title: "تم حذف السند" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });

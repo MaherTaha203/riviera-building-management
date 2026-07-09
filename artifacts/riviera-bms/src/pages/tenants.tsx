@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePersistedView } from "@/lib/usePersistedView";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
@@ -54,7 +55,7 @@ export default function Tenants() {
         await create.mutateAsync({ data: form as any });
         toast({ title: "تمت الإضافة" });
       }
-      qc.invalidateQueries({ queryKey: ["/api/tenants"] });
+      invalidateFinancial(qc);
       setOpen(false);
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
@@ -65,7 +66,7 @@ export default function Tenants() {
     if (!deleteId) return;
     try {
       await del.mutateAsync({ id: deleteId });
-      qc.invalidateQueries({ queryKey: ["/api/tenants"] });
+      invalidateFinancial(qc);
       toast({ title: "تم الحذف" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
