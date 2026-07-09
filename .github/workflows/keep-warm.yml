@@ -1,0 +1,56 @@
+# Phase 0 — Keep-warm: eliminate Render scale-to-zero cold start.
+#
+# The production instrumentation proved that the first login after inactivity
+# takes ~37s while the server itself only spends ~0.62s — the gap is the Render
+# instance resuming from a spun-down (scale-to-zero) state. This workflow pings
+# the trivial, DB-free /api/healthz endpoint on a schedule so the container
+# never crosses Render's ~15-minute idle threshold, and real users always hit a
+# warm instance.
+#
+# This is a $0, reversible mitigation. Alternatives (choose one):
+#   • Render dashboard → set the service to an always-on/paid instance type
+#     (no scale-to-zero). Cleaner, ~$7/mo, and does not consume Free hours.
+#   • An external uptime pinger (UptimeRobot / cron-job.org) hitting the same
+#     URL every ~5 min — more reliable scheduling than GitHub's cron.
+#
+# Caveat: keep-warm keeps a Free instance running ~24/7, which consumes the
+# Free monthly-hours budget and effectively defeats scale-to-zero's cost
+# savings — at which point an always-on paid tier is the honest choice. Delete
+# this file to disable.
+#
+# Scheduled runs only fire from the DEFAULT branch after this is merged; nothing
+# runs while it sits in a PR.
+name: keep-warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every ~10 min (GitHub may delay; Render idles at ~15)
+  workflow_dispatch: {} # allow manual "wake it now" runs
+
+# Never let overlapping/backed-up scheduled runs pile up.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping health endpoint (tolerates a cold wake)
+        env:
+          # Override in repo Settings → Variables if the URL ever changes.
+          URL: ${{ vars.KEEP_WARM_URL || 'https://riviera-api.onrender.com/api/healthz' }}
+        run: |
+          echo "Pinging $URL"
+          # --max-time 90 tolerates a full cold start on the first hit after idle.
+          # Retry a few times so a single transient blip doesn't fail the run.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+                   --max-time 90 --retry 3 --retry-delay 5 --retry-all-errors \
+                   "$URL" || echo "000")
+          echo "HTTP $code"
+          # 2xx/3xx = warm/healthy. Anything else is a real problem worth a red run.
+          case "$code" in
+            2*|3*) echo "OK — instance is warm."; exit 0 ;;
+            *) echo "::warning::health check returned $code"; exit 1 ;;
+          esac
