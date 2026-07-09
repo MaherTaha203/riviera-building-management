@@ -30,9 +30,9 @@ const ASSETS_DIR = join(
 // Raw-byte budgets (KB). Current sizes for reference are in parentheses.
 const KB = 1024;
 const BUDGETS = {
-  entry: 100 * KB,   // index-*.js — the app shell (~63KB)
-  vendor: 230 * KB,  // each vendor-*.js chunk (~186KB largest)
-  route: 60 * KB,    // any single lazily-loaded page/component chunk (~16KB largest)
+  entry: 100 * KB,   // index-*.js — the app shell (~66KB)
+  vendor: 230 * KB,  // each vendor-*.js chunk (~181KB largest)
+  route: 60 * KB,    // any single lazily-loaded page/component chunk (~15KB largest)
   totalJs: 950 * KB, // sum of all .js (~700KB)
 };
 
@@ -47,6 +47,13 @@ try {
   files = readdirSync(ASSETS_DIR).filter((f) => f.endsWith(".js"));
 } catch {
   console.error(`✗ perf-budget: build output not found at ${ASSETS_DIR}\n  Run the frontend build first.`);
+  process.exit(1);
+}
+
+// A dir with zero .js means a partial/misconfigured build (or a changed Vite
+// assetsDir). Passing here would silently disable the guard rail, so fail loud.
+if (files.length === 0) {
+  console.error(`✗ perf-budget: no .js files found in ${ASSETS_DIR}\n  The build produced no bundle — nothing to check.`);
   process.exit(1);
 }
 

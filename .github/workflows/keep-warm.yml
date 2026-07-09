@@ -48,11 +48,16 @@ jobs:
           echo "Pinging $URL"
           # --max-time 90 tolerates a full cold start on the first hit after idle.
           # Retry a few times so a single transient blip doesn't fail the run.
-          # Capture status + timing (TTFB, total) in one shot.
-          read -r code ttfb total < <(curl -sS -o /dev/null \
+          # Capture curl's -w line separately from its exit code: on failure curl
+          # still prints the -w string (e.g. "000 0.000000 0.000000") but with NO
+          # trailing newline, so an inline `|| echo` fallback would concatenate and
+          # corrupt the parsed `total`. `|| true` keeps the -w output intact; -sS
+          # errors still surface on stderr (untouched) for a red run's log.
+          out=$(curl -sS -o /dev/null \
                    -w '%{http_code} %{time_starttransfer} %{time_total}' \
                    --max-time 90 --retry 3 --retry-delay 5 --retry-all-errors \
-                   "$URL" 2>/dev/null || echo "000 0 0")
+                   "$URL") || true
+          read -r code ttfb total <<< "${out:-000 0 0}"
           echo "HTTP $code | TTFB ${ttfb}s | total ${total}s"
 
           # Phase 5 — write a latency record to the run summary so the Actions
@@ -66,7 +71,7 @@ jobs:
 
           # A warm /healthz (no DB) should answer in well under a second. A slow
           # TTFB is the signal that keep-warm gapped and the container cold-booted.
-          if awk "BEGIN{exit !($ttfb > $COLD_TTFB_S)}"; then
+          if awk -v t="$ttfb" -v c="$COLD_TTFB_S" 'BEGIN{exit !(t > c)}'; then
             echo "::warning::keep-warm TTFB was ${ttfb}s (> ${COLD_TTFB_S}s) — the instance was likely cold; a user could have hit a cold start. Check the schedule cadence or consider an always-on tier."
           fi
 
