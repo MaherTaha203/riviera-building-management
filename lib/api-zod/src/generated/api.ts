@@ -68,6 +68,17 @@ export const GetDashboardRecentActivityResponseItem = zod.object({
 export const GetDashboardRecentActivityResponse = zod.array(GetDashboardRecentActivityResponseItem)
 
 
+export const GetDashboardLatestReceiptsResponseItem = zod.object({
+  "id": zod.number(),
+  "voucherNumber": zod.string(),
+  "date": zod.string(),
+  "payerName": zod.string(),
+  "amountILS": zod.number(),
+  "paymentMethod": zod.string()
+})
+export const GetDashboardLatestReceiptsResponse = zod.array(GetDashboardLatestReceiptsResponseItem)
+
+
 export const ListUnitsResponseItem = zod.object({
   "id": zod.number(),
   "unitNumber": zod.string(),

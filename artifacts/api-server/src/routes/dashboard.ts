@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, unitsTable, tenantsTable, contractsTable, receiptVouchersTable, paymentVouchersTable, chequesTable, bankAccountsTable, auditLogTable } from "@workspace/db";
-import { sql, eq, gte, and } from "drizzle-orm";
+import { desc } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth";
 import { smark } from "../lib/diag";
 
@@ -12,39 +13,47 @@ router.get("/dashboard/summary", authMiddleware, async (_req, res): Promise<void
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  const [totalUnits] = await db.select({ count: sql<number>`count(*)` }).from(unitsTable);
-  const [occupied] = await db.select({ count: sql<number>`count(*)` }).from(unitsTable).where(eq(unitsTable.status, "occupied"));
-  const [vacant] = await db.select({ count: sql<number>`count(*)` }).from(unitsTable).where(eq(unitsTable.status, "vacant"));
-  const [totalTenants] = await db.select({ count: sql<number>`count(*)` }).from(tenantsTable);
-  const [activeContracts] = await db.select({ count: sql<number>`count(*)` }).from(contractsTable).where(eq(contractsTable.status, "active"));
-  const [expiring] = await db.select({ count: sql<number>`count(*)` }).from(contractsTable)
-    .where(and(eq(contractsTable.status, "active"), sql`end_date <= ${thirtyDaysFromNow}`));
-
-  const [receipts] = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(receiptVouchersTable)
-    .where(gte(receiptVouchersTable.date, firstOfMonth));
-  const [payments] = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(paymentVouchersTable)
-    .where(gte(paymentVouchersTable.date, firstOfMonth));
-
-  const [pendingCheques] = await db.select({ count: sql<number>`count(*)` }).from(chequesTable).where(eq(chequesTable.status, "pending"));
-
-  const bankBalances = await db.select({ bal: sql<number>`coalesce(sum(balance_ils), 0)` }).from(bankAccountsTable);
-  const cashIn = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(receiptVouchersTable).where(eq(receiptVouchersTable.paymentMethod, "cash"));
-  const cashOut = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(paymentVouchersTable).where(eq(paymentVouchersTable.paymentMethod, "cash"));
-  const cashBalance = Number(cashIn[0]?.total ?? 0) - Number(cashOut[0]?.total ?? 0);
+  // Phase 3 — same result, fewer round-trips. Conditional aggregation collapses
+  // the previous 12 sequential single-value queries into 7 one-per-table
+  // aggregates, run in parallel (7 < pool max 10, so no exhaustion). On Neon
+  // this turns ~12 serial network round-trips into effectively one wave.
+  const [units, tenants, contracts, receipts, payments, cheques, banks] = await Promise.all([
+    db.select({
+      total: sql<number>`count(*)`,
+      occupied: sql<number>`count(*) filter (where status = 'occupied')`,
+      vacant: sql<number>`count(*) filter (where status = 'vacant')`,
+    }).from(unitsTable),
+    db.select({ count: sql<number>`count(*)` }).from(tenantsTable),
+    db.select({
+      active: sql<number>`count(*) filter (where status = 'active')`,
+      expiring: sql<number>`count(*) filter (where status = 'active' and end_date <= ${thirtyDaysFromNow})`,
+    }).from(contractsTable),
+    db.select({
+      monthly: sql<number>`coalesce(sum(amount_ils) filter (where date >= ${firstOfMonth}), 0)`,
+      cash: sql<number>`coalesce(sum(amount_ils) filter (where payment_method = 'cash'), 0)`,
+    }).from(receiptVouchersTable),
+    db.select({
+      monthly: sql<number>`coalesce(sum(amount_ils) filter (where date >= ${firstOfMonth}), 0)`,
+      cash: sql<number>`coalesce(sum(amount_ils) filter (where payment_method = 'cash'), 0)`,
+    }).from(paymentVouchersTable),
+    db.select({ pending: sql<number>`count(*) filter (where status = 'pending')` }).from(chequesTable),
+    db.select({ bal: sql<number>`coalesce(sum(balance_ils), 0)` }).from(bankAccountsTable),
+  ]);
+  const cashBalance = Number(receipts[0]?.cash ?? 0) - Number(payments[0]?.cash ?? 0);
   smark("summary_computed");
 
   res.json({
-    totalUnits: Number(totalUnits.count),
-    occupiedUnits: Number(occupied.count),
-    vacantUnits: Number(vacant.count),
-    totalTenants: Number(totalTenants.count),
-    activeContracts: Number(activeContracts.count),
-    expiringContractsSoon: Number(expiring.count),
-    monthlyReceiptsILS: Number(receipts.total),
-    monthlyPaymentsILS: Number(payments.total),
+    totalUnits: Number(units[0]?.total ?? 0),
+    occupiedUnits: Number(units[0]?.occupied ?? 0),
+    vacantUnits: Number(units[0]?.vacant ?? 0),
+    totalTenants: Number(tenants[0]?.count ?? 0),
+    activeContracts: Number(contracts[0]?.active ?? 0),
+    expiringContractsSoon: Number(contracts[0]?.expiring ?? 0),
+    monthlyReceiptsILS: Number(receipts[0]?.monthly ?? 0),
+    monthlyPaymentsILS: Number(payments[0]?.monthly ?? 0),
     cashBalanceILS: cashBalance,
-    totalBankBalanceILS: Number(bankBalances[0]?.bal ?? 0),
-    pendingCheques: Number(pendingCheques.count),
+    totalBankBalanceILS: Number(banks[0]?.bal ?? 0),
+    pendingCheques: Number(cheques[0]?.pending ?? 0),
   });
 });
 
@@ -60,6 +69,26 @@ router.get("/dashboard/recent-activity", authMiddleware, async (_req, res): Prom
     entityType: e.entityType,
     createdAt: e.createdAt,
   })));
+});
+
+// Phase 3 — lightweight "latest 5 receipts" for the dashboard. Previously the
+// dashboard pulled the ENTIRE receipt-vouchers list (~620KB, plus tenant/
+// contract/unit denormalization) just to render five rows. This returns only
+// the five columns the dashboard shows, from a single indexed LIMIT query.
+router.get("/dashboard/latest-receipts", authMiddleware, async (_req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      id: receiptVouchersTable.id,
+      voucherNumber: receiptVouchersTable.voucherNumber,
+      date: receiptVouchersTable.date,
+      payerName: receiptVouchersTable.payerName,
+      amountILS: receiptVouchersTable.amountILS,
+      paymentMethod: receiptVouchersTable.paymentMethod,
+    })
+    .from(receiptVouchersTable)
+    .orderBy(desc(receiptVouchersTable.date), desc(receiptVouchersTable.id))
+    .limit(5);
+  res.json(rows.map(r => ({ ...r, amountILS: Number(r.amountILS) })));
 });
 
 export default router;

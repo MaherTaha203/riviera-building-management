@@ -93,6 +93,15 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface DashboardLatestReceipt {
+  id: number;
+  voucherNumber: string;
+  date: string;
+  payerName: string;
+  amountILS: number;
+  paymentMethod: string;
+}
+
 export type UnitType = typeof UnitType[keyof typeof UnitType];
 
 
