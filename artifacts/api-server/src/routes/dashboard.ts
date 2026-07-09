@@ -74,7 +74,9 @@ router.get("/dashboard/recent-activity", authMiddleware, async (_req, res): Prom
 // Phase 3 — lightweight "latest 5 receipts" for the dashboard. Previously the
 // dashboard pulled the ENTIRE receipt-vouchers list (~620KB, plus tenant/
 // contract/unit denormalization) just to render five rows. This returns only
-// the five columns the dashboard shows, from a single indexed LIMIT query.
+// the columns the dashboard shows, from one small ORDER BY ... LIMIT 5 query.
+// (At current volumes the sort is trivial; add an index on (date desc, id desc)
+// if the table grows large — that would need a schema migration.)
 router.get("/dashboard/latest-receipts", authMiddleware, async (_req, res): Promise<void> => {
   const rows = await db
     .select({
