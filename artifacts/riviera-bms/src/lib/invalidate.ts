@@ -21,6 +21,7 @@ import type { QueryClient } from "@tanstack/react-query";
 const FINANCIAL_QUERY_KEYS: readonly string[] = [
   "/api/dashboard/summary",
   "/api/dashboard/recent-activity",
+  "/api/dashboard/latest-receipts",
   "/api/receipt-vouchers",
   "/api/payment-vouchers",
   "/api/cash-fund",

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import bcrypt from "bcryptjs";
+import { comparePassword } from "../lib/hash";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { signToken, authMiddleware, type JwtPayload } from "../lib/auth";
@@ -22,7 +22,7 @@ router.post("/auth/login", validateBody(LoginBody), async (req, res): Promise<vo
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  const valid = await comparePassword(password, user.passwordHash);
   smark("bcrypt");
   if (!valid) {
     res.status(401).json({ error: "Invalid credentials" });

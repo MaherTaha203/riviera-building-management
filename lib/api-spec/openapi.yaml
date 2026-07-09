@@ -108,6 +108,20 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /dashboard/latest-receipts:
+    get:
+      operationId: getDashboardLatestReceipts
+      tags: [dashboard]
+      responses:
+        "200":
+          description: The five most recent receipt vouchers (lightweight, for the dashboard)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DashboardLatestReceipt"
+
   # ─── Units ──────────────────────────────────────────────────────────────────
   /units:
     get:
@@ -1095,6 +1109,23 @@ components:
         entityType:
           type: ["string", "null"]
         createdAt:
+          type: string
+
+    DashboardLatestReceipt:
+      type: object
+      required: [id, voucherNumber, date, payerName, amountILS, paymentMethod]
+      properties:
+        id:
+          type: integer
+        voucherNumber:
+          type: string
+        date:
+          type: string
+        payerName:
+          type: string
+        amountILS:
+          type: number
+        paymentMethod:
           type: string
 
     # ─── Units ─────────────────────────────────────────────────────────────────

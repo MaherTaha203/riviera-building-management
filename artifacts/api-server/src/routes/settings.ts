@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, settingsTable, exchangeRatesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../lib/hash";
 import { authMiddleware, requireRole, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
@@ -75,7 +75,7 @@ router.post("/settings/users", authMiddleware, requireRole("admin"), validateBod
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
   const [newUser] = await db.insert(usersTable).values({ username, name, passwordHash, role }).returning();
   await logAction(user, "CREATE", "user", newUser.id);
   res.status(201).json({ id: newUser.id, username: newUser.username, name: newUser.name, role: newUser.role, createdAt: newUser.createdAt });
@@ -88,7 +88,7 @@ router.patch("/settings/users/:id", authMiddleware, requireRole("admin"), valida
   const updates: Record<string, unknown> = {};
   if (name != null) updates.name = name;
   if (role != null) updates.role = role;
-  if (password) updates.passwordHash = await bcrypt.hash(password, 10);
+  if (password) updates.passwordHash = await hashPassword(password);
   const [u] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
   if (!u) { res.status(404).json({ error: "User not found" }); return; }
   await logAction(user, "UPDATE", "user", u.id);

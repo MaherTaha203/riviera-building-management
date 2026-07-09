@@ -1,4 +1,4 @@
-import { useGetDashboardSummary, useGetDashboardRecentActivity, useListReceiptVouchers } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetDashboardRecentActivity, useGetDashboardLatestReceipts } from "@workspace/api-client-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { pmark, pmarkInteractive } from "@/lib/perf";
@@ -30,7 +30,8 @@ function Sk({ className = "", light = false }: { className?: string; light?: boo
 export default function Dashboard() {
   const { data: summary } = useGetDashboardSummary();
   const { data: activities, isLoading: isLoadingActivities } = useGetDashboardRecentActivity();
-  const { data: receipts = [], isLoading: isLoadingReceipts } = useListReceiptVouchers();
+  // Phase 3 — lightweight top-5 endpoint (~1KB) instead of the full ~620KB list.
+  const { data: latestData = [], isLoading: isLoadingReceipts } = useGetDashboardLatestReceipts();
   const notices = useNotices();
   const [, navigate] = useLocation();
 
@@ -52,7 +53,7 @@ export default function Dashboard() {
   const netPct = totalFlow > 0 ? Math.max(4, Math.round((Number(s.monthlyReceiptsILS) / totalFlow) * 100)) : 0;
   const occPct = s.totalUnits > 0 ? Math.round((s.occupiedUnits / s.totalUnits) * 100) : 0;
   const monthLabel = new Date().toLocaleDateString("ar", { month: "long", year: "numeric" });
-  const latestReceipts = (receipts as any[]).slice(0, 5);
+  const latestReceipts = latestData as any[];
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none">

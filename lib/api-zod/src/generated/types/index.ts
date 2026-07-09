@@ -43,6 +43,7 @@ export * from './contractUpdateCurrency';
 export * from './contractUpdatePaymentFrequency';
 export * from './contractUpdatePaymentMethod';
 export * from './contractUpdateStatus';
+export * from './dashboardLatestReceipt';
 export * from './dashboardSummary';
 export * from './document';
 export * from './documentEntityType';
