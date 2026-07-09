@@ -10,8 +10,10 @@ behind a single feature flag and is deleted in one step when we're done.
 
 | Tier | Turn ON | Turn OFF (default) |
 |------|---------|--------------------|
-| **Server** (Render) | env var `DIAG_PERF=1` | unset the env var |
-| **Frontend** | `localStorage.setItem("diag","1")` then reload — *or* build with `VITE_DIAG_PERF=1` | `localStorage.removeItem("diag")` |
+| **Server** (Render) | env var `DIAG_PERF=true` | unset the env var |
+| **Frontend** | `localStorage.setItem("diag","true")` then reload — *or* build with `VITE_DIAG_PERF=true` | `localStorage.removeItem("diag")` |
+
+Both flags accept `true` / `1` / `yes` / `on` (case-insensitive). **Unset is OFF.**
 
 When OFF: no header is added, no log line is emitted, the pg pool is **not**
 patched, and the frontend marks are no-ops — i.e. **zero measurable overhead**.
@@ -87,7 +89,7 @@ client TTFB → Render process wake.
 
 ## 4. How to capture the real production numbers
 
-1. Set `DIAG_PERF=1` in Render and redeploy; enable `localStorage.diag=1` in your browser.
+1. Set `DIAG_PERF=true` in Render and redeploy; run `localStorage.setItem("diag","true")` in your browser, then reload.
 2. Leave the app idle ≥1 hour (Render idles ~15 min, Neon ~5 min).
 3. Log in. Then:
    - **Render logs** → read the `perf-boot` line and the first few `perf` lines.

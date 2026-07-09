@@ -28,7 +28,9 @@ import type { Request, Response, NextFunction } from "express";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
 
-export const DIAG = process.env.DIAG_PERF === "1";
+// Accept the common truthy spellings so `DIAG_PERF=true` (or 1/yes/on) all
+// activate diagnostics; anything else — including unset — keeps them OFF.
+export const DIAG = /^(1|true|yes|on)$/i.test((process.env.DIAG_PERF ?? "").trim());
 
 interface DiagCtx {
   path: string;

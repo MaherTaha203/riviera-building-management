@@ -14,10 +14,14 @@
 // be attributed to network vs server vs database vs frontend.
 // ---------------------------------------------------------------------------
 
+// Accept 1/true/yes/on (case-insensitive) for both the build-time env flag and
+// the runtime localStorage toggle; anything else — including unset — is OFF.
+const truthy = (v: unknown): boolean => /^(1|true|yes|on)$/i.test(String(v ?? "").trim());
+
 function flagOn(): boolean {
   try {
-    if (import.meta.env.VITE_DIAG_PERF === "1") return true;
-    if (typeof localStorage !== "undefined" && localStorage.getItem("diag") === "1") return true;
+    if (truthy(import.meta.env.VITE_DIAG_PERF)) return true;
+    if (typeof localStorage !== "undefined" && truthy(localStorage.getItem("diag"))) return true;
   } catch {
     /* localStorage may be unavailable — treat as off */
   }
