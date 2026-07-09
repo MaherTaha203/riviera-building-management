@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { pmark } from "@/lib/perf";
 import { Lock, User, Eye, EyeOff, LogIn } from "lucide-react";
 
 // NOTE: Validation schema and field names are intentionally unchanged.
@@ -68,12 +69,17 @@ export default function Login() {
 
   // ── Authentication logic preserved exactly as the original implementation. ──
   const onSubmit = (data: LoginFormValues) => {
+    pmark("login:click");
+    pmark("login:request");
     loginMutation.mutate(
       { data },
       {
         onSuccess: (res) => {
+          pmark("login:response");
           setToken(res.token);
           setUser(res.user);
+          pmark("login:tokenStored");
+          pmark("login:redirect");
           setLocation("/dashboard");
         },
         onError: () => {

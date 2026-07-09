@@ -2,10 +2,12 @@ import { Router } from "express";
 import { db, unitsTable, tenantsTable, contractsTable, receiptVouchersTable, paymentVouchersTable, chequesTable, bankAccountsTable, auditLogTable } from "@workspace/db";
 import { sql, eq, gte, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth";
+import { smark } from "../lib/diag";
 
 const router = Router();
 
 router.get("/dashboard/summary", authMiddleware, async (_req, res): Promise<void> => {
+  smark("summary_start");
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -29,6 +31,7 @@ router.get("/dashboard/summary", authMiddleware, async (_req, res): Promise<void
   const cashIn = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(receiptVouchersTable).where(eq(receiptVouchersTable.paymentMethod, "cash"));
   const cashOut = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(paymentVouchersTable).where(eq(paymentVouchersTable.paymentMethod, "cash"));
   const cashBalance = Number(cashIn[0]?.total ?? 0) - Number(cashOut[0]?.total ?? 0);
+  smark("summary_computed");
 
   res.json({
     totalUnits: Number(totalUnits.count),
@@ -46,7 +49,9 @@ router.get("/dashboard/summary", authMiddleware, async (_req, res): Promise<void
 });
 
 router.get("/dashboard/recent-activity", authMiddleware, async (_req, res): Promise<void> => {
+  smark("activity_start");
   const entries = await db.select().from(auditLogTable).orderBy(sql`created_at desc`).limit(15);
+  smark("activity_queried");
   res.json(entries.map(e => ({
     id: e.id,
     type: e.action,

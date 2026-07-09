@@ -5,6 +5,7 @@ import {
   useListPaymentVouchers, useListCheques, useListBankAccounts, useGetExchangeRates,
 } from "@workspace/api-client-react";
 import { getUser } from "@/lib/auth";
+import { pmark } from "@/lib/perf";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -262,6 +263,8 @@ function HeaderClock() {
 // FX chips — real rates from the existing exchange-rates endpoint.
 function FxChips() {
   const { data: rates } = useGetExchangeRates();
+  // Diagnostics: header is "ready" once its own data (rates) has resolved.
+  useEffect(() => { if (rates) pmark("dash:header"); }, [rates]);
   const chip = (cur: string, val: unknown) => (
     <div className="flex items-center gap-1.5 leading-none select-none">
       <span className="text-[9.5px] font-bold tracking-wider text-secondary/90">{cur}</span>

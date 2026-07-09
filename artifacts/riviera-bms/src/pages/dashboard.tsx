@@ -1,5 +1,7 @@
 import { useGetDashboardSummary, useGetDashboardRecentActivity, useListReceiptVouchers } from "@workspace/api-client-react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { pmark, pmarkInteractive } from "@/lib/perf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +19,19 @@ const methodLabels: Record<string, string> = { cash: "نقدي", cheque: "شيك
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: activities, isLoading: isLoadingActivities } = useGetDashboardRecentActivity();
-  const { data: receipts = [] } = useListReceiptVouchers();
+  const { data: receipts = [], isLoading: isLoadingReceipts } = useListReceiptVouchers();
   const notices = useNotices();
   const [, navigate] = useLocation();
+
+  // Diagnostics marks (no-op unless the diag flag is on). Pure observation —
+  // these read existing state only; they do not alter dashboard behaviour.
+  useEffect(() => { pmark("dash:mounted"); }, []);
+  useEffect(() => { if (summary) pmark("dash:kpis"); }, [summary]);
+  useEffect(() => { if (!isLoadingReceipts) pmark("dash:charts"); }, [isLoadingReceipts]);
+  useEffect(() => { if (!isLoadingActivities) pmark("dash:activity"); }, [isLoadingActivities]);
+  useEffect(() => {
+    if (summary && !isLoadingReceipts && !isLoadingActivities) pmarkInteractive();
+  }, [summary, isLoadingReceipts, isLoadingActivities]);
 
   if (isLoadingSummary || !summary) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">جاري التحميل...</div>;
