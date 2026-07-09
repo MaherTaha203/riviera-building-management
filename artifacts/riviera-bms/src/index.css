@@ -194,3 +194,16 @@
 #root tbody tr:hover {
   background: hsl(40 20% 97.5%);
 }
+
+/* Phase 1 — indeterminate login progress bar (honest "working, duration
+   unknown" signal; never a fake percentage). Respects reduced motion. */
+@keyframes rv-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.rv-indeterminate-bar {
+  animation: rv-indeterminate 1.15s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-indeterminate-bar { animation: none; }
+}

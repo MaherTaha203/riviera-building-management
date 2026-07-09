@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,7 +18,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { pmark } from "@/lib/perf";
-import { Lock, User, Eye, EyeOff, LogIn } from "lucide-react";
+import { resolveApiBaseUrl } from "@/lib/config";
+import { Lock, User, Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+
+// Phase 1 (perceived performance) — warm-on-intent.
+// The dominant cost is a Render container cold start that happens BEFORE the
+// login request is processed. We can overlap that wake with the seconds the
+// user spends typing: the moment they focus the form, fire a silent, one-time
+// health ping so the instance is already warming by the time they submit.
+// Fire-and-forget; every error is swallowed — the user must never see it.
+let warmed = false;
+function warmBackend(): void {
+  if (warmed) return;
+  warmed = true;
+  try {
+    const url = `${resolveApiBaseUrl()}/api/healthz`;
+    void fetch(url, { method: "GET", cache: "no-store", keepalive: true }).catch(() => {});
+  } catch {
+    /* API base not resolvable yet — ignore */
+  }
+}
 
 // NOTE: Validation schema and field names are intentionally unchanged.
 const loginSchema = z.object({
@@ -58,6 +77,39 @@ export default function Login() {
   // Presentational-only state for the password visibility toggle.
   // Works entirely client-side; does not touch auth / session handling.
   const [showPassword, setShowPassword] = useState(false);
+
+  // Phase 1 — how many seconds the sign-in request has been in flight, so we
+  // can narrate an honest, escalating status instead of a frozen spinner
+  // during a cold-start wake. Presentational only.
+  const [elapsed, setElapsed] = useState(0);
+  const isPending = loginMutation.isPending;
+
+  // Prefetch the lazy dashboard chunk while the user is on the login page, so
+  // after a successful sign-in there is no second "loading" flash waiting on
+  // the code to download. Fire-and-forget; ignore failures.
+  useEffect(() => {
+    void import("@/pages/dashboard").catch(() => {});
+  }, []);
+
+  // Tick the elapsed counter only while the request is in flight.
+  useEffect(() => {
+    if (!isPending) {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [isPending]);
+
+  // Honest, elapsed-tied status. Frames a long wait as the server *waking*, not
+  // as the app being broken. No fake percentage — an indeterminate bar carries
+  // the "we're working, duration unknown" signal.
+  const stageMsg =
+    elapsed >= 24 ? "اقتربنا، جارٍ إعداد لوحة التحكم…" :
+    elapsed >= 12 ? "الخادم يستيقظ بعد فترة خمول، لحظات من فضلك…" :
+    elapsed >= 4 ? "جارٍ تجهيز الخادم…" :
+    "جاري تسجيل الدخول…";
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -174,6 +226,7 @@ export default function Login() {
                               autoComplete="username"
                               className={inputBaseClass}
                               {...field}
+                              onFocus={warmBackend}
                             />
                           </div>
                         </FormControl>
@@ -237,8 +290,11 @@ export default function Login() {
                       "motion-reduce:hover:translate-y-0"
                     )}
                   >
-                    {loginMutation.isPending ? (
-                      "جاري الدخول..."
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
+                        جاري الدخول...
+                      </>
                     ) : (
                       <>
                         <LogIn className="h-5 w-5" />
@@ -246,6 +302,26 @@ export default function Login() {
                       </>
                     )}
                   </Button>
+
+                  {/* Phase 1 — indeterminate progress + honest staged status.
+                      Shown only while the request is in flight. */}
+                  {isPending && (
+                    <div aria-live="polite">
+                      <div
+                        className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-[#E8ECEF]"
+                        role="progressbar"
+                        aria-label="جاري المعالجة"
+                      >
+                        <div className="rv-indeterminate-bar h-full w-1/3 rounded-full bg-[#C8A86B]" />
+                      </div>
+                      <p className="mt-3 text-center text-[13px] text-[#64748B]">{stageMsg}</p>
+                      {elapsed >= 6 && (
+                        <p className="mt-1 text-center text-[11.5px] text-[#94A3B8]">
+                          قد يستغرق أول دخول بعد فترة خمول ما يصل إلى 40 ثانية — هذا طبيعي.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </form>
               </Form>
             </div>
