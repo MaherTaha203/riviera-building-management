@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -74,7 +75,7 @@ export default function Cheques() {
           notes: form.notes || undefined,
         } as any
       });
-      qc.invalidateQueries({ queryKey: ["/api/cheques"] });
+      invalidateFinancial(qc);
       toast({ title: "تمت إضافة الشيك" });
       setOpen(false);
       setForm({ ...emptyForm });
@@ -84,7 +85,7 @@ export default function Cheques() {
   const changeStatus = async (id: number, status: string) => {
     try {
       await update.mutateAsync({ id, data: { status } as any });
-      qc.invalidateQueries({ queryKey: ["/api/cheques"] });
+      invalidateFinancial(qc);
       toast({ title: "تم تحديث الحالة" });
     } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
   };

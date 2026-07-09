@@ -40,6 +40,14 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Phase 2 — de-duplicate refetch-on-navigation storms. With staleTime:0
+      // (the previous default) every remount refetched, so opening the
+      // dashboard re-pulled the same large lists the header had just fetched.
+      // A modest 30s window collapses those duplicates. This is SAFE for the
+      // financial data only because every money-affecting write calls
+      // invalidateFinancial() (see lib/invalidate.ts), so post-write data is
+      // refreshed immediately regardless of this window.
+      staleTime: 30_000,
     },
   },
 });

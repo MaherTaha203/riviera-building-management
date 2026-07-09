@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
@@ -127,7 +128,7 @@ export default function PaymentVouchers() {
         await create.mutateAsync({ data: payload });
         toast({ title: "تم إصدار سند الصرف" });
       }
-      qc.invalidateQueries({ queryKey: ["/api/payment-vouchers"] });
+      invalidateFinancial(qc);
       setOpen(false);
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
@@ -138,7 +139,7 @@ export default function PaymentVouchers() {
     if (!deleteId) return;
     try {
       await del.mutateAsync({ id: deleteId });
-      qc.invalidateQueries({ queryKey: ["/api/payment-vouchers"] });
+      invalidateFinancial(qc);
       toast({ title: "تم حذف السند" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });

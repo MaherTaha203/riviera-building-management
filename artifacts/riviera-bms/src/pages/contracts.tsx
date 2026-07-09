@@ -15,6 +15,7 @@ import { Plus, Pencil, Trash2, FileText, Printer, Paperclip, Eye, Download } fro
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { ContractDoc, ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
+import { invalidateFinancial } from "@/lib/invalidate";
 import { useQueryClient } from "@tanstack/react-query";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -176,8 +177,7 @@ export default function Contracts() {
         await create.mutateAsync({ data: payload as any });
         toast({ title: "تمت الإضافة" });
       }
-      qc.invalidateQueries({ queryKey: ["/api/contracts"] });
-      qc.invalidateQueries({ queryKey: ["/api/units"] });
+      invalidateFinancial(qc);
       setOpen(false);
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
@@ -188,8 +188,7 @@ export default function Contracts() {
     if (!deleteId) return;
     try {
       await del.mutateAsync({ id: deleteId });
-      qc.invalidateQueries({ queryKey: ["/api/contracts"] });
-      qc.invalidateQueries({ queryKey: ["/api/units"] });
+      invalidateFinancial(qc);
       toast({ title: "تم الحذف" });
     } catch (e: any) {
       toast({ title: "خطأ", description: e.message, variant: "destructive" });
