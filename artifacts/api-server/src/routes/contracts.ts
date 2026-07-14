@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { generateContractNumber } from "../lib/vouchers";
+import { syncUnitStatus } from "../lib/occupancy";
 import { validateBody } from "../lib/validate";
 import { CreateContractBody, UpdateContractBody } from "@workspace/api-zod";
 
@@ -40,7 +41,8 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
   if (!unitRef) { res.status(400).json({ error: "Unit not found" }); return; }
   const rate = Number(exchangeRate ?? 1);
   const amountILS = Number(rentAmount) * rate;
-  // Atomically generate contract number + insert in one transaction.
+  // Atomically generate contract number + insert + sync unit occupancy in one
+  // transaction, so the unit can never be left in a stale occupancy state.
   const contract = await db.transaction(async (tx) => {
     const contractNumber = await generateContractNumber(tx);
     const [inserted] = await tx.insert(contractsTable).values({
@@ -53,10 +55,9 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
       additionalTerms: additionalTerms ?? null,
       paymentMethod: paymentMethod ?? null,
     }).returning();
+    await syncUnitStatus(tx, Number(unitId));
     return inserted;
   });
-  // Mark unit as occupied (outside transaction; non-critical if this fails separately)
-  await db.update(unitsTable).set({ status: "occupied" }).where(eq(unitsTable.id, Number(unitId)));
   await logAction(user, "CREATE", "contract", contract.id);
   res.status(201).json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), depositAmount: contract.depositAmount != null ? Number(contract.depositAmount) : null, tenantName: "", unitNumber: "" });
 });
@@ -94,7 +95,13 @@ router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody),
     const effectiveRate = exchangeRate != null ? Number(exchangeRate) : Number(existing.exchangeRate);
     updates.rentAmountILS = String(effectiveRent * effectiveRate);
   }
-  const [contract] = await db.update(contractsTable).set(updates).where(eq(contractsTable.id, id)).returning();
+  // Update + re-derive unit occupancy atomically: a status change to/from
+  // "active" (e.g. terminating a contract) must flip the unit in the same step.
+  const contract = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(contractsTable).set(updates).where(eq(contractsTable.id, id)).returning();
+    if (updated) await syncUnitStatus(tx, updated.unitId);
+    return updated ?? null;
+  });
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
   await logAction(user, "UPDATE", "contract", contract.id);
   res.json({ ...contract, rentAmount: Number(contract.rentAmount), exchangeRate: Number(contract.exchangeRate), rentAmountILS: Number(contract.rentAmountILS), depositAmount: contract.depositAmount != null ? Number(contract.depositAmount) : null });
@@ -103,10 +110,15 @@ router.patch("/contracts/:id", authMiddleware, validateBody(UpdateContractBody),
 router.delete("/contracts/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [contract] = await db.delete(contractsTable).where(eq(contractsTable.id, id)).returning();
+  // Delete + re-derive unit occupancy atomically. Re-deriving (rather than
+  // blindly setting "vacant") keeps the unit "occupied" when ANOTHER active
+  // contract still references it, and preserves a manual "maintenance" hold.
+  const contract = await db.transaction(async (tx) => {
+    const [deleted] = await tx.delete(contractsTable).where(eq(contractsTable.id, id)).returning();
+    if (deleted) await syncUnitStatus(tx, deleted.unitId);
+    return deleted ?? null;
+  });
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
-  // Reset the unit back to vacant when a contract is deleted
-  await db.update(unitsTable).set({ status: "vacant" }).where(eq(unitsTable.id, contract.unitId));
   await logAction(user, "DELETE", "contract", contract.id);
   res.sendStatus(204);
 });
