@@ -5,9 +5,12 @@
  * Riviera Building Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ExchangeRatesSource } from './exchangeRatesSource';
 
 export interface ExchangeRates {
   usdToILS: number;
   jodToILS: number;
   updatedAt: string;
+  /** "auto" when the rate is a live fetch, "manual" when it is the stored fallback. */
+  source?: ExchangeRatesSource;
 }

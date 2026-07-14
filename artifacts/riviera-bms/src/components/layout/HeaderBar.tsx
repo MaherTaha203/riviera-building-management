@@ -260,11 +260,17 @@ function HeaderClock() {
   );
 }
 
-// FX chips — real rates from the existing exchange-rates endpoint.
+// FX chips — live rates from the exchange-rates endpoint. The server serves an
+// automatically-fetched market rate (falling back to the stored manual rate if
+// the upstream is unavailable); `source` tells us which, so we can show an
+// honest "live vs manual" dot. refetchInterval keeps a long-open tab current.
 function FxChips() {
-  const { data: rates } = useGetExchangeRates();
+  const { data: rates } = useGetExchangeRates({
+    query: { refetchInterval: 30 * 60 * 1000, refetchOnWindowFocus: true },
+  } as any);
   // Diagnostics: header is "ready" once its own data (rates) has resolved.
   useEffect(() => { if (rates) pmark("dash:header"); }, [rates]);
+  const isLive = (rates as any)?.source === "auto";
   const chip = (cur: string, val: unknown) => (
     <div className="flex items-center gap-1.5 leading-none select-none">
       <span className="text-[9.5px] font-bold tracking-wider text-secondary/90">{cur}</span>
@@ -272,7 +278,14 @@ function FxChips() {
     </div>
   );
   return (
-    <div className="hidden xl:flex items-center gap-4">
+    <div
+      className="hidden xl:flex items-center gap-4"
+      title={isLive ? "سعر صرف مباشر — يُحدَّث تلقائياً" : "سعر صرف يدوي (تعذّر الجلب التلقائي)"}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/25"}`}
+        aria-hidden
+      />
       {chip("USD", rates?.usdToILS)}
       {chip("JOD", rates?.jodToILS)}
     </div>

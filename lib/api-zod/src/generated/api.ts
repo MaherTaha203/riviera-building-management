@@ -902,7 +902,8 @@ export const UpdateSettingsResponse = zod.object({
 export const GetExchangeRatesResponse = zod.object({
   "usdToILS": zod.number(),
   "jodToILS": zod.number(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "source": zod.enum(['auto', 'manual']).optional().describe('\"auto\" when the rate is a live fetch, \"manual\" when it is the stored fallback.')
 })
 
 
@@ -914,7 +915,8 @@ export const UpdateExchangeRatesBody = zod.object({
 export const UpdateExchangeRatesResponse = zod.object({
   "usdToILS": zod.number(),
   "jodToILS": zod.number(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "source": zod.enum(['auto', 'manual']).optional().describe('\"auto\" when the rate is a live fetch, \"manual\" when it is the stored fallback.')
 })
 
 
