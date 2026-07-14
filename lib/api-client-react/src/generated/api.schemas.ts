@@ -833,6 +833,8 @@ export interface Cheque {
   /** @nullable */
   tenantId?: number | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   tenantName?: string | null;
   /** @nullable */
   notes?: string | null;
@@ -870,6 +872,8 @@ export interface ChequeInput {
   /** @nullable */
   tenantId?: number | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   notes?: string | null;
 }
 
@@ -889,6 +893,8 @@ export interface ChequeUpdate {
   /** @nullable */
   notes?: string | null;
   dueDate?: string;
+  /** @nullable */
+  bankAccountId?: number | null;
 }
 
 export interface AccountStatementEntry {

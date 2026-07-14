@@ -37,6 +37,17 @@ export async function resolveBankAccountId(tx: TxClient, ref: BankRef): Promise<
 }
 
 /**
+ * A cheque moves money only when it CLEARS: an incoming cheque is deposited
+ * into our account (+), an outgoing one is drawn from it (−). Any other status
+ * (pending / bounced / cancelled) contributes nothing. Pure and exhaustively
+ * testable; the single source of truth for invariant I2's cheque terms.
+ */
+export function chequeBankContribution(type: string, status: string, amountILS: number): number {
+  if (status !== "cleared") return 0;
+  return type === "incoming" ? amountILS : -amountILS;
+}
+
+/**
  * Apply a signed ILS delta to a voucher's bank account (positive = money in,
  * negative = money out). No-op when the delta is 0 or no account resolves.
  */

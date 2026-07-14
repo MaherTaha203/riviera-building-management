@@ -5,8 +5,10 @@
 //   I2:  bank_accounts.balance_ils ==
 //          Σ receipts(bank_transfer, bank_account_id = acc).amount_ils
 //        − Σ payments(bank_transfer, bank_account_id = acc).amount_ils
+//        + Σ cheques(cleared, incoming, bank_account_id = acc).amount_ils
+//        − Σ cheques(cleared, outgoing, bank_account_id = acc).amount_ils
 //
-// (The cheque terms of I2 arrive with Phase C.) An INDEPENDENT raw-SQL re-check
+// An INDEPENDENT raw-SQL re-check
 // that reports drift (exit 1), repairs with --fix, and re-verifies. Run it
 // against production before/after Phase B ships, and periodically.
 //
@@ -30,6 +32,10 @@ async function scan() {
                         where r.bank_account_id = ba.id and r.payment_method = 'bank_transfer'), 0)
            - coalesce((select sum(p.amount_ils) from payment_vouchers p
                         where p.bank_account_id = ba.id and p.payment_method = 'bank_transfer'), 0)
+           + coalesce((select sum(ci.amount_ils) from cheques ci
+                        where ci.bank_account_id = ba.id and ci.status = 'cleared' and ci.type = 'incoming'), 0)
+           - coalesce((select sum(co.amount_ils) from cheques co
+                        where co.bank_account_id = ba.id and co.status = 'cleared' and co.type = 'outgoing'), 0)
            )::float8 as computed
     from bank_accounts ba
     order by ba.id

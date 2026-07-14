@@ -695,6 +695,7 @@ export const ListChequesResponseItem = zod.object({
   "status": zod.enum(['pending', 'deposited', 'cleared', 'bounced', 'cancelled']),
   "drawerName": zod.string(),
   "tenantId": zod.number().nullish(),
+  "bankAccountId": zod.number().nullish(),
   "tenantName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()
@@ -714,6 +715,7 @@ export const CreateChequeBody = zod.object({
   "dueDate": zod.string(),
   "drawerName": zod.string(),
   "tenantId": zod.number().nullish(),
+  "bankAccountId": zod.number().nullish(),
   "notes": zod.string().nullish()
 })
 
@@ -736,6 +738,7 @@ export const GetChequeResponse = zod.object({
   "status": zod.enum(['pending', 'deposited', 'cleared', 'bounced', 'cancelled']),
   "drawerName": zod.string(),
   "tenantId": zod.number().nullish(),
+  "bankAccountId": zod.number().nullish(),
   "tenantName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()
@@ -749,7 +752,8 @@ export const UpdateChequeParams = zod.object({
 export const UpdateChequeBody = zod.object({
   "status": zod.enum(['pending', 'deposited', 'cleared', 'bounced', 'cancelled']).optional(),
   "notes": zod.string().nullish(),
-  "dueDate": zod.string().optional()
+  "dueDate": zod.string().optional(),
+  "bankAccountId": zod.number().nullish()
 })
 
 export const UpdateChequeResponse = zod.object({
@@ -766,6 +770,7 @@ export const UpdateChequeResponse = zod.object({
   "status": zod.enum(['pending', 'deposited', 'cleared', 'bounced', 'cancelled']),
   "drawerName": zod.string(),
   "tenantId": zod.number().nullish(),
+  "bankAccountId": zod.number().nullish(),
   "tenantName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()

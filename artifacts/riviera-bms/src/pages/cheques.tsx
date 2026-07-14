@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
-import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGetExchangeRates } from "@workspace/api-client-react";
+import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGetExchangeRates, useListBankAccounts } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 const statusLabels: Record<string, string> = { pending: "معلق", deposited: "مودع", cleared: "محصل", bounced: "مرتجع", cancelled: "ملغى" };
 const typeLabels: Record<string, string> = { incoming: "وارد", outgoing: "صادر" };
 
-const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", notes: "" };
+const emptyForm = { chequeNumber: "", type: "incoming", amount: "", currency: "ILS", exchangeRate: "1", bankName: "", chequeDate: new Date().toISOString().split("T")[0], dueDate: new Date().toISOString().split("T")[0], drawerName: "", tenantId: "", bankAccountId: "", notes: "" };
 
 export default function Cheques() {
   // Type tab (وارد/صادر) drives the query and persists on its own slot.
@@ -39,6 +39,7 @@ export default function Cheques() {
   const { data: cheques = [], isLoading } = useListCheques(typeFilter !== "all" ? { type: typeFilter as any } : undefined);
   const { data: tenants = [] } = useListTenants();
   const { data: rates } = useGetExchangeRates();
+  const { data: bankAccounts = [] } = useListBankAccounts();
   const create = useCreateCheque();
   const update = useUpdateCheque();
   const { toast } = useToast();
@@ -72,6 +73,7 @@ export default function Cheques() {
           exchangeRate: Number(form.exchangeRate),
           amountILS,
           tenantId: form.tenantId ? Number(form.tenantId) : undefined,
+          bankAccountId: form.bankAccountId ? Number(form.bankAccountId) : undefined,
           notes: form.notes || undefined,
         } as any
       });
@@ -221,6 +223,16 @@ export default function Cheques() {
               <Select value={form.tenantId || "__none__"} onValueChange={v => setForm(f => ({ ...f, tenantId: v === "__none__" ? "" : v }))}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="اختر مستأجراً" /></SelectTrigger>
                 <SelectContent><SelectItem value="__none__">بدون</SelectItem>{(tenants as any[]).map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>حساب التسوية (يُحرَّك عند التحصيل)</Label>
+              <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={form.type === "incoming" ? "الحساب الذي يُودَع فيه عند التحصيل" : "الحساب الذي يُخصم منه عند التحصيل"} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">بدون</SelectItem>
+                  {(bankAccounts as any[]).map((b: any) => <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
