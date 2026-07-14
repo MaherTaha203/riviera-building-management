@@ -14,6 +14,9 @@ export const receiptVouchersTable = pgTable("receipt_vouchers", {
   exchangeRate: numeric("exchange_rate", { precision: 10, scale: 4 }).notNull().default("1"),
   amountILS: numeric("amount_ils", { precision: 14, scale: 2 }).notNull(),
   paymentMethod: text("payment_method").notNull().default("cash"),
+  // Phase B — which of OUR bank accounts a bank_transfer moves money into.
+  // A soft reference (like tenantId/contractId): app-level integrity + index.
+  bankAccountId: integer("bank_account_id"),
   chequeNumber: text("cheque_number"),
   bankName: text("bank_name"),
   chequeDate: date("cheque_date", { mode: "string" }),
@@ -28,6 +31,8 @@ export const receiptVouchersTable = pgTable("receipt_vouchers", {
   // all filter receipt vouchers by these foreign keys.
   index("receipt_vouchers_tenant_id_idx").on(t.tenantId),
   index("receipt_vouchers_contract_id_idx").on(t.contractId),
+  // Bank balance reconciliation (I2) sums vouchers per bank account.
+  index("receipt_vouchers_bank_account_id_idx").on(t.bankAccountId),
 ]);
 
 export const insertReceiptVoucherSchema = createInsertSchema(receiptVouchersTable).omit({ id: true, createdAt: true, voucherNumber: true });

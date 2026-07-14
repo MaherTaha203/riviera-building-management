@@ -483,6 +483,8 @@ export interface ReceiptVoucher {
   /** @nullable */
   bankName?: string | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
   dueDate?: string | null;
@@ -532,6 +534,8 @@ export interface ReceiptVoucherInput {
   /** @nullable */
   bankName?: string | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
   dueDate?: string | null;
@@ -571,6 +575,8 @@ export interface ReceiptVoucherUpdate {
   chequeNumber?: string | null;
   /** @nullable */
   bankName?: string | null;
+  /** @nullable */
+  bankAccountId?: number | null;
   /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
@@ -615,6 +621,8 @@ export interface PaymentVoucher {
   /** @nullable */
   bankName?: string | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
   dueDate?: string | null;
@@ -655,6 +663,8 @@ export interface PaymentVoucherInput {
   /** @nullable */
   bankName?: string | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
   dueDate?: string | null;
@@ -693,6 +703,8 @@ export interface PaymentVoucherUpdate {
   chequeNumber?: string | null;
   /** @nullable */
   bankName?: string | null;
+  /** @nullable */
+  bankAccountId?: number | null;
   /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
