@@ -1942,6 +1942,10 @@ components:
           type: number
         updatedAt:
           type: string
+        source:
+          description: "\"auto\" when the rate is a live fetch, \"manual\" when it is the stored fallback."
+          type: string
+          enum: [auto, manual]
 
     ExchangeRatesUpdate:
       type: object

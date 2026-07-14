@@ -50,6 +50,7 @@ export * from './documentEntityType';
 export * from './documentInput';
 export * from './documentInputEntityType';
 export * from './exchangeRates';
+export * from './exchangeRatesSource';
 export * from './exchangeRatesUpdate';
 export * from './healthStatus';
 export * from './listAccountStatementsParams';

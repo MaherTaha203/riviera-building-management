@@ -129,6 +129,10 @@ export default function Settings() {
       <Card>
         <CardHeader><CardTitle>أسعار الصرف</CardTitle></CardHeader>
         <CardContent>
+          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+            يُجلب سعر الصرف تلقائياً من مصدر مباشر ويُحدَّث دورياً. القيم أدناه تُستخدم كسعر
+            احتياطي يظهر فقط عند تعذّر الجلب التلقائي.
+          </p>
           <div className="grid gap-3 md:grid-cols-2 max-w-md">
             <div><Label>دولار أمريكي → شيقل</Label><Input type="number" step="0.001" value={ratesForm.usdToILS} onChange={e => setRatesForm(f => ({ ...f, usdToILS: e.target.value }))} className="mt-1 ltr-nums" /></div>
             <div><Label>دينار أردني → شيقل</Label><Input type="number" step="0.001" value={ratesForm.jodToILS} onChange={e => setRatesForm(f => ({ ...f, jodToILS: e.target.value }))} className="mt-1 ltr-nums" /></div>

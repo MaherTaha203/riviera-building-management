@@ -1016,10 +1016,23 @@ export interface SettingsUpdate {
   taxNumber?: string | null;
 }
 
+/**
+ * "auto" when the rate is a live fetch, "manual" when it is the stored fallback.
+ */
+export type ExchangeRatesSource = typeof ExchangeRatesSource[keyof typeof ExchangeRatesSource];
+
+
+export const ExchangeRatesSource = {
+  auto: 'auto',
+  manual: 'manual',
+} as const;
+
 export interface ExchangeRates {
   usdToILS: number;
   jodToILS: number;
   updatedAt: string;
+  /** "auto" when the rate is a live fetch, "manual" when it is the stored fallback. */
+  source?: ExchangeRatesSource;
 }
 
 export interface ExchangeRatesUpdate {

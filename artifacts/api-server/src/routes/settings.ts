@@ -6,6 +6,7 @@ import { authMiddleware, requireRole, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
 import { UpdateSettingsBody, UpdateExchangeRatesBody, CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
+import { getLiveRates } from "../lib/fx";
 
 const router = Router();
 
@@ -39,13 +40,20 @@ router.patch("/settings", authMiddleware, validateBody(UpdateSettingsBody), asyn
   res.json(updated);
 });
 
-// Exchange rates
+// Exchange rates. The stored row is the manual fallback / last-known-good;
+// when auto-fetch is enabled (FX_AUTO, default on) we serve LIVE rates and fall
+// back to the stored manual value whenever the upstream is unreachable.
 router.get("/settings/exchange-rates", authMiddleware, async (_req, res): Promise<void> => {
   let [r] = await db.select().from(exchangeRatesTable);
   if (!r) {
     [r] = await db.insert(exchangeRatesTable).values({}).returning();
   }
-  res.json({ usdToILS: Number(r.usdToILS), jodToILS: Number(r.jodToILS), updatedAt: r.updatedAt });
+  const live = await getLiveRates();
+  if (live) {
+    res.json({ usdToILS: live.usdToILS, jodToILS: live.jodToILS, updatedAt: live.fetchedAt, source: "auto" });
+    return;
+  }
+  res.json({ usdToILS: Number(r.usdToILS), jodToILS: Number(r.jodToILS), updatedAt: r.updatedAt, source: "manual" });
 });
 
 router.patch("/settings/exchange-rates", authMiddleware, validateBody(UpdateExchangeRatesBody), async (req, res): Promise<void> => {
