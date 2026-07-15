@@ -122,6 +122,20 @@ paths:
                 items:
                   $ref: "#/components/schemas/DashboardLatestReceipt"
 
+  /dashboard/notices:
+    get:
+      operationId: getDashboardNotices
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Server-computed attention items (expiring contracts, due/bounced cheques, overdue tenants) — replaces pulling three full lists on the client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DashboardNotice"
+
   # ─── Units ──────────────────────────────────────────────────────────────────
   /units:
     get:
@@ -1127,6 +1141,24 @@ components:
           type: number
         paymentMethod:
           type: string
+
+    DashboardNotice:
+      type: object
+      required: [kind, refId]
+      properties:
+        kind:
+          type: string
+          enum: [contract_expiring, cheque_due, cheque_bounced, tenant_overdue]
+        refId:
+          type: integer
+        num:
+          type: ["string", "null"]
+        name:
+          type: ["string", "null"]
+        date:
+          type: ["string", "null"]
+        amount:
+          type: ["number", "null"]
 
     # ─── Units ─────────────────────────────────────────────────────────────────
     Unit:

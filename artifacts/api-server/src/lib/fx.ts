@@ -94,18 +94,23 @@ async function fetchLive(): Promise<LiveRates | null> {
 /**
  * Return live rates if auto-fetch is enabled and a fresh (or freshly fetchable)
  * value exists; otherwise null so the caller falls back to the stored manual
- * rate. Never throws. De-dupes concurrent refreshes via a single in-flight
- * promise and keeps serving the stale cache if a refresh fails.
+ * rate. Never blocks on the network: a stale/empty cache triggers a BACKGROUND
+ * refresh and we return whatever we have right now (stale cache, or null so the
+ * caller falls back to the stored rate). The fresh value is served on the next
+ * call. This keeps the exchange-rates endpoint fast even on the first request
+ * after a cold boot, when the upstream could otherwise take seconds.
  */
 export async function getLiveRates(): Promise<LiveRates | null> {
   if (!FX_AUTO) return null;
   const fresh = cache && Date.now() - cache.fetchedAt.getTime() < TTL_MS;
   if (fresh) return cache;
   if (!inFlight) {
-    inFlight = fetchLive().finally(() => { inFlight = null; });
+    // Fire-and-forget; update the cache when it resolves. De-duped via inFlight.
+    inFlight = fetchLive()
+      .then((r) => { if (r) cache = r; return r; })
+      .finally(() => { inFlight = null; });
+    void inFlight;
   }
-  const result = await inFlight;
-  if (result) cache = result;
-  // On failure, serve the last good cache if we have one, else null (→ fallback).
+  // Serve the current cache immediately (stale or null) — never await the fetch.
   return cache;
 }

@@ -27,6 +27,44 @@ const Reports = lazy(() => import("@/pages/reports"));
 const AuditLog = lazy(() => import("@/pages/audit-log"));
 const Settings = lazy(() => import("@/pages/settings"));
 
+// After the shell is up, warm every route chunk during idle time so navigating
+// to a page for the first time is instant (no on-demand chunk download). Only
+// mounted inside the authed layout, so it never runs on the login screen.
+const routeImporters: Array<() => Promise<unknown>> = [
+  () => import("@/pages/units"),
+  () => import("@/pages/tenants"),
+  () => import("@/pages/contracts"),
+  () => import("@/pages/receipt-vouchers"),
+  () => import("@/pages/payment-vouchers"),
+  () => import("@/pages/cash-fund"),
+  () => import("@/pages/bank-accounts"),
+  () => import("@/pages/cheques"),
+  () => import("@/pages/account-statements"),
+  () => import("@/pages/documents"),
+  () => import("@/pages/reports"),
+  () => import("@/pages/audit-log"),
+  () => import("@/pages/settings"),
+];
+
+function RoutePrefetcher() {
+  useEffect(() => {
+    let i = 0;
+    // Prefetch one chunk per idle slice so the burst never competes with the
+    // current page's data fetches.
+    const step = () => {
+      if (i >= routeImporters.length) return;
+      routeImporters[i++]().catch(() => {});
+      schedule();
+    };
+    const schedule = () => {
+      if (typeof requestIdleCallback === "function") requestIdleCallback(step, { timeout: 2000 });
+      else setTimeout(step, 200);
+    };
+    schedule();
+  }, []);
+  return null;
+}
+
 function RouteFallback() {
   return (
     <div className="flex items-center justify-center py-24 text-muted-foreground">
@@ -84,6 +122,7 @@ function Router() {
 
       <Route>
         <AppLayout>
+          <RoutePrefetcher />
           <Suspense fallback={<RouteFallback />}>
             <Switch>
               <Route path="/" component={RootRedirect} />

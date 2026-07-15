@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import {
   useListTenants, useListUnits, useListContracts, useListReceiptVouchers,
   useListPaymentVouchers, useListCheques, useListBankAccounts, useGetExchangeRates,
+  useGetDashboardNotices,
 } from "@workspace/api-client-react";
 import { getUser } from "@/lib/auth";
 import { pmark } from "@/lib/perf";
@@ -161,35 +162,31 @@ export interface Notice {
 }
 
 export function useNotices(): Notice[] {
-  const { data: contracts = [] } = useListContracts();
-  const { data: cheques = [] } = useListCheques();
-  const { data: tenants = [] } = useListTenants();
+  // Server-computed (one small request) instead of pulling three full lists on
+  // every page. The item shape is minimal data; the icon/path/text are mapped
+  // here so the display is identical to before.
+  const { data: items = [] } = useGetDashboardNotices();
 
   return useMemo(() => {
     const out: Notice[] = [];
-    const today = new Date().toISOString().split("T")[0];
-    const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-    const in7 = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-
-    for (const c of contracts as any[]) {
-      if (c.status === "active" && c.endDate >= today && c.endDate <= in30) {
-        out.push({ key: `ce${c.id}`, icon: FileText, path: "/contracts", tone: "warn", text: `عقد ${c.contractNumber} ينتهي قريباً`, detail: `${c.tenantName ?? ""} — ${formatDate(c.endDate)}` });
-      }
-    }
-    for (const ch of cheques as any[]) {
-      if (ch.status === "pending" && ch.dueDate <= in7) {
-        out.push({ key: `cq${ch.id}`, icon: Files, path: "/cheques", tone: "warn", text: `شيك ${ch.chequeNumber} مستحق`, detail: `${ch.drawerName ?? ""} — ${formatDate(ch.dueDate)}` });
-      } else if (ch.status === "bounced") {
-        out.push({ key: `cb${ch.id}`, icon: Files, path: "/cheques", tone: "danger", text: `شيك ${ch.chequeNumber} مرتجع`, detail: ch.drawerName ?? "" });
-      }
-    }
-    for (const t of tenants as any[]) {
-      if (Number(t.balance) < 0) {
-        out.push({ key: `tb${t.id}`, icon: Users, path: "/tenants", tone: "danger", text: `${t.name} — رصيد متأخر`, detail: `${Number(t.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })} ILS` });
+    for (const n of items as any[]) {
+      switch (n.kind) {
+        case "contract_expiring":
+          out.push({ key: `ce${n.refId}`, icon: FileText, path: "/contracts", tone: "warn", text: `عقد ${n.num} ينتهي قريباً`, detail: `${n.name ?? ""} — ${formatDate(n.date)}` });
+          break;
+        case "cheque_due":
+          out.push({ key: `cq${n.refId}`, icon: Files, path: "/cheques", tone: "warn", text: `شيك ${n.num} مستحق`, detail: `${n.name ?? ""} — ${formatDate(n.date)}` });
+          break;
+        case "cheque_bounced":
+          out.push({ key: `cb${n.refId}`, icon: Files, path: "/cheques", tone: "danger", text: `شيك ${n.num} مرتجع`, detail: n.name ?? "" });
+          break;
+        case "tenant_overdue":
+          out.push({ key: `tb${n.refId}`, icon: Users, path: "/tenants", tone: "danger", text: `${n.name} — رصيد متأخر`, detail: `${Number(n.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })} ILS` });
+          break;
       }
     }
     return out;
-  }, [contracts, cheques, tenants]);
+  }, [items]);
 }
 
 function NotificationsBell() {
