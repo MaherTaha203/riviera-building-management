@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -221,20 +222,23 @@ export default function Cheques() {
             </div>
             <div>
               <Label>المستأجر (إن وجد)</Label>
-              <Select value={form.tenantId || "__none__"} onValueChange={v => setForm(f => ({ ...f, tenantId: v === "__none__" ? "" : v }))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="اختر مستأجراً" /></SelectTrigger>
-                <SelectContent><SelectItem value="__none__">بدون</SelectItem>{(tenants as any[]).map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <SearchableSelect
+                className="mt-1"
+                value={form.tenantId}
+                onChange={v => setForm(f => ({ ...f, tenantId: v }))}
+                options={(tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name }))}
+                placeholder="اختر مستأجراً"
+              />
             </div>
             <div>
               <Label>حساب التسوية (يُحرَّك عند التحصيل)</Label>
-              <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder={form.type === "incoming" ? "الحساب الذي يُودَع فيه عند التحصيل" : "الحساب الذي يُخصم منه عند التحصيل"} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">بدون</SelectItem>
-                  {(bankAccounts as any[]).map((b: any) => <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                className="mt-1"
+                value={form.bankAccountId}
+                onChange={v => setForm(f => ({ ...f, bankAccountId: v }))}
+                options={(bankAccounts as any[]).map((b: any) => ({ value: String(b.id), label: `${b.bankName} — ${b.accountName}` }))}
+                placeholder={form.type === "incoming" ? "الحساب الذي يُودَع فيه عند التحصيل" : "الحساب الذي يُخصم منه عند التحصيل"}
+              />
             </div>
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>

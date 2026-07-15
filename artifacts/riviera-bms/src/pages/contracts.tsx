@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -309,21 +310,25 @@ export default function Contracts() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>المستأجر *</Label>
-                <Select value={form.tenantId} onValueChange={v => setForm(f => ({ ...f, tenantId: v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر مستأجراً" /></SelectTrigger>
-                  <SelectContent>{(tenants as any[]).map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.tenantId}
+                  onChange={v => setForm(f => ({ ...f, tenantId: v }))}
+                  options={(tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name }))}
+                  placeholder="اختر مستأجراً"
+                  clearable={false}
+                />
               </div>
               <div>
                 <Label>الوحدة *</Label>
-                <Select value={form.unitId} onValueChange={v => setForm(f => ({ ...f, unitId: v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر وحدة" /></SelectTrigger>
-                  <SelectContent>
-                    {(units as any[]).filter((u: any) => u.status !== "occupied" || String(u.id) === form.unitId).map((u: any) => (
-                      <SelectItem key={u.id} value={String(u.id)}>وحدة {u.unitNumber}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.unitId}
+                  onChange={v => setForm(f => ({ ...f, unitId: v }))}
+                  options={(units as any[]).filter((u: any) => u.status !== "occupied" || String(u.id) === form.unitId).map((u: any) => ({ value: String(u.id), label: `وحدة ${u.unitNumber}` }))}
+                  placeholder="اختر وحدة"
+                  clearable={false}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
