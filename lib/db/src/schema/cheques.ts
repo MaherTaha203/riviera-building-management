@@ -16,12 +16,18 @@ export const chequesTable = pgTable("cheques", {
   status: text("status").notNull().default("pending"),
   drawerName: text("drawer_name").notNull(),
   tenantId: integer("tenant_id"),
+  // Phase C — which of OUR bank accounts the cheque settles against when it
+  // clears: an incoming cheque is deposited into it (+), an outgoing one is
+  // drawn from it (−). NB: `bankName` above is the DRAWER's bank, not ours.
+  bankAccountId: integer("bank_account_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   // Tenant deletion guard filters cheques by tenant_id.
   index("cheques_tenant_id_idx").on(t.tenantId),
+  // Bank balance reconciliation (I2) sums cleared cheques per bank account.
+  index("cheques_bank_account_id_idx").on(t.bankAccountId),
 ]);
 
 export const insertChequeSchema = createInsertSchema(chequesTable).omit({ id: true, createdAt: true, updatedAt: true });

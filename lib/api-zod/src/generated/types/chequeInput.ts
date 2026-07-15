@@ -22,5 +22,7 @@ export interface ChequeInput {
   /** @nullable */
   tenantId?: number | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   notes?: string | null;
 }

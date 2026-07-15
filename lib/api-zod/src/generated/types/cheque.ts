@@ -25,6 +25,8 @@ export interface Cheque {
   /** @nullable */
   tenantId?: number | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   tenantName?: string | null;
   /** @nullable */
   notes?: string | null;

@@ -1732,6 +1732,8 @@ components:
           type: string
         tenantId:
           type: ["integer", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         tenantName:
           type: ["string", "null"]
         notes:
@@ -1767,6 +1769,8 @@ components:
           type: string
         tenantId:
           type: ["integer", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         notes:
           type: ["string", "null"]
 
@@ -1780,6 +1784,8 @@ components:
           type: ["string", "null"]
         dueDate:
           type: string
+        bankAccountId:
+          type: ["integer", "null"]
 
     # ─── Account Statements ────────────────────────────────────────────────────
     AccountStatementEntry:

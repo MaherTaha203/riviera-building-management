@@ -12,4 +12,6 @@ export interface ChequeUpdate {
   /** @nullable */
   notes?: string | null;
   dueDate?: string;
+  /** @nullable */
+  bankAccountId?: number | null;
 }
