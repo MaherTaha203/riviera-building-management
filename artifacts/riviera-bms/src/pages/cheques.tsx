@@ -15,6 +15,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
 import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
+import { useFormErrors } from "@/lib/useFormErrors";
+import { FieldError } from "@/components/ui/field-error";
 import { Plus } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
@@ -45,6 +47,7 @@ export default function Cheques() {
   const create = useCreateCheque();
   const update = useUpdateCheque();
   const { toast } = useToast();
+  const { errors, validate, clear, reset } = useFormErrors();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -67,6 +70,17 @@ export default function Cheques() {
   const amountILS = Number(form.amount) * Number(form.exchangeRate);
 
   const handleSave = async () => {
+    if (!validate({
+      chequeNumber: !form.chequeNumber.trim() ? "رقم الشيك مطلوب" : "",
+      drawerName: !form.drawerName.trim() ? "اسم المسحوب عليه مطلوب" : "",
+      bankName: !form.bankName.trim() ? "اسم البنك مطلوب" : "",
+      chequeDate: !form.chequeDate ? "تاريخ الشيك مطلوب" : "",
+      dueDate: !form.dueDate ? "تاريخ الاستحقاق مطلوب" : "",
+      amount: !(Number(form.amount) > 0) ? "أدخل مبلغاً أكبر من صفر" : "",
+    })) {
+      toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
     try {
       await create.mutateAsync({
         data: {
@@ -122,7 +136,7 @@ export default function Cheques() {
             exportSpec={{ filename: "cheques", headers: ["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"],
               getRows: () => filtered.map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status]) }}
           />
-          <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
+          <Button onClick={() => { setForm({ ...emptyForm }); reset(); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
         </div>
       </div>
 
@@ -192,7 +206,7 @@ export default function Cheques() {
           <DialogHeader><DialogTitle>إضافة شيك جديد</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>رقم الشيك *</Label><Input value={form.chequeNumber} onChange={e => setForm(f => ({ ...f, chequeNumber: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div><Label>رقم الشيك *</Label><Input id="chequeNumber" value={form.chequeNumber} onChange={e => { setForm(f => ({ ...f, chequeNumber: e.target.value })); clear("chequeNumber"); }} aria-invalid={!!errors.chequeNumber} className={`mt-1 ltr-nums ${errors.chequeNumber ? "border-destructive" : ""}`} /><FieldError msg={errors.chequeNumber} /></div>
               <div>
                 <Label>النوع *</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
@@ -202,12 +216,12 @@ export default function Cheques() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>اسم المسحوب عليه *</Label><Input value={form.drawerName} onChange={e => setForm(f => ({ ...f, drawerName: e.target.value }))} className="mt-1" /></div>
-              <div><Label>البنك *</Label><Input value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} className="mt-1" /></div>
+              <div><Label>اسم المسحوب عليه *</Label><Input id="drawerName" value={form.drawerName} onChange={e => { setForm(f => ({ ...f, drawerName: e.target.value })); clear("drawerName"); }} aria-invalid={!!errors.drawerName} className={`mt-1 ${errors.drawerName ? "border-destructive" : ""}`} /><FieldError msg={errors.drawerName} /></div>
+              <div><Label>البنك *</Label><Input id="bankName" value={form.bankName} onChange={e => { setForm(f => ({ ...f, bankName: e.target.value })); clear("bankName"); }} aria-invalid={!!errors.bankName} className={`mt-1 ${errors.bankName ? "border-destructive" : ""}`} /><FieldError msg={errors.bankName} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>تاريخ الشيك *</Label><SmartDateInput value={form.chequeDate} onChange={v => setForm(f => ({ ...f, chequeDate: v }))} className="mt-1" /></div>
-              <div><Label>تاريخ الاستحقاق *</Label><SmartDateInput value={form.dueDate} onChange={v => setForm(f => ({ ...f, dueDate: v }))} className="mt-1" /></div>
+              <div><Label>تاريخ الشيك *</Label><SmartDateInput id="chequeDate" value={form.chequeDate} onChange={v => { setForm(f => ({ ...f, chequeDate: v })); clear("chequeDate"); }} className="mt-1" invalid={!!errors.chequeDate} /><FieldError msg={errors.chequeDate} /></div>
+              <div><Label>تاريخ الاستحقاق *</Label><SmartDateInput id="dueDate" value={form.dueDate} onChange={v => { setForm(f => ({ ...f, dueDate: v })); clear("dueDate"); }} className="mt-1" invalid={!!errors.dueDate} /><FieldError msg={errors.dueDate} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -217,7 +231,7 @@ export default function Cheques() {
                   <SelectContent><SelectItem value="ILS">₪ ILS</SelectItem><SelectItem value="USD">$ USD</SelectItem><SelectItem value="JOD">JD JOD</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div><Label>المبلغ *</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div><Label>المبلغ *</Label><Input id="amount" type="number" value={form.amount} onChange={e => { setForm(f => ({ ...f, amount: e.target.value })); clear("amount"); }} aria-invalid={!!errors.amount} className={`mt-1 ltr-nums ${errors.amount ? "border-destructive" : ""}`} /><FieldError msg={errors.amount} /></div>
               <div><Label>سعر الصرف</Label><Input type="number" step="0.0001" value={form.exchangeRate} onChange={e => setForm(f => ({ ...f, exchangeRate: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
             <div>

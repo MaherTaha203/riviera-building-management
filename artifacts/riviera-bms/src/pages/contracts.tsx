@@ -13,6 +13,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useFormErrors } from "@/lib/useFormErrors";
+import { FieldError } from "@/components/ui/field-error";
 import { Plus, Pencil, Trash2, FileText, Printer, Paperclip, Eye, Download } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { ContractDoc, ReportTable } from "@/lib/print/documents";
@@ -48,6 +50,7 @@ export default function Contracts() {
   const update = useUpdateContract();
   const del = useDeleteContract();
   const { toast } = useToast();
+  const { errors, validate, clear, reset } = useFormErrors();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -141,7 +144,7 @@ export default function Contracts() {
 
   const amountILS = Number(form.rentAmount) * Number(form.exchangeRate);
 
-  const openNew = () => { setEditing(null); setForm({ ...empty }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ ...empty }); reset(); setOpen(true); };
   const openEdit = (c: any) => {
     setEditing(c.id);
     setForm({
@@ -155,10 +158,21 @@ export default function Contracts() {
       paymentMethod: c.paymentMethod ?? "",
       additionalTerms: c.additionalTerms ?? "",
     });
+    reset();
     setOpen(true);
   };
 
   const handleSave = async () => {
+    if (!validate({
+      tenantId: !form.tenantId ? "اختر المستأجر" : "",
+      unitId: !form.unitId ? "اختر الوحدة" : "",
+      startDate: !form.startDate ? "تاريخ البداية مطلوب" : "",
+      endDate: !form.endDate ? "تاريخ الانتهاء مطلوب" : "",
+      rentAmount: !(Number(form.rentAmount) > 0) ? "أدخل مبلغاً أكبر من صفر" : "",
+    })) {
+      toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
     const payload = {
       ...form,
       tenantId: Number(form.tenantId),
@@ -311,29 +325,35 @@ export default function Contracts() {
               <div>
                 <Label>المستأجر *</Label>
                 <SearchableSelect
+                  id="tenantId"
                   className="mt-1"
+                  invalid={!!errors.tenantId}
                   value={form.tenantId}
-                  onChange={v => setForm(f => ({ ...f, tenantId: v }))}
+                  onChange={v => { setForm(f => ({ ...f, tenantId: v })); clear("tenantId"); }}
                   options={(tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name }))}
                   placeholder="اختر مستأجراً"
                   clearable={false}
                 />
+                <FieldError msg={errors.tenantId} />
               </div>
               <div>
                 <Label>الوحدة *</Label>
                 <SearchableSelect
+                  id="unitId"
                   className="mt-1"
+                  invalid={!!errors.unitId}
                   value={form.unitId}
-                  onChange={v => setForm(f => ({ ...f, unitId: v }))}
+                  onChange={v => { setForm(f => ({ ...f, unitId: v })); clear("unitId"); }}
                   options={(units as any[]).filter((u: any) => u.status !== "occupied" || String(u.id) === form.unitId).map((u: any) => ({ value: String(u.id), label: `وحدة ${u.unitNumber}` }))}
                   placeholder="اختر وحدة"
                   clearable={false}
                 />
+                <FieldError msg={errors.unitId} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>تاريخ البداية *</Label><SmartDateInput value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} className="mt-1" /></div>
-              <div><Label>تاريخ الانتهاء *</Label><SmartDateInput value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} className="mt-1" /></div>
+              <div><Label>تاريخ البداية *</Label><SmartDateInput id="startDate" value={form.startDate} onChange={v => { setForm(f => ({ ...f, startDate: v })); clear("startDate"); }} className="mt-1" invalid={!!errors.startDate} /><FieldError msg={errors.startDate} /></div>
+              <div><Label>تاريخ الانتهاء *</Label><SmartDateInput id="endDate" value={form.endDate} onChange={v => { setForm(f => ({ ...f, endDate: v })); clear("endDate"); }} className="mt-1" invalid={!!errors.endDate} /><FieldError msg={errors.endDate} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -347,7 +367,7 @@ export default function Contracts() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>مبلغ الإيجار *</Label><Input type="number" value={form.rentAmount} onChange={e => setForm(f => ({ ...f, rentAmount: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div><Label>مبلغ الإيجار *</Label><Input id="rentAmount" type="number" value={form.rentAmount} onChange={e => { setForm(f => ({ ...f, rentAmount: e.target.value })); clear("rentAmount"); }} aria-invalid={!!errors.rentAmount} className={`mt-1 ltr-nums ${errors.rentAmount ? "border-destructive" : ""}`} /><FieldError msg={errors.rentAmount} /></div>
               <div><Label>سعر الصرف</Label><Input type="number" step="0.0001" value={form.exchangeRate} onChange={e => setForm(f => ({ ...f, exchangeRate: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
             {form.currency !== "ILS" && (

@@ -26,6 +26,7 @@ interface SearchableSelectProps {
   id?: string;
   className?: string;
   disabled?: boolean;
+  invalid?: boolean;
 }
 
 export function SearchableSelect({
@@ -40,6 +41,7 @@ export function SearchableSelect({
   id,
   className,
   disabled,
+  invalid,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
@@ -54,7 +56,8 @@ export function SearchableSelect({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className={cn("w-full justify-between font-normal", !selected && "text-muted-foreground", className)}
+          aria-invalid={invalid || undefined}
+          className={cn("w-full justify-between font-normal", !selected && "text-muted-foreground", invalid && "border-destructive", className)}
         >
           <span className="truncate">{selected ? selected.label : placeholder}</span>
           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
