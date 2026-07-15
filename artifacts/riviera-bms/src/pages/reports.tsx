@@ -4,6 +4,7 @@ import { useGetDashboardSummary, useListReceiptVouchers, useListPaymentVouchers,
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { formatAmount } from "@/lib/format";
 import { BarChart3, TrendingUp, TrendingDown, Building2, FileText, Wallet } from "lucide-react";
@@ -138,8 +139,8 @@ export default function Reports() {
         <CardHeader><CardTitle className="text-base">فترة التقرير</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
-            <div><Label>من تاريخ</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="mt-1" /></div>
-            <div><Label>إلى تاريخ</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="mt-1" /></div>
+            <div><Label>من تاريخ</Label><SmartDateInput value={from} onChange={setFrom} className="mt-1" /></div>
+            <div><Label>إلى تاريخ</Label><SmartDateInput value={to} onChange={setTo} className="mt-1" /></div>
             <Button onClick={handleApply} className="w-full">تطبيق</Button>
             <Button onClick={handleReset} variant="outline" className="w-full">إعادة تعيين</Button>
           </div>

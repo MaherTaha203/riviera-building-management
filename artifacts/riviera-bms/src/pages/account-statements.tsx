@@ -4,6 +4,7 @@ import { useListAccountStatements, useListTenants } from "@workspace/api-client-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -62,8 +63,8 @@ export default function AccountStatements() {
                 <SelectContent><SelectItem value="__none__">الكل</SelectItem>{(tenants as any[]).map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>من تاريخ</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="mt-1" /></div>
-            <div><Label>إلى تاريخ</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="mt-1" /></div>
+            <div><Label>من تاريخ</Label><SmartDateInput value={from} onChange={setFrom} className="mt-1" /></div>
+            <div><Label>إلى تاريخ</Label><SmartDateInput value={to} onChange={setTo} className="mt-1" /></div>
             <Button onClick={handleSearch} className="w-full">بحث</Button>
           </div>
         </CardContent>

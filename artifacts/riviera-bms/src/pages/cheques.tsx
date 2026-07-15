@@ -4,6 +4,7 @@ import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGe
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -204,8 +205,8 @@ export default function Cheques() {
               <div><Label>البنك *</Label><Input value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} className="mt-1" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>تاريخ الشيك *</Label><Input type="date" value={form.chequeDate} onChange={e => setForm(f => ({ ...f, chequeDate: e.target.value }))} className="mt-1" /></div>
-              <div><Label>تاريخ الاستحقاق *</Label><Input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="mt-1" /></div>
+              <div><Label>تاريخ الشيك *</Label><SmartDateInput value={form.chequeDate} onChange={v => setForm(f => ({ ...f, chequeDate: v }))} className="mt-1" /></div>
+              <div><Label>تاريخ الاستحقاق *</Label><SmartDateInput value={form.dueDate} onChange={v => setForm(f => ({ ...f, dueDate: v }))} className="mt-1" /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>

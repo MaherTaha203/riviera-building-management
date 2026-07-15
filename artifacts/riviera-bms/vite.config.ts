@@ -48,6 +48,10 @@ export default defineConfig({
           if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "vendor-react";
           if (/[\\/]node_modules[\\/]@tanstack[\\/]/.test(id)) return "vendor-query";
           if (/[\\/]node_modules[\\/]@radix-ui[\\/]/.test(id)) return "vendor-radix";
+          // react-day-picker is only referenced by the lazily-loaded calendar
+          // popover; keep it in its own chunk so it doesn't weigh down the eager
+          // vendor bundle for users who only type dates.
+          if (/[\\/]node_modules[\\/]react-day-picker[\\/]/.test(id)) return "vendor-datepicker";
           return "vendor";
         },
       },
