@@ -102,6 +102,29 @@ export interface DashboardLatestReceipt {
   paymentMethod: string;
 }
 
+export type DashboardNoticeKind = typeof DashboardNoticeKind[keyof typeof DashboardNoticeKind];
+
+
+export const DashboardNoticeKind = {
+  contract_expiring: 'contract_expiring',
+  cheque_due: 'cheque_due',
+  cheque_bounced: 'cheque_bounced',
+  tenant_overdue: 'tenant_overdue',
+} as const;
+
+export interface DashboardNotice {
+  kind: DashboardNoticeKind;
+  refId: number;
+  /** @nullable */
+  num?: string | null;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  amount?: number | null;
+}
+
 export type UnitType = typeof UnitType[keyof typeof UnitType];
 
 

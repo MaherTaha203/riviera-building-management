@@ -44,6 +44,8 @@ export * from './contractUpdatePaymentFrequency';
 export * from './contractUpdatePaymentMethod';
 export * from './contractUpdateStatus';
 export * from './dashboardLatestReceipt';
+export * from './dashboardNotice';
+export * from './dashboardNoticeKind';
 export * from './dashboardSummary';
 export * from './document';
 export * from './documentEntityType';

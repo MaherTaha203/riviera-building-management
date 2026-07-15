@@ -79,6 +79,17 @@ export const GetDashboardLatestReceiptsResponseItem = zod.object({
 export const GetDashboardLatestReceiptsResponse = zod.array(GetDashboardLatestReceiptsResponseItem)
 
 
+export const GetDashboardNoticesResponseItem = zod.object({
+  "kind": zod.enum(['contract_expiring', 'cheque_due', 'cheque_bounced', 'tenant_overdue']),
+  "refId": zod.number(),
+  "num": zod.string().nullish(),
+  "name": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "amount": zod.number().nullish()
+})
+export const GetDashboardNoticesResponse = zod.array(GetDashboardNoticesResponseItem)
+
+
 export const ListUnitsResponseItem = zod.object({
   "id": zod.number(),
   "unitNumber": zod.string(),

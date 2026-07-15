@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, unitsTable, tenantsTable, contractsTable, receiptVouchersTable, paymentVouchersTable, chequesTable, bankAccountsTable, auditLogTable } from "@workspace/db";
-import { desc } from "drizzle-orm";
+import { desc, and, eq, gte, lte, lt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth";
 import { smark } from "../lib/diag";
@@ -91,6 +91,39 @@ router.get("/dashboard/latest-receipts", authMiddleware, async (_req, res): Prom
     .orderBy(desc(receiptVouchersTable.date), desc(receiptVouchersTable.id))
     .limit(5);
   res.json(rows.map(r => ({ ...r, amountILS: Number(r.amountILS) })));
+});
+
+// Server-computed "attention" items for the header bell + dashboard rail.
+// Previously the client pulled the ENTIRE contracts, cheques and tenants lists
+// on every page just to derive these few items; this returns only the items,
+// from four small filtered queries run in parallel.
+router.get("/dashboard/notices", authMiddleware, async (_req, res): Promise<void> => {
+  const today = new Date().toISOString().split("T")[0];
+  const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const in7 = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const [expiring, dueCheques, bouncedCheques, overdue] = await Promise.all([
+    db.select({ id: contractsTable.id, num: contractsTable.contractNumber, date: contractsTable.endDate, name: tenantsTable.name })
+      .from(contractsTable)
+      .leftJoin(tenantsTable, eq(contractsTable.tenantId, tenantsTable.id))
+      .where(and(eq(contractsTable.status, "active"), gte(contractsTable.endDate, today), lte(contractsTable.endDate, in30))),
+    db.select({ id: chequesTable.id, num: chequesTable.chequeNumber, date: chequesTable.dueDate, name: chequesTable.drawerName })
+      .from(chequesTable)
+      .where(and(eq(chequesTable.status, "pending"), lte(chequesTable.dueDate, in7))),
+    db.select({ id: chequesTable.id, num: chequesTable.chequeNumber, name: chequesTable.drawerName })
+      .from(chequesTable)
+      .where(eq(chequesTable.status, "bounced")),
+    db.select({ id: tenantsTable.id, name: tenantsTable.name, amount: tenantsTable.balance })
+      .from(tenantsTable)
+      .where(lt(tenantsTable.balance, "0")),
+  ]);
+
+  res.json([
+    ...expiring.map(c => ({ kind: "contract_expiring", refId: c.id, num: c.num, name: c.name ?? "", date: c.date })),
+    ...dueCheques.map(c => ({ kind: "cheque_due", refId: c.id, num: c.num, name: c.name, date: c.date })),
+    ...bouncedCheques.map(c => ({ kind: "cheque_bounced", refId: c.id, num: c.num, name: c.name })),
+    ...overdue.map(t => ({ kind: "tenant_overdue", refId: t.id, name: t.name, amount: Number(t.amount) })),
+  ]);
 });
 
 export default router;
