@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -299,23 +300,24 @@ export default function ReceiptVouchers() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>المستأجر</Label>
-                <Select value={form.tenantId || "__none__"} onValueChange={v => setForm(f => ({ ...f, tenantId: v === "__none__" ? "" : v, contractId: "" }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر مستأجراً" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">بدون</SelectItem>
-                    {(tenants as any[]).map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.tenantId}
+                  onChange={v => setForm(f => ({ ...f, tenantId: v, contractId: "" }))}
+                  options={(tenants as any[]).map((t: any) => ({ value: String(t.id), label: t.name }))}
+                  placeholder="اختر مستأجراً"
+                />
               </div>
               <div>
                 <Label>العقد</Label>
-                <Select value={form.contractId || "__none__"} onValueChange={v => setForm(f => ({ ...f, contractId: v === "__none__" ? "" : v }))} disabled={!form.tenantId}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر عقداً" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">بدون</SelectItem>
-                    {tenantContracts.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.contractNumber}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.contractId}
+                  onChange={v => setForm(f => ({ ...f, contractId: v }))}
+                  options={tenantContracts.map((c: any) => ({ value: String(c.id), label: c.contractNumber }))}
+                  placeholder="اختر عقداً"
+                  disabled={!form.tenantId}
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -339,15 +341,13 @@ export default function ReceiptVouchers() {
             {form.paymentMethod === "bank_transfer" && (
               <div>
                 <Label>الحساب البنكي *</Label>
-                <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر الحساب الذي يُودَع فيه المبلغ" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">بدون</SelectItem>
-                    {(bankAccounts as any[]).map((b: any) => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.bankAccountId}
+                  onChange={v => setForm(f => ({ ...f, bankAccountId: v }))}
+                  options={(bankAccounts as any[]).map((b: any) => ({ value: String(b.id), label: `${b.bankName} — ${b.accountName}` }))}
+                  placeholder="اختر الحساب الذي يُودَع فيه المبلغ"
+                />
               </div>
             )}
             {form.paymentMethod === "cheque" && (

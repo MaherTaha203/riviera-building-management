@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -329,15 +330,13 @@ export default function PaymentVouchers() {
             {form.paymentMethod === "bank_transfer" && (
               <div>
                 <Label>الحساب البنكي *</Label>
-                <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر الحساب الذي يُخصم منه المبلغ" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">بدون</SelectItem>
-                    {(bankAccounts as any[]).map((b: any) => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  className="mt-1"
+                  value={form.bankAccountId}
+                  onChange={v => setForm(f => ({ ...f, bankAccountId: v }))}
+                  options={(bankAccounts as any[]).map((b: any) => ({ value: String(b.id), label: `${b.bankName} — ${b.accountName}` }))}
+                  placeholder="اختر الحساب الذي يُخصم منه المبلغ"
+                />
               </div>
             )}
             {form.paymentMethod === "cheque" && (
