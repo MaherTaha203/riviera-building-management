@@ -17,6 +17,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
 import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
+import { useFormErrors } from "@/lib/useFormErrors";
+import { FieldError } from "@/components/ui/field-error";
 import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
 import { formatAmount, formatDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
@@ -58,6 +60,7 @@ export default function ReceiptVouchers() {
   const update = useUpdateReceiptVoucher();
   const del = useDeleteReceiptVoucher();
   const { toast } = useToast();
+  const { errors, validate, clear, reset } = useFormErrors();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -88,6 +91,7 @@ export default function ReceiptVouchers() {
   const openNew = () => {
     setEditing(null);
     setForm({ ...emptyForm });
+    reset();
     setOpen(true);
   };
 
@@ -110,6 +114,7 @@ export default function ReceiptVouchers() {
       accountHolderName: v.accountHolderName ?? "",
       notes: v.notes ?? "",
     });
+    reset();
     setOpen(true);
   };
 
@@ -117,10 +122,20 @@ export default function ReceiptVouchers() {
   useOpenNewSignal("/receipt-vouchers", openNew);
 
   const handleSave = async () => {
+    const isTransfer = form.paymentMethod === "bank_transfer";
+    // Inline required-field validation before we hit the API.
+    if (!validate({
+      date: !form.date ? "التاريخ مطلوب" : "",
+      payerName: !form.payerName.trim() ? "اسم الدافع مطلوب" : "",
+      amount: !(Number(form.amount) > 0) ? "أدخل مبلغاً أكبر من صفر" : "",
+      bankAccountId: isTransfer && !form.bankAccountId ? "اختر الحساب البنكي" : "",
+    })) {
+      toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
     // For a bank transfer the money moves into a chosen account (by id); mirror
     // its name into bankName for display. Otherwise keep the free-text bankName.
     const selectedBank = (bankAccounts as any[]).find(b => String(b.id) === form.bankAccountId);
-    const isTransfer = form.paymentMethod === "bank_transfer";
     const payload = {
       ...form,
       tenantId: form.tenantId ? Number(form.tenantId) : undefined,
@@ -285,7 +300,7 @@ export default function ReceiptVouchers() {
           </DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>التاريخ *</Label><SmartDateInput value={form.date} onChange={v => setForm(f => ({ ...f, date: v }))} className="mt-1" /></div>
+              <div><Label>التاريخ *</Label><SmartDateInput id="date" value={form.date} onChange={v => { setForm(f => ({ ...f, date: v })); clear("date"); }} className="mt-1" invalid={!!errors.date} /><FieldError msg={errors.date} /></div>
               <div>
                 <Label>طريقة الدفع *</Label>
                 <Select value={form.paymentMethod} onValueChange={v => setForm(f => ({ ...f, paymentMethod: v }))}>
@@ -296,7 +311,7 @@ export default function ReceiptVouchers() {
                 </Select>
               </div>
             </div>
-            <div><Label>اسم الدافع *</Label><Input value={form.payerName} onChange={e => setForm(f => ({ ...f, payerName: e.target.value }))} className="mt-1" /></div>
+            <div><Label>اسم الدافع *</Label><Input id="payerName" value={form.payerName} onChange={e => { setForm(f => ({ ...f, payerName: e.target.value })); clear("payerName"); }} aria-invalid={!!errors.payerName} className={`mt-1 ${errors.payerName ? "border-destructive" : ""}`} /><FieldError msg={errors.payerName} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>المستأجر</Label>
@@ -332,7 +347,7 @@ export default function ReceiptVouchers() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>المبلغ *</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 ltr-nums" /></div>
+              <div><Label>المبلغ *</Label><Input id="amount" type="number" value={form.amount} onChange={e => { setForm(f => ({ ...f, amount: e.target.value })); clear("amount"); }} aria-invalid={!!errors.amount} className={`mt-1 ltr-nums ${errors.amount ? "border-destructive" : ""}`} /><FieldError msg={errors.amount} /></div>
               <div><Label>سعر الصرف</Label><Input type="number" step="0.0001" value={form.exchangeRate} onChange={e => setForm(f => ({ ...f, exchangeRate: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
             {form.currency !== "ILS" && (
@@ -342,12 +357,15 @@ export default function ReceiptVouchers() {
               <div>
                 <Label>الحساب البنكي *</Label>
                 <SearchableSelect
+                  id="bankAccountId"
                   className="mt-1"
+                  invalid={!!errors.bankAccountId}
                   value={form.bankAccountId}
-                  onChange={v => setForm(f => ({ ...f, bankAccountId: v }))}
+                  onChange={v => { setForm(f => ({ ...f, bankAccountId: v })); clear("bankAccountId"); }}
                   options={(bankAccounts as any[]).map((b: any) => ({ value: String(b.id), label: `${b.bankName} — ${b.accountName}` }))}
                   placeholder="اختر الحساب الذي يُودَع فيه المبلغ"
                 />
+                <FieldError msg={errors.bankAccountId} />
               </div>
             )}
             {form.paymentMethod === "cheque" && (

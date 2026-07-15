@@ -17,6 +17,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { usePersistedView } from "@/lib/usePersistedView";
 import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
+import { useFormErrors } from "@/lib/useFormErrors";
+import { FieldError } from "@/components/ui/field-error";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { PaymentVoucherDoc, ReportTable } from "@/lib/print/documents";
@@ -56,6 +58,7 @@ export default function PaymentVouchers() {
   const update = useUpdatePaymentVoucher();
   const del = useDeletePaymentVoucher();
   const { toast } = useToast();
+  const { errors, validate, clear, reset } = useFormErrors();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -86,6 +89,7 @@ export default function PaymentVouchers() {
   const openNew = () => {
     setEditing(null);
     setForm({ ...emptyForm });
+    reset();
     setOpen(true);
   };
 
@@ -106,6 +110,7 @@ export default function PaymentVouchers() {
       dueDate: v.dueDate ?? "",
       notes: v.notes ?? "",
     });
+    reset();
     setOpen(true);
   };
 
@@ -113,10 +118,20 @@ export default function PaymentVouchers() {
   useOpenNewSignal("/payment-vouchers", openNew);
 
   const handleSave = async () => {
+    const isTransfer = form.paymentMethod === "bank_transfer";
+    if (!validate({
+      date: !form.date ? "التاريخ مطلوب" : "",
+      beneficiaryName: !form.beneficiaryName.trim() ? "اسم المستفيد مطلوب" : "",
+      amount: !(Number(form.amount) > 0) ? "أدخل مبلغاً أكبر من صفر" : "",
+      category: !form.category.trim() ? "البند مطلوب" : "",
+      bankAccountId: isTransfer && !form.bankAccountId ? "اختر الحساب البنكي" : "",
+    })) {
+      toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
     // A bank_transfer payment draws money from a chosen account (by id); mirror
     // its name into bankName for display. Otherwise keep the free-text bankName.
     const selectedBank = (bankAccounts as any[]).find(b => String(b.id) === form.bankAccountId);
-    const isTransfer = form.paymentMethod === "bank_transfer";
     const payload = {
       ...form,
       amount: Number(form.amount),
@@ -276,7 +291,8 @@ export default function PaymentVouchers() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>التاريخ *</Label>
-                <SmartDateInput value={form.date} onChange={v => setForm(f => ({ ...f, date: v }))} className="mt-1" />
+                <SmartDateInput id="date" value={form.date} onChange={v => { setForm(f => ({ ...f, date: v })); clear("date"); }} className="mt-1" invalid={!!errors.date} />
+                <FieldError msg={errors.date} />
               </div>
               <div>
                 <Label>طريقة الدفع *</Label>
@@ -291,16 +307,18 @@ export default function PaymentVouchers() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>المستفيد *</Label>
-                <Input value={form.beneficiaryName} onChange={e => setForm(f => ({ ...f, beneficiaryName: e.target.value }))} className="mt-1" />
+                <Input id="beneficiaryName" value={form.beneficiaryName} onChange={e => { setForm(f => ({ ...f, beneficiaryName: e.target.value })); clear("beneficiaryName"); }} aria-invalid={!!errors.beneficiaryName} className={`mt-1 ${errors.beneficiaryName ? "border-destructive" : ""}`} />
+                <FieldError msg={errors.beneficiaryName} />
               </div>
               <div>
                 <Label>بند الصرف *</Label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر بنداً" /></SelectTrigger>
+                <Select value={form.category} onValueChange={v => { setForm(f => ({ ...f, category: v })); clear("category"); }}>
+                  <SelectTrigger id="category" aria-invalid={!!errors.category} className={`mt-1 ${errors.category ? "border-destructive" : ""}`}><SelectValue placeholder="اختر بنداً" /></SelectTrigger>
                   <SelectContent>
                     {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <FieldError msg={errors.category} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -317,7 +335,8 @@ export default function PaymentVouchers() {
               </div>
               <div>
                 <Label>المبلغ *</Label>
-                <Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 ltr-nums" />
+                <Input id="amount" type="number" value={form.amount} onChange={e => { setForm(f => ({ ...f, amount: e.target.value })); clear("amount"); }} aria-invalid={!!errors.amount} className={`mt-1 ltr-nums ${errors.amount ? "border-destructive" : ""}`} />
+                <FieldError msg={errors.amount} />
               </div>
               <div>
                 <Label>سعر الصرف</Label>
@@ -331,12 +350,15 @@ export default function PaymentVouchers() {
               <div>
                 <Label>الحساب البنكي *</Label>
                 <SearchableSelect
+                  id="bankAccountId"
                   className="mt-1"
+                  invalid={!!errors.bankAccountId}
                   value={form.bankAccountId}
-                  onChange={v => setForm(f => ({ ...f, bankAccountId: v }))}
+                  onChange={v => { setForm(f => ({ ...f, bankAccountId: v })); clear("bankAccountId"); }}
                   options={(bankAccounts as any[]).map((b: any) => ({ value: String(b.id), label: `${b.bankName} — ${b.accountName}` }))}
                   placeholder="اختر الحساب الذي يُخصم منه المبلغ"
                 />
+                <FieldError msg={errors.bankAccountId} />
               </div>
             )}
             {form.paymentMethod === "cheque" && (

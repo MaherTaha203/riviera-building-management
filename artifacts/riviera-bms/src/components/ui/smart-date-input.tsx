@@ -19,13 +19,15 @@ interface SmartDateInputProps {
   id?: string;
   className?: string;
   placeholder?: string;
+  invalid?: boolean; // external validation error (e.g. required but empty)
 }
 
-export function SmartDateInput({ value, onChange, id, className, placeholder }: SmartDateInputProps) {
+export function SmartDateInput({ value, onChange, id, className, placeholder, invalid: invalidProp }: SmartDateInputProps) {
   const [text, setText] = useState(() => isoToDisplay(value));
   const [invalid, setInvalid] = useState(false);
   const [open, setOpen] = useState(false);
   const editing = useRef(false);
+  const showInvalid = invalid || !!invalidProp;
 
   // Reflect external value changes (edit/reset) unless the user is mid-typing.
   useEffect(() => {
@@ -49,8 +51,8 @@ export function SmartDateInput({ value, onChange, id, className, placeholder }: 
         inputMode="numeric"
         autoComplete="off"
         placeholder={placeholder ?? "يوم/شهر/سنة"}
-        aria-invalid={invalid || undefined}
-        className={cn("ltr-nums text-start pl-9", invalid && "border-destructive focus-visible:ring-destructive")}
+        aria-invalid={showInvalid || undefined}
+        className={cn("ltr-nums text-start pl-9", showInvalid && "border-destructive focus-visible:ring-destructive")}
         onFocus={() => { editing.current = true; }}
         onChange={(e) => { setText(e.target.value); if (invalid) setInvalid(false); }}
         onBlur={() => { editing.current = false; commit(); }}
