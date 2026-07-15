@@ -4,6 +4,7 @@ import { useListContracts, useCreateContract, useUpdateContract, useDeleteContra
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -326,8 +327,8 @@ export default function Contracts() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>تاريخ البداية *</Label><Input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className="mt-1" /></div>
-              <div><Label>تاريخ الانتهاء *</Label><Input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className="mt-1" /></div>
+              <div><Label>تاريخ البداية *</Label><SmartDateInput value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} className="mt-1" /></div>
+              <div><Label>تاريخ الانتهاء *</Label><SmartDateInput value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} className="mt-1" /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
