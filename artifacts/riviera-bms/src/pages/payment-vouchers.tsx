@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
 import { useOpenNewSignal } from "@/lib/shortcuts";
-import { useListPaymentVouchers, useCreatePaymentVoucher, useUpdatePaymentVoucher, useDeletePaymentVoucher, useGetExchangeRates } from "@workspace/api-client-react";
+import { useListPaymentVouchers, useCreatePaymentVoucher, useUpdatePaymentVoucher, useDeletePaymentVoucher, useGetExchangeRates, useListBankAccounts } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ const emptyForm = {
   exchangeRate: "1",
   paymentMethod: "cash",
   category: "",
+  bankAccountId: "",
   chequeNumber: "",
   bankName: "",
   chequeDate: "",
@@ -48,6 +49,7 @@ const categories = ["رواتب", "صيانة", "خدمات", "ضرائب", "ت�
 export default function PaymentVouchers() {
   const { data: vouchers = [], isLoading } = useListPaymentVouchers();
   const { data: rates } = useGetExchangeRates();
+  const { data: bankAccounts = [] } = useListBankAccounts();
   const create = useCreatePaymentVoucher();
   const update = useUpdatePaymentVoucher();
   const del = useDeletePaymentVoucher();
@@ -95,6 +97,7 @@ export default function PaymentVouchers() {
       exchangeRate: String(v.exchangeRate),
       paymentMethod: v.paymentMethod,
       category: v.category,
+      bankAccountId: v.bankAccountId ? String(v.bankAccountId) : "",
       chequeNumber: v.chequeNumber ?? "",
       bankName: v.bankName ?? "",
       chequeDate: v.chequeDate ?? "",
@@ -108,13 +111,18 @@ export default function PaymentVouchers() {
   useOpenNewSignal("/payment-vouchers", openNew);
 
   const handleSave = async () => {
+    // A bank_transfer payment draws money from a chosen account (by id); mirror
+    // its name into bankName for display. Otherwise keep the free-text bankName.
+    const selectedBank = (bankAccounts as any[]).find(b => String(b.id) === form.bankAccountId);
+    const isTransfer = form.paymentMethod === "bank_transfer";
     const payload = {
       ...form,
       amount: Number(form.amount),
       exchangeRate: Number(form.exchangeRate),
       amountILS,
+      bankAccountId: isTransfer && form.bankAccountId ? Number(form.bankAccountId) : undefined,
       chequeNumber: form.chequeNumber || undefined,
-      bankName: form.bankName || undefined,
+      bankName: (isTransfer ? selectedBank?.bankName : form.bankName) || undefined,
       chequeDate: form.chequeDate || undefined,
       dueDate: form.dueDate || undefined,
       notes: form.notes || undefined,
@@ -316,6 +324,20 @@ export default function PaymentVouchers() {
             </div>
             {form.currency !== "ILS" && (
               <p className="text-sm text-muted-foreground ltr-nums">المبلغ بالشيقل: {formatAmount(amountILS, "ILS")}</p>
+            )}
+            {form.paymentMethod === "bank_transfer" && (
+              <div>
+                <Label>الحساب البنكي *</Label>
+                <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر الحساب الذي يُخصم منه المبلغ" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">بدون</SelectItem>
+                    {(bankAccounts as any[]).map((b: any) => (
+                      <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
             {form.paymentMethod === "cheque" && (
               <div className="grid gap-3 p-3 border rounded-lg">

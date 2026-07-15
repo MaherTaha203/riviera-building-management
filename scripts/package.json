@@ -6,6 +6,8 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "reconcile:units": "tsx ./src/reconcile-units.ts",
+    "reconcile:bank": "tsx ./src/reconcile-bank.ts",
+    "backfill:bank": "tsx ./src/backfill-bank.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

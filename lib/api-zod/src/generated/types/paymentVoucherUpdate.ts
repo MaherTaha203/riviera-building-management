@@ -22,6 +22,8 @@ export interface PaymentVoucherUpdate {
   /** @nullable */
   bankName?: string | null;
   /** @nullable */
+  bankAccountId?: number | null;
+  /** @nullable */
   chequeDate?: string | null;
   /** @nullable */
   dueDate?: string | null;

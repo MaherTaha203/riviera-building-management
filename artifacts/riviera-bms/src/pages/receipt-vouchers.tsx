@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
 import { useOpenNewSignal } from "@/lib/shortcuts";
-import { useListReceiptVouchers, useCreateReceiptVoucher, useUpdateReceiptVoucher, useDeleteReceiptVoucher, useListTenants, useListContracts, useGetExchangeRates } from "@workspace/api-client-react";
+import { useListReceiptVouchers, useCreateReceiptVoucher, useUpdateReceiptVoucher, useDeleteReceiptVoucher, useListTenants, useListContracts, useGetExchangeRates, useListBankAccounts } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ const emptyForm = {
   currency: "ILS",
   exchangeRate: "1",
   paymentMethod: "cash",
+  bankAccountId: "",
   chequeNumber: "",
   bankName: "",
   chequeDate: "",
@@ -50,6 +51,7 @@ export default function ReceiptVouchers() {
   const { data: tenants = [] } = useListTenants();
   const { data: contracts = [] } = useListContracts();
   const { data: rates } = useGetExchangeRates();
+  const { data: bankAccounts = [] } = useListBankAccounts();
   const create = useCreateReceiptVoucher();
   const update = useUpdateReceiptVoucher();
   const del = useDeleteReceiptVoucher();
@@ -98,6 +100,7 @@ export default function ReceiptVouchers() {
       currency: v.currency,
       exchangeRate: String(v.exchangeRate),
       paymentMethod: v.paymentMethod,
+      bankAccountId: v.bankAccountId ? String(v.bankAccountId) : "",
       chequeNumber: v.chequeNumber ?? "",
       bankName: v.bankName ?? "",
       chequeDate: v.chequeDate ?? "",
@@ -112,6 +115,10 @@ export default function ReceiptVouchers() {
   useOpenNewSignal("/receipt-vouchers", openNew);
 
   const handleSave = async () => {
+    // For a bank transfer the money moves into a chosen account (by id); mirror
+    // its name into bankName for display. Otherwise keep the free-text bankName.
+    const selectedBank = (bankAccounts as any[]).find(b => String(b.id) === form.bankAccountId);
+    const isTransfer = form.paymentMethod === "bank_transfer";
     const payload = {
       ...form,
       tenantId: form.tenantId ? Number(form.tenantId) : undefined,
@@ -119,8 +126,9 @@ export default function ReceiptVouchers() {
       amount: Number(form.amount),
       exchangeRate: Number(form.exchangeRate),
       amountILS,
+      bankAccountId: isTransfer && form.bankAccountId ? Number(form.bankAccountId) : undefined,
       chequeNumber: form.chequeNumber || undefined,
-      bankName: form.bankName || undefined,
+      bankName: (isTransfer ? selectedBank?.bankName : form.bankName) || undefined,
       chequeDate: form.chequeDate || undefined,
       dueDate: form.dueDate || undefined,
       accountHolderName: form.accountHolderName || undefined,
@@ -326,6 +334,20 @@ export default function ReceiptVouchers() {
             </div>
             {form.currency !== "ILS" && (
               <p className="text-sm text-muted-foreground ltr-nums">المبلغ بالشيقل: {formatAmount(amountILS, "ILS")}</p>
+            )}
+            {form.paymentMethod === "bank_transfer" && (
+              <div>
+                <Label>الحساب البنكي *</Label>
+                <Select value={form.bankAccountId || "__none__"} onValueChange={v => setForm(f => ({ ...f, bankAccountId: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="اختر الحساب الذي يُودَع فيه المبلغ" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">بدون</SelectItem>
+                    {(bankAccounts as any[]).map((b: any) => (
+                      <SelectItem key={b.id} value={String(b.id)}>{b.bankName} — {b.accountName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
             {form.paymentMethod === "cheque" && (
               <div className="grid gap-3 p-3 border rounded-lg">

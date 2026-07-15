@@ -1410,6 +1410,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:
@@ -1453,6 +1455,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:
@@ -1485,6 +1489,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:
@@ -1525,6 +1531,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:
@@ -1560,6 +1568,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:
@@ -1592,6 +1602,8 @@ components:
           type: ["string", "null"]
         bankName:
           type: ["string", "null"]
+        bankAccountId:
+          type: ["integer", "null"]
         chequeDate:
           type: ["string", "null"]
         dueDate:

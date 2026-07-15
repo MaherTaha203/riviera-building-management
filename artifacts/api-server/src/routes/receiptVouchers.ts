@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { db, receiptVouchersTable, tenantsTable, contractsTable, unitsTable, bankAccountsTable } from "@workspace/db";
+import { db, receiptVouchersTable, tenantsTable, contractsTable, unitsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { generateReceiptVoucherNumber } from "../lib/vouchers";
+import { applyBankDelta } from "../lib/bank";
 import { validateBody } from "../lib/validate";
 import { CreateReceiptVoucherBody, UpdateReceiptVoucherBody } from "@workspace/api-zod";
 
@@ -34,7 +35,7 @@ router.get("/receipt-vouchers", authMiddleware, async (_req, res): Promise<void>
 
 router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVoucherBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
-  const { date, payerName, tenantId, contractId, amount, currency, exchangeRate, amountILS, paymentMethod, chequeNumber, bankName, chequeDate, dueDate, accountHolderName, notes } = req.body;
+  const { date, payerName, tenantId, contractId, amount, currency, exchangeRate, amountILS, paymentMethod, bankAccountId, chequeNumber, bankName, chequeDate, dueDate, accountHolderName, notes } = req.body;
   if (!date || !payerName || amount == null || !currency || !paymentMethod) {
     res.status(400).json({ error: "Missing required fields" });
     return;
@@ -72,6 +73,7 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
       exchangeRate: String(exchangeRate ?? 1),
       amountILS: String(amountILS),
       paymentMethod,
+      bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
       chequeNumber: chequeNumber ?? null, bankName: bankName ?? null,
       chequeDate: chequeDate ?? null, dueDate: dueDate ?? null,
       accountHolderName: accountHolderName ?? null,
@@ -79,17 +81,12 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
       newBalance: newBalance != null ? String(newBalance) : null,
       notes: notes ?? null,
     }).returning();
+    // Bank balance: a bank_transfer receipt credits the chosen account (by id).
+    if (paymentMethod === "bank_transfer") {
+      await applyBankDelta(tx, { bankAccountId: bankAccountId != null ? Number(bankAccountId) : null, bankName }, Number(amountILS));
+    }
     return inserted;
   });
-  // Sync bank account balance for bank_transfer
-  if (paymentMethod === "bank_transfer" && bankName) {
-    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, bankName));
-    if (bankAccount) {
-      // Atomic increment — concurrent bank_transfer receipts to the same bank
-      // previously lost updates via read-modify-write outside the transaction.
-      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${Number(amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
-    }
-  }
   await logAction(user, "CREATE", "receipt_voucher", voucher.id);
   res.status(201).json({ ...voucher, amount: Number(voucher.amount), exchangeRate: Number(voucher.exchangeRate), amountILS: Number(voucher.amountILS), previousBalance: toNum(voucher.previousBalance), newBalance: toNum(voucher.newBalance) });
 });
@@ -119,12 +116,16 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
 
     const oldBankName = existing.bankName;
     const oldMethod = existing.paymentMethod;
+    const oldBankAccountId = existing.bankAccountId;
     const newBankName = req.body.bankName !== undefined ? req.body.bankName : oldBankName;
     const newMethod = req.body.paymentMethod ?? oldMethod;
+    const newBankAccountId = req.body.bankAccountId !== undefined
+      ? (req.body.bankAccountId != null ? Number(req.body.bankAccountId) : null)
+      : oldBankAccountId;
 
     const tenantChanged = newTenantId !== oldTenantId;
     const amountChanged = newAmountILS !== oldAmountILS;
-    const bankChanged = oldBankName !== newBankName || oldMethod !== newMethod;
+    const bankChanged = oldBankAccountId !== newBankAccountId || oldBankName !== newBankName || oldMethod !== newMethod;
 
     if (tenantChanged || amountChanged) {
       // Reverse the old tenant's balance for the old amount
@@ -149,23 +150,13 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
     }
 
     if (amountChanged || bankChanged) {
-      // Reverse old bank balance (subtract the old receipt amount)
-      if (oldMethod === "bank_transfer" && oldBankName) {
-        const [oldBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, oldBankName));
-        if (oldBa) {
-          await tx.update(bankAccountsTable)
-            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${oldAmountILS}` })
-            .where(eq(bankAccountsTable.id, oldBa.id));
-        }
+      // Reverse the old account's credit, then apply the new one — keyed by
+      // bank_account_id (name only as a legacy fallback inside applyBankDelta).
+      if (oldMethod === "bank_transfer") {
+        await applyBankDelta(tx, { bankAccountId: oldBankAccountId, bankName: oldBankName }, -oldAmountILS);
       }
-      // Apply new bank balance (add the new receipt amount)
-      if (newMethod === "bank_transfer" && newBankName) {
-        const [newBa] = await tx.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, newBankName as string));
-        if (newBa) {
-          await tx.update(bankAccountsTable)
-            .set({ balanceILS: sql`${bankAccountsTable.balanceILS} + ${newAmountILS}` })
-            .where(eq(bankAccountsTable.id, newBa.id));
-        }
+      if (newMethod === "bank_transfer") {
+        await applyBankDelta(tx, { bankAccountId: newBankAccountId, bankName: newBankName }, newAmountILS);
       }
     }
 
@@ -173,6 +164,7 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
     const updates: Record<string, unknown> = {};
     if (req.body.tenantId !== undefined) updates.tenantId = newTenantId;
     if (req.body.contractId !== undefined) updates.contractId = req.body.contractId ? Number(req.body.contractId) : null;
+    if (req.body.bankAccountId !== undefined) updates.bankAccountId = newBankAccountId;
     const scalarFields = ["date","payerName","amount","currency","exchangeRate","amountILS","paymentMethod","chequeNumber","bankName","chequeDate","dueDate","accountHolderName","notes"];
     for (const f of scalarFields) {
       if (req.body[f] !== undefined) {
@@ -194,24 +186,20 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
 router.delete("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  // Fetch voucher before deletion so we can reverse the tenant balance
-  const [existing] = await db.select().from(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
+  // Fetch, reverse the tenant + bank balances, and delete — all atomically.
+  const existing = await db.transaction(async (tx) => {
+    const [row] = await tx.select().from(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
+    if (!row) return null;
+    if (row.tenantId) {
+      await tx.update(tenantsTable).set({ balance: sql`${tenantsTable.balance} - ${Number(row.amountILS)}` }).where(eq(tenantsTable.id, row.tenantId));
+    }
+    if (row.paymentMethod === "bank_transfer") {
+      await applyBankDelta(tx, { bankAccountId: row.bankAccountId, bankName: row.bankName }, -Number(row.amountILS));
+    }
+    await tx.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
+    return row;
+  });
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-  // Reverse tenant balance if this voucher was linked to a tenant
-  if (existing.tenantId) {
-    const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, existing.tenantId));
-    if (tenant) {
-      await db.update(tenantsTable).set({ balance: sql`${tenantsTable.balance} - ${Number(existing.amountILS)}` }).where(eq(tenantsTable.id, existing.tenantId));
-    }
-  }
-  // Reverse bank account balance for bank_transfer
-  if (existing.paymentMethod === "bank_transfer" && existing.bankName) {
-    const [bankAccount] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.bankName, existing.bankName));
-    if (bankAccount) {
-      await db.update(bankAccountsTable).set({ balanceILS: sql`${bankAccountsTable.balanceILS} - ${Number(existing.amountILS)}` }).where(eq(bankAccountsTable.id, bankAccount.id));
-    }
-  }
-  await db.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
   await logAction(user, "DELETE", "receipt_voucher", existing.id);
   res.sendStatus(204);
 });
