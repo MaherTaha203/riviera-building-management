@@ -55,16 +55,16 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 function RivieraLogo() {
   return (
     <div className="flex flex-col items-center" aria-label="Riviera Building Management">
-      <div className="font-['Playfair_Display',Georgia,serif] text-[64px] font-bold leading-none text-[#C8A86B]">
+      <div className="font-['Playfair_Display',Georgia,serif] text-[64px] font-bold leading-none text-[#4B4CC0]">
         R
       </div>
-      <div className="mt-2.5 font-[Inter] text-[28px] font-bold leading-none tracking-[0.34em] text-[#102A43]">
+      <div className="mt-2.5 font-[Inter] text-[28px] font-bold leading-none tracking-[0.34em] text-[#26264D]">
         RIVIERA
       </div>
-      <div className="mt-1.5 font-[Inter] text-[11px] font-semibold tracking-[0.42em] text-[#C8A86B]">
+      <div className="mt-1.5 font-[Inter] text-[11px] font-semibold tracking-[0.42em] text-[#4B4CC0]">
         BUILDING MANAGEMENT
       </div>
-      <span className="my-[26px] h-px w-[72px] bg-gradient-to-l from-transparent via-[#C8A86B] to-transparent" />
+      <span className="my-[26px] h-px w-[72px] bg-gradient-to-l from-transparent via-[#4B4CC0] to-transparent" />
     </div>
   );
 }
@@ -148,22 +148,22 @@ export default function Login() {
   const inputBaseClass =
     "h-14 rounded-2xl border-[#E8ECEF] bg-white/70 ps-12 text-[15px] text-[#1E293B] " +
     "placeholder:text-[#94A3B8] transition-all duration-200 " +
-    "focus-visible:border-[#C8A86B] focus-visible:ring-4 focus-visible:ring-[#C8A86B]/15";
+    "focus-visible:border-[#4B4CC0] focus-visible:ring-4 focus-visible:ring-[#4B4CC0]/15";
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#FCFCFA]">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#F8F8FC]">
       {/* ── Decorative background — Concept 1 geometry (washes, blobs, gold rings) ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {/* layered radial washes */}
-        <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_85%_5%,#F6F3EE_0%,transparent_45%),radial-gradient(100%_100%_at_5%_95%,#F3EFE7_0%,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_85%_5%,#EEEEFA_0%,transparent_45%),radial-gradient(100%_100%_at_5%_95%,#ECECF8_0%,transparent_50%)]" />
 
         {/* blurred champagne blobs (physical positions per the reference) */}
-        <div className="absolute -top-[160px] -right-[120px] h-[420px] w-[420px] rounded-full bg-[#EFE7D6] opacity-[0.65] blur-[70px]" />
-        <div className="absolute -bottom-[140px] left-[22%] h-[380px] w-[380px] rounded-full bg-[#F1EDE4] opacity-60 blur-[70px]" />
+        <div className="absolute -top-[160px] -right-[120px] h-[420px] w-[420px] rounded-full bg-[#E3E3F6] opacity-[0.65] blur-[70px]" />
+        <div className="absolute -bottom-[140px] left-[22%] h-[380px] w-[380px] rounded-full bg-[#E7F4EE] opacity-60 blur-[70px]" />
 
         {/* thin gold rings */}
-        <div className="absolute -top-[230px] -left-[180px] h-[540px] w-[540px] rounded-full border-[1.5px] border-[#C8A86B]/[0.22]" />
-        <div className="absolute -bottom-[280px] -right-[200px] h-[620px] w-[620px] rounded-full border-[1.5px] border-[#C8A86B]/[0.22]" />
+        <div className="absolute -top-[230px] -left-[180px] h-[540px] w-[540px] rounded-full border-[1.5px] border-[#4B4CC0]/[0.22]" />
+        <div className="absolute -bottom-[280px] -right-[200px] h-[620px] w-[620px] rounded-full border-[1.5px] border-[#4B4CC0]/[0.22]" />
       </div>
 
       {/* ───────────────────────────── Content ───────────────────────────── */}
@@ -172,7 +172,7 @@ export default function Login() {
         <section className="flex w-full flex-col items-center text-center duration-700 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none lg:w-[45%]">
           <RivieraLogo />
 
-          <h1 className="text-[32px] font-bold leading-snug text-[#102A43]">
+          <h1 className="text-[32px] font-bold leading-snug text-[#26264D]">
             مرحباً بك في نظام عمارة الريفيرا
           </h1>
           <p className="mt-3 max-w-[360px] text-[15px] leading-8 text-[#64748B]">
@@ -185,7 +185,7 @@ export default function Login() {
           <div className="relative w-[460px] max-w-full pt-9">
             {/* floating gold-lock badge, overlapping the card top */}
             <div className="absolute start-1/2 top-0 z-20 flex h-[72px] w-[72px] -translate-x-1/2 items-center justify-center rounded-full border border-white/70 bg-white shadow-[0_18px_40px_rgba(16,42,67,0.12)] rtl:translate-x-1/2">
-              <Lock className="!h-7 !w-7 text-[#C8A86B]" strokeWidth={2.2} />
+              <Lock className="!h-7 !w-7 text-[#4B4CC0]" strokeWidth={2.2} />
             </div>
 
             {/* floating card */}
@@ -198,7 +198,7 @@ export default function Login() {
               )}
             >
               <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-[#102A43]">تسجيل الدخول</h2>
+                <h2 className="text-2xl font-bold text-[#26264D]">تسجيل الدخول</h2>
                 <p className="mt-2 text-sm text-[#64748B]">
                   يرجى إدخال بياناتك لتسجيل الدخول
                 </p>
@@ -264,7 +264,7 @@ export default function Login() {
                                 showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
                               }
                               aria-pressed={showPassword}
-                              className="absolute end-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#94A3B8] transition-colors hover:bg-[#F6F3EE] hover:text-[#102A43] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A86B]/40"
+                              className="absolute end-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#94A3B8] transition-colors hover:bg-[#EEEEFA] hover:text-[#26264D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B4CC0]/40"
                             >
                               {showPassword ? (
                                 <EyeOff className="h-5 w-5" />
@@ -279,14 +279,14 @@ export default function Login() {
                     )}
                   />
 
-                  {/* Primary submit — navy → gold on hover */}
+                  {/* Primary submit — royal indigo → soft mint on hover */}
                   <Button
                     type="submit"
                     disabled={loginMutation.isPending}
                     className={cn(
-                      "mt-1 h-14 w-full rounded-2xl bg-[#102A43] text-base font-semibold text-white",
-                      "shadow-[0_12px_30px_rgba(16,42,67,0.22)] transition-all duration-300",
-                      "hover:-translate-y-0.5 hover:bg-[#C8A86B] hover:text-[#102A43] hover:shadow-[0_16px_36px_rgba(200,168,107,0.30)]",
+                      "mt-1 h-14 w-full rounded-2xl bg-[#4B4CC0] text-base font-semibold text-white",
+                      "shadow-[0_12px_30px_rgba(75,76,192,0.24)] transition-all duration-300",
+                      "hover:-translate-y-0.5 hover:bg-[#5FC091] hover:text-[#0F3D2A] hover:shadow-[0_16px_36px_rgba(95,192,145,0.32)]",
                       "motion-reduce:hover:translate-y-0"
                     )}
                   >
@@ -312,7 +312,7 @@ export default function Login() {
                         role="progressbar"
                         aria-label="جاري المعالجة"
                       >
-                        <div className="rv-indeterminate-bar h-full w-1/3 rounded-full bg-[#C8A86B]" />
+                        <div className="rv-indeterminate-bar h-full w-1/3 rounded-full bg-[#4B4CC0]" />
                       </div>
                       <p className="mt-3 text-center text-[13px] text-[#64748B]">{stageMsg}</p>
                       {elapsed >= 6 && (

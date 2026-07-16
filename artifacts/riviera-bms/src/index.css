@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ===========================================================================
+   RIVIERA DESIGN SYSTEM — "Indigo Hospitality"
+   Design DNA: Royal Indigo + Soft Mint on a warm-neutral canvas, pure-white
+   surfaces, generous radius, and ultra-soft indigo-tinted elevation. Calm,
+   premium, airy. Every screen is themed through these tokens.
+   =========================================================================== */
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -39,6 +46,14 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  /* Semantic status palette */
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -54,104 +69,136 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Unified radius scale (generous, "large") */
+  --radius-sm: calc(var(--radius) - 5px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
+  /* Ultra-soft, indigo-tinted elevation — barely-there luxury shadows */
+  --shadow-2xs: 0 1px 2px hsl(243 40% 22% / 0.04);
+  --shadow-xs: 0 1px 2px hsl(243 40% 22% / 0.05);
+  --shadow-sm: 0 1px 3px hsl(243 40% 22% / 0.05), 0 1px 2px -1px hsl(243 40% 22% / 0.04);
+  --shadow: 0 2px 8px -2px hsl(243 40% 22% / 0.07), 0 1px 2px -1px hsl(243 40% 22% / 0.05);
+  --shadow-md: 0 6px 16px -6px hsl(243 40% 22% / 0.10), 0 2px 6px -2px hsl(243 40% 22% / 0.06);
+  --shadow-lg: 0 12px 28px -8px hsl(243 40% 22% / 0.12), 0 4px 10px -4px hsl(243 40% 22% / 0.07);
+  --shadow-xl: 0 20px 44px -12px hsl(243 40% 22% / 0.16);
 }
 
 :root {
-  --app-font-sans: 'Cairo', 'Inter', sans-serif;
-  --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
-  --radius: 0.3rem;
-  
-  /* Light mode - Warm corporate banking vibe */
-  --background: 40 20% 98%;
-  --foreground: 222 47% 11%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
-  
-  --primary: 222 47% 11%; /* Deep Navy */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 43 74% 49%; /* Warm Gold */
-  --secondary-foreground: 222 47% 11%;
-  
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 43 74% 49%;
-  --accent-foreground: 222 47% 11%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 222 47% 11%;
-  
-  --sidebar: 222 47% 11%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 222 47% 15%;
-  --sidebar-primary: 43 74% 49%;
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 222 47% 18%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 43 74% 49%;
+  --app-font-sans: 'Cairo', 'Inter', system-ui, sans-serif;
+  --app-font-serif: 'Cairo', Georgia, serif;
+  --app-font-mono: ui-monospace, Menlo, monospace;
+  --radius: 0.85rem;
 
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  /* ── Light — warm-neutral canvas, royal indigo + soft mint ── */
+  --background: 240 24% 98%;      /* warm light gray, faint indigo */
+  --foreground: 240 22% 18%;      /* neutral indigo-gray ink (not black) */
+
+  --card: 0 0% 100%;              /* pure white surfaces */
+  --card-foreground: 240 22% 18%;
+  --card-border: 240 24% 92%;     /* hairline */
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 22% 18%;
+  --popover-border: 240 24% 92%;
+
+  --primary: 244 46% 48%;         /* Royal Indigo */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 150 46% 55%;       /* Soft Mint — the brand accent */
+  --secondary-foreground: 154 58% 13%;
+
+  --muted: 240 24% 96%;
+  --muted-foreground: 240 10% 46%;
+
+  --accent: 244 48% 96%;          /* pale indigo — calm hover wash */
+  --accent-foreground: 244 46% 34%;
+
+  --destructive: 6 74% 61%;       /* Coral */
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 150 46% 40%;         /* Mint (readable) */
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;          /* Amber */
+  --warning-foreground: 40 60% 14%;
+  --info: 212 70% 55%;            /* Soft Blue */
+  --info-foreground: 0 0% 100%;
+
+  --border: 240 24% 91%;
+  --input: 240 24% 90%;
+  --ring: 244 46% 48%;
+
+  /* ── Sidebar — deep Royal Indigo panel ── */
+  --sidebar: 244 44% 40%;
+  --sidebar-foreground: 240 34% 95%;
+  --sidebar-border: 244 40% 47%;
+  --sidebar-primary: 150 46% 60%;            /* mint active accent */
+  --sidebar-primary-foreground: 154 55% 14%;
+  --sidebar-accent: 244 42% 47%;             /* hover wash */
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 150 46% 60%;
+
+  --button-outline: hsl(244 40% 30% / 0.10);
+  --badge-outline: hsl(244 40% 30% / 0.06);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: hsl(244 40% 30% / 0.03);
+  --elevate-2: hsl(244 40% 30% / 0.07);
 }
 
 .dark {
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  
-  --card: 222 47% 14%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 222 47% 18%;
-  
-  --popover: 222 47% 14%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 222 47% 18%;
-  
-  --primary: 43 74% 49%;
-  --primary-foreground: 222 47% 11%;
-  
-  --secondary: 222 47% 18%;
-  --secondary-foreground: 210 40% 98%;
-  
-  --muted: 222 47% 18%;
-  --muted-foreground: 215 20% 65%;
-  
-  --accent: 43 74% 49%;
-  --accent-foreground: 222 47% 11%;
-  
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 222 47% 18%;
-  --input: 222 47% 18%;
-  --ring: 43 74% 49%;
-  
-  --sidebar: 222 47% 14%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 222 47% 18%;
-  --sidebar-primary: 43 74% 49%;
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 222 47% 20%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 43 74% 49%;
+  /* ── Dark — built from scratch: deep indigo-ink, soft contrast, no neon ── */
+  --background: 240 28% 9%;
+  --foreground: 240 22% 92%;
+
+  --card: 240 24% 13%;
+  --card-foreground: 240 22% 92%;
+  --card-border: 240 20% 21%;
+
+  --popover: 240 24% 13%;
+  --popover-foreground: 240 22% 92%;
+  --popover-border: 240 20% 21%;
+
+  --primary: 244 62% 72%;         /* light royal indigo on dark */
+  --primary-foreground: 244 45% 13%;
+
+  --secondary: 240 20% 20%;
+  --secondary-foreground: 150 44% 72%;
+
+  --muted: 240 20% 18%;
+  --muted-foreground: 240 12% 64%;
+
+  --accent: 240 24% 19%;          /* subtle hover */
+  --accent-foreground: 240 22% 92%;
+
+  --destructive: 6 66% 58%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 150 44% 52%;
+  --success-foreground: 150 45% 10%;
+  --warning: 38 88% 60%;
+  --warning-foreground: 40 60% 10%;
+  --info: 212 66% 64%;
+  --info-foreground: 212 45% 12%;
+
+  --border: 240 20% 21%;
+  --input: 240 20% 22%;
+  --ring: 244 62% 72%;
+
+  --sidebar: 243 34% 14%;
+  --sidebar-foreground: 240 22% 90%;
+  --sidebar-border: 243 26% 23%;
+  --sidebar-primary: 150 44% 56%;
+  --sidebar-primary-foreground: 150 45% 12%;
+  --sidebar-accent: 243 28% 22%;
+  --sidebar-accent-foreground: 240 22% 92%;
+  --sidebar-ring: 150 44% 56%;
+
+  --button-outline: hsl(0 0% 100% / 0.10);
+  --badge-outline: hsl(0 0% 100% / 0.06);
+  --elevate-1: hsl(0 0% 100% / 0.04);
+  --elevate-2: hsl(0 0% 100% / 0.08);
 }
 
 @layer base {
@@ -171,28 +218,28 @@
   display: inline-block;
 }
 
-/* ── Approved floating design (Concept 4): tables inside the app shell ──
+/* ── App-shell tables (Riviera design): airy rows, calm indigo hover ──
    Scoped to #root so the print document (#print-root) keeps its own system. */
 #root thead th {
-  background: hsl(40 20% 97.5%);
+  background: hsl(var(--muted));
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: hsl(var(--muted-foreground));
-  height: 40px;
+  height: 44px;
   padding-top: 0;
   padding-bottom: 0;
 }
 #root tbody td {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 13px;
+  padding-bottom: 13px;
   font-size: 12.5px;
 }
 #root tbody tr {
-  transition: background-color 0.12s;
+  transition: background-color 0.14s ease;
 }
 #root tbody tr:hover {
-  background: hsl(40 20% 97.5%);
+  background: hsl(var(--accent));
 }
 
 /* Phase 1 — indeterminate login progress bar (honest "working, duration

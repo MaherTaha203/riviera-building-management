@@ -142,7 +142,7 @@ export default function Tenants() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((t: any) => (
-            <Card key={t.id} className="transition-colors hover:border-[hsl(214,32%,84%)]">
+            <Card key={t.id} className="transition-colors hover:border-primary/30">
               <CardHeader className="pb-2 flex flex-row items-start justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-md text-primary"><Users size={18} /></div>

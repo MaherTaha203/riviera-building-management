@@ -1,22 +1,22 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Home, 
-  Users, 
-  FileText, 
-  Receipt, 
-  CreditCard, 
-  Wallet, 
-  Landmark, 
-  Files, 
+import {
+  LayoutDashboard,
+  Home,
+  Users,
+  FileText,
+  Receipt,
+  CreditCard,
+  Wallet,
+  Landmark,
+  Files,
   ScrollText,
   FileBox,
   BarChart3,
   History,
   Settings,
   LogOut,
-  Building2
+  Building2,
 } from "lucide-react";
 import { getUser, clearToken } from "@/lib/auth";
 
@@ -46,6 +46,7 @@ const adminItems = [
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [location, setLocation] = useLocation();
   const user = getUser();
+  const initial = (user?.name || user?.username || "U").charAt(0);
 
   const handleLogout = () => {
     clearToken();
@@ -55,67 +56,82 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const NavLink = ({ item }: { item: any }) => {
     const isActive = location === item.path || location.startsWith(`${item.path}/`);
     const Icon = item.icon;
-
     return (
       <Link href={item.path}>
         <div
           onClick={onNavigate}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer text-sm font-medium",
-            isActive 
-              ? "bg-primary text-primary-foreground" 
-              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            "group relative flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] transition-all cursor-pointer text-[13.5px] font-medium",
+            isActive
+              ? "bg-white/[0.14] text-white shadow-sm"
+              : "text-sidebar-foreground/75 hover:bg-white/[0.07] hover:text-white",
           )}
         >
-          <Icon size={18} />
-          <span>{item.name}</span>
+          {/* mint accent tab on the active item (reference cue) */}
+          <span
+            className={cn(
+              "absolute inset-y-1.5 start-0 w-[3px] rounded-full bg-secondary transition-opacity",
+              isActive ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden="true"
+          />
+          <Icon size={18} className={cn("shrink-0", isActive ? "text-secondary" : "")} />
+          <span className="truncate">{item.name}</span>
         </div>
       </Link>
     );
   };
 
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+    <div className="px-3.5 mb-1.5 text-[10.5px] font-bold text-sidebar-foreground/45 tracking-[0.14em]">{children}</div>
+  );
+
   return (
-    <div className="w-64 bg-sidebar border-l border-sidebar-border flex flex-col h-full overflow-hidden shrink-0">
-      <div className="p-5 flex items-center gap-3 border-b border-sidebar-border shrink-0">
-        <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-primary-foreground shrink-0">
-          <Building2 size={18} />
+    <div className="w-[248px] h-full bg-sidebar text-sidebar-foreground rounded-[22px] shadow-md flex flex-col overflow-hidden shrink-0">
+      {/* Brand */}
+      <div className="pt-5 px-5 flex items-center gap-2.5 shrink-0">
+        <div className="w-8 h-8 bg-white/12 rounded-xl flex items-center justify-center text-sidebar-foreground shrink-0">
+          <Building2 size={17} />
         </div>
-        <div className="font-bold text-lg text-sidebar-foreground tracking-tight leading-tight">عمارة الريفييرا</div>
+        <div className="font-extrabold text-[15px] tracking-tight leading-tight">عمارة الريفييرا</div>
       </div>
-      
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin">
+
+      {/* Profile block — avatar-first, echoing the reference sidebar */}
+      <div className="mt-5 mb-1 px-5 flex flex-col items-center text-center shrink-0">
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center text-[22px] font-extrabold ring-4 ring-white/10"
+          style={{ background: "linear-gradient(135deg, hsl(150 46% 62%), hsl(150 48% 46%))", color: "hsl(154 55% 14%)" }}
+        >
+          {initial}
+        </div>
+        <div className="mt-3 text-[14.5px] font-bold text-white leading-tight">{user?.name || user?.username || "المستخدم"}</div>
+        <div className="text-[11px] text-sidebar-foreground/55 capitalize mt-0.5">{user?.role || "admin"}</div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5 scrollbar-thin">
         <div className="space-y-1">
           {navItems.map((item) => <NavLink key={item.path} item={item} />)}
         </div>
-        
         <div>
-          <div className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">المالية</div>
+          <SectionLabel>المالية</SectionLabel>
           <div className="space-y-1">
             {financialItems.map((item) => <NavLink key={item.path} item={item} />)}
           </div>
         </div>
-        
         <div>
-          <div className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">الإدارة</div>
+          <SectionLabel>الإدارة</SectionLabel>
           <div className="space-y-1">
             {adminItems.map((item) => <NavLink key={item.path} item={item} />)}
           </div>
         </div>
       </div>
 
-      <div className="p-4 border-t border-sidebar-border shrink-0 bg-sidebar-accent/50">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-full bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-foreground font-bold text-sm">
-            {user?.name?.charAt(0) || "U"}
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <div className="text-sm font-semibold text-sidebar-foreground truncate">{user?.name || "المستخدم"}</div>
-            <div className="text-xs text-sidebar-foreground/60 truncate capitalize">{user?.role || "Admin"}</div>
-          </div>
-        </div>
-        <button 
+      {/* Logout */}
+      <div className="p-3 shrink-0">
+        <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85 bg-white/[0.06] hover:bg-white/[0.12] rounded-[14px] transition-colors"
         >
           <LogOut size={16} />
           <span>تسجيل خروج</span>

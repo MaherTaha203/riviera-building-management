@@ -62,20 +62,20 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1 text-[12.5px]">خط السيولة أولاً — ثم ما يتطلب انتباهك</p>
       </div>
 
-      {/* ── Liquidity hero (navy, gold edge) ── */}
+      {/* ── Liquidity hero (royal indigo, mint edge) ── */}
       <div className="relative overflow-hidden rounded-[14px] bg-sidebar text-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.25)] grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
         <span className="absolute inset-y-0 right-0 w-1 bg-secondary" aria-hidden="true" />
-        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)]">
+        <div className="px-4 lg:px-[22px] lg:border-l border-white/12">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">رصيد الصندوق</div>
           <div className="text-[24px] font-semibold text-secondary ltr-nums text-left">{ready ? formatAmount(Number(s.cashBalanceILS), "ILS") : <Sk light className="h-6 w-28" />}</div>
           <div className="text-[10.5px] text-white/50 mt-1">الرصيد النقدي المتوفر</div>
         </div>
-        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)]">
+        <div className="px-4 lg:px-[22px] lg:border-l border-white/12">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">الحسابات البنكية</div>
           <div className="text-[24px] font-semibold ltr-nums text-left">{ready ? formatAmount(Number(s.totalBankBalanceILS), "ILS") : <Sk light className="h-6 w-28" />}</div>
           <div className="text-[10.5px] text-white/50 mt-1">إجمالي الأرصدة</div>
         </div>
-        <div className="px-4 lg:px-[22px] lg:border-l border-[hsl(222,47%,18%)] mt-4 lg:mt-0">
+        <div className="px-4 lg:px-[22px] lg:border-l border-white/12 mt-4 lg:mt-0">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">شيكات معلّقة</div>
           <div className="text-[24px] font-semibold ltr-nums text-left">{ready ? s.pendingCheques : <Sk light className="h-6 w-10" />}</div>
           <div className="text-[10.5px] text-white/50 mt-1">بانتظار الاستحقاق</div>
@@ -83,7 +83,7 @@ export default function Dashboard() {
         <div className="px-4 lg:px-[22px] mt-4 lg:mt-0">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">صافي حركة الشهر — {monthLabel}</div>
           <div className="text-[24px] font-semibold text-secondary ltr-nums text-left">{ready ? formatAmount(monthlyNet, "ILS") : <Sk light className="h-6 w-28" />}</div>
-          <div className="mt-2 h-[5px] rounded-[3px] bg-[hsl(222,47%,18%)] overflow-hidden flex">
+          <div className="mt-2 h-[5px] rounded-[3px] bg-white/15 overflow-hidden flex">
             <div className="bg-secondary rounded-[3px]" style={{ width: ready ? `${netPct}%` : "0%" }} />
           </div>
           <div className="text-[10.5px] text-white/50 mt-1.5">
@@ -99,7 +99,7 @@ export default function Dashboard() {
         <div className="space-y-5 min-w-0">
           {/* KPI row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+            <Card className="transition-colors hover:border-primary/30">
               <CardContent className="pt-3.5 pb-3.5 px-4">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><Building2 size={14} />الإشغال</div>
                 <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{ready ? <>{s.occupiedUnits} / {s.totalUnits}</> : <Sk className="h-6 w-20" />}</div>
@@ -113,14 +113,14 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+            <Card className="transition-colors hover:border-primary/30">
               <CardContent className="pt-3.5 pb-3.5 px-4">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><Users size={14} />المستأجرين</div>
                 <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{ready ? s.totalTenants : <Sk className="h-6 w-12" />}</div>
                 <div className="text-[11px] text-muted-foreground mt-2">إجمالي المستأجرين</div>
               </CardContent>
             </Card>
-            <Card className="transition-colors hover:border-[hsl(214,32%,84%)]">
+            <Card className="transition-colors hover:border-primary/30">
               <CardContent className="pt-3.5 pb-3.5 px-4">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-2"><FileText size={14} />العقود النشطة</div>
                 <div className="text-[23px] font-semibold ltr-nums text-left tracking-tight">{ready ? s.activeContracts : <Sk className="h-6 w-12" />}</div>
@@ -249,7 +249,7 @@ export default function Dashboard() {
                 <button
                   key={n.key}
                   onClick={() => navigate(n.path)}
-                  className="w-full flex gap-2.5 px-4 py-3 border-b last:border-b-0 text-start hover:bg-[hsl(43,74%,97%)] transition-colors"
+                  className="w-full flex gap-2.5 px-4 py-3 border-b last:border-b-0 text-start hover:bg-accent transition-colors"
                 >
                   <span className={`w-[3px] self-stretch rounded-[2px] shrink-0 ${n.tone === "danger" ? "bg-destructive" : "bg-secondary"}`} />
                   <span className="min-w-0">

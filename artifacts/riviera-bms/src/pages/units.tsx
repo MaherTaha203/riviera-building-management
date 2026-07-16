@@ -168,7 +168,7 @@ export default function Units() {
           {filtered.map((u: any) => {
             const st = statusLabels[u.status] ?? { label: u.status, variant: "outline" as const };
             return (
-              <Card key={u.id} className="transition-colors hover:border-[hsl(214,32%,84%)]">
+              <Card key={u.id} className="transition-colors hover:border-primary/30">
                 <CardHeader className="pb-2 flex flex-row items-start justify-between">
                   <div className="flex items-center gap-2">
                     <div className="p-2 bg-primary/10 rounded-md text-primary"><Building2 size={18} /></div>
