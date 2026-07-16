@@ -15,8 +15,6 @@ import {
 import { formatDate } from "@/lib/format";
 
 // Approved design tokens (identity: navy sidebar family)
-const NAVY_18 = "hsl(222,47%,18%)";
-const NAVY_24 = "hsl(222,47%,24%)";
 
 // ---------------------------------------------------------------------------
 // Global search (V1.1 §1) — searches tenants / units / contracts / receipt
@@ -107,15 +105,14 @@ function GlobalSearch() {
   };
 
   return (
-    <div ref={boxRef} className="relative w-full max-w-[340px]">
-      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" />
+    <div ref={boxRef} className="relative w-full max-w-[360px]">
+      <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
       <input
         value={q}
         onChange={e => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => { setArmed(true); setOpen(true); }}
         placeholder="بحث شامل... (مستأجر، وحدة، عقد، سند، شيك)"
-        className="w-full h-9 rounded-[7px] border text-[12.5px] text-white placeholder:text-white/45 pr-9 pl-3 outline-none transition-colors focus:border-secondary"
-        style={{ background: NAVY_18, borderColor: NAVY_24 }}
+        className="w-full h-10 rounded-full border border-border bg-muted text-[12.5px] text-foreground placeholder:text-muted-foreground pr-10 pl-4 outline-none transition-colors focus:border-primary focus:bg-card"
         data-global-search
       />
       {open && q.trim().length >= 2 && (
@@ -198,7 +195,7 @@ function NotificationsBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="relative h-9 w-9 rounded-[7px] flex items-center justify-center text-white/75 transition-colors hover:bg-[hsl(222,47%,18%)] hover:text-white"
+          className="relative h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="التنبيهات"
         >
           <Bell size={16} />
@@ -247,10 +244,10 @@ function HeaderClock() {
   }, []);
   return (
     <div className="hidden md:flex flex-col items-start leading-tight select-none">
-      <span className="text-[13px] font-medium text-white/85 ltr-nums" style={{ direction: "ltr" }}>
+      <span className="text-[13px] font-semibold text-foreground ltr-nums" style={{ direction: "ltr" }}>
         {now.toLocaleTimeString("en-GB")}
       </span>
-      <span className="text-[10px] text-white/45">
+      <span className="text-[10px] text-muted-foreground">
         {now.toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
       </span>
     </div>
@@ -270,8 +267,8 @@ function FxChips() {
   const isLive = (rates as any)?.source === "auto";
   const chip = (cur: string, val: unknown) => (
     <div className="flex items-center gap-1.5 leading-none select-none">
-      <span className="text-[9.5px] font-bold tracking-wider text-secondary/90">{cur}</span>
-      <span className="text-[12px] font-medium text-white/80 ltr-nums" style={{ direction: "ltr" }}>₪ {Number(val ?? 0).toFixed(2)}</span>
+      <span className="text-[9.5px] font-bold tracking-wider text-success">{cur}</span>
+      <span className="text-[12px] font-semibold text-foreground/85 ltr-nums" style={{ direction: "ltr" }}>₪ {Number(val ?? 0).toFixed(2)}</span>
     </div>
   );
   return (
@@ -280,7 +277,7 @@ function FxChips() {
       title={isLive ? "سعر صرف مباشر — يُحدَّث تلقائياً" : "سعر صرف يدوي (تعذّر الجلب التلقائي)"}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/25"}`}
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLive ? "bg-success animate-pulse" : "bg-muted-foreground/40"}`}
         aria-hidden
       />
       {chip("USD", rates?.usdToILS)}
@@ -294,24 +291,24 @@ function UserChip() {
   return (
     <div className="hidden sm:flex items-center gap-2.5 select-none">
       <div className="text-right leading-tight">
-        <div className="text-[12px] font-semibold text-white/90">{user?.name || user?.username || "المستخدم"}</div>
-        <div className="text-[9.5px] text-white/40 capitalize">{user?.role || ""}</div>
+        <div className="text-[12px] font-semibold text-foreground">{user?.name || user?.username || "المستخدم"}</div>
+        <div className="text-[9.5px] text-muted-foreground capitalize">{user?.role || ""}</div>
       </div>
-      <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center font-extrabold text-[12px] text-primary"
-        style={{ background: "linear-gradient(135deg, hsl(43,74%,49%), hsl(43,74%,38%))" }}>
+      <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center font-extrabold text-[12px]"
+        style={{ background: "linear-gradient(135deg, hsl(150 46% 60%), hsl(150 48% 46%))", color: "hsl(154 55% 14%)" }}>
         {(user?.name || user?.username || "U").charAt(0)}
       </div>
     </div>
   );
 }
 
-const SEP = <div className="hidden md:block w-px h-[22px] bg-white/10" />;
+const SEP = <div className="hidden md:block w-px h-[22px] bg-border" />;
 
 export function HeaderBar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="h-[58px] shrink-0 bg-sidebar border-b border-sidebar-border flex items-center gap-4 px-3 sm:px-5">
+    <header className="mx-3 mt-3 mb-1 h-[60px] shrink-0 rounded-2xl bg-card border border-card-border shadow-sm flex items-center gap-4 px-3 sm:px-5">
       {onMenuClick && (
-        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden text-white hover:bg-[hsl(222,47%,24%)] hover:text-white" title="القائمة" onClick={onMenuClick}>
+        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden text-foreground hover:bg-muted" title="القائمة" onClick={onMenuClick}>
           <Menu size={18} />
         </Button>
       )}
