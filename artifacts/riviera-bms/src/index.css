@@ -5,10 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ===========================================================================
-   RIVIERA DESIGN SYSTEM — "Indigo Hospitality"
-   Design DNA: Royal Indigo + Soft Mint on a warm-neutral canvas, pure-white
-   surfaces, generous radius, and ultra-soft indigo-tinted elevation. Calm,
-   premium, airy. Every screen is themed through these tokens.
+   RIVIERA DESIGN SYSTEM — "Glossy Graphite"
+   Design DNA: a glossy shiny-gray "floor" (the canvas) with beautiful glossy
+   black bars (sidebar / top bar / hero) and a vivid emerald-mint accent.
+   White cards, generous radius, soft neutral elevation. Every screen is themed
+   through these tokens; the bars get their gloss from the .rv-bar / .rv-floor
+   utilities below.
    =========================================================================== */
 
 @theme inline {
@@ -76,14 +78,14 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 10px);
 
-  /* Ultra-soft, indigo-tinted elevation — barely-there luxury shadows */
-  --shadow-2xs: 0 1px 2px hsl(243 40% 22% / 0.04);
-  --shadow-xs: 0 1px 2px hsl(243 40% 22% / 0.05);
-  --shadow-sm: 0 1px 3px hsl(243 40% 22% / 0.05), 0 1px 2px -1px hsl(243 40% 22% / 0.04);
-  --shadow: 0 2px 8px -2px hsl(243 40% 22% / 0.07), 0 1px 2px -1px hsl(243 40% 22% / 0.05);
-  --shadow-md: 0 6px 16px -6px hsl(243 40% 22% / 0.10), 0 2px 6px -2px hsl(243 40% 22% / 0.06);
-  --shadow-lg: 0 12px 28px -8px hsl(243 40% 22% / 0.12), 0 4px 10px -4px hsl(243 40% 22% / 0.07);
-  --shadow-xl: 0 20px 44px -12px hsl(243 40% 22% / 0.16);
+  /* Soft, cool-graphite elevation — barely-there shadows for white cards */
+  --shadow-2xs: 0 1px 2px hsl(220 24% 12% / 0.05);
+  --shadow-xs: 0 1px 2px hsl(220 24% 12% / 0.06);
+  --shadow-sm: 0 1px 3px hsl(220 24% 12% / 0.07), 0 1px 2px -1px hsl(220 24% 12% / 0.05);
+  --shadow: 0 2px 8px -2px hsl(220 24% 12% / 0.09), 0 1px 2px -1px hsl(220 24% 12% / 0.06);
+  --shadow-md: 0 6px 16px -6px hsl(220 24% 12% / 0.13), 0 2px 6px -2px hsl(220 24% 12% / 0.08);
+  --shadow-lg: 0 12px 28px -8px hsl(220 24% 12% / 0.16), 0 4px 10px -4px hsl(220 24% 12% / 0.09);
+  --shadow-xl: 0 20px 44px -12px hsl(220 24% 12% / 0.20);
 }
 
 :root {
@@ -92,108 +94,108 @@
   --app-font-mono: ui-monospace, Menlo, monospace;
   --radius: 0.85rem;
 
-  /* ── Light — warm-neutral canvas, royal indigo + soft mint ── */
-  --background: 240 24% 98%;      /* warm light gray, faint indigo */
-  --foreground: 240 22% 18%;      /* neutral indigo-gray ink (not black) */
+  /* ── Light — glossy shiny-gray floor, emerald-mint accent ── */
+  --background: 220 16% 90%;      /* glossy shiny gray (the floor) */
+  --foreground: 220 20% 15%;      /* graphite ink */
 
   --card: 0 0% 100%;              /* pure white surfaces */
-  --card-foreground: 240 22% 18%;
-  --card-border: 240 24% 92%;     /* hairline */
+  --card-foreground: 220 20% 15%;
+  --card-border: 220 16% 88%;     /* hairline */
 
   --popover: 0 0% 100%;
-  --popover-foreground: 240 22% 18%;
-  --popover-border: 240 24% 92%;
+  --popover-foreground: 220 20% 15%;
+  --popover-border: 220 16% 88%;
 
-  --primary: 244 46% 48%;         /* Royal Indigo */
+  --primary: 158 64% 40%;         /* Emerald mint — the brand accent */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 150 46% 55%;       /* Soft Mint — the brand accent */
-  --secondary-foreground: 154 58% 13%;
+  --secondary: 158 66% 50%;       /* vivid mint — the accent that sits on black bars */
+  --secondary-foreground: 158 62% 12%;
 
-  --muted: 240 24% 96%;
-  --muted-foreground: 240 10% 46%;
+  --muted: 220 15% 95%;
+  --muted-foreground: 220 10% 42%;
 
-  --accent: 244 48% 96%;          /* pale indigo — calm hover wash */
-  --accent-foreground: 244 46% 34%;
+  --accent: 158 48% 94%;          /* pale mint — calm hover wash */
+  --accent-foreground: 158 64% 24%;
 
-  --destructive: 6 74% 61%;       /* Coral */
+  --destructive: 4 74% 56%;       /* Red */
   --destructive-foreground: 0 0% 100%;
 
-  --success: 150 46% 40%;         /* Mint (readable) */
+  --success: 158 64% 36%;         /* Emerald (readable) */
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;          /* Amber */
   --warning-foreground: 40 60% 14%;
-  --info: 212 70% 55%;            /* Soft Blue */
+  --info: 210 78% 50%;            /* Blue */
   --info-foreground: 0 0% 100%;
 
-  --border: 240 24% 91%;
-  --input: 240 24% 90%;
-  --ring: 244 46% 48%;
+  --border: 220 16% 86%;
+  --input: 220 16% 85%;
+  --ring: 158 64% 40%;
 
-  /* ── Sidebar — deep Royal Indigo panel ── */
-  --sidebar: 244 44% 40%;
-  --sidebar-foreground: 240 34% 95%;
-  --sidebar-border: 244 40% 47%;
-  --sidebar-primary: 150 46% 60%;            /* mint active accent */
-  --sidebar-primary-foreground: 154 55% 14%;
-  --sidebar-accent: 244 42% 47%;             /* hover wash */
+  /* ── Sidebar — glossy black panel (gloss comes from .rv-bar) ── */
+  --sidebar: 220 14% 8%;
+  --sidebar-foreground: 220 16% 90%;
+  --sidebar-border: 220 12% 18%;
+  --sidebar-primary: 158 66% 52%;            /* mint active accent */
+  --sidebar-primary-foreground: 158 60% 12%;
+  --sidebar-accent: 220 10% 16%;             /* hover wash */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 150 46% 60%;
+  --sidebar-ring: 158 66% 52%;
 
-  --button-outline: hsl(244 40% 30% / 0.10);
-  --badge-outline: hsl(244 40% 30% / 0.06);
+  --button-outline: hsl(220 24% 14% / 0.10);
+  --badge-outline: hsl(220 24% 14% / 0.06);
   --opaque-button-border-intensity: -8;
-  --elevate-1: hsl(244 40% 30% / 0.03);
-  --elevate-2: hsl(244 40% 30% / 0.07);
+  --elevate-1: hsl(220 24% 14% / 0.03);
+  --elevate-2: hsl(220 24% 14% / 0.07);
 }
 
 .dark {
-  /* ── Dark — built from scratch: deep indigo-ink, soft contrast, no neon ── */
-  --background: 240 28% 9%;
-  --foreground: 240 22% 92%;
+  /* ── Dark — darker graphite floor, near-black bars, brighter emerald mint ── */
+  --background: 220 14% 10%;       /* dark graphite floor */
+  --foreground: 220 16% 92%;
 
-  --card: 240 24% 13%;
-  --card-foreground: 240 22% 92%;
-  --card-border: 240 20% 21%;
+  --card: 220 13% 14%;
+  --card-foreground: 220 16% 92%;
+  --card-border: 220 10% 22%;
 
-  --popover: 240 24% 13%;
-  --popover-foreground: 240 22% 92%;
-  --popover-border: 240 20% 21%;
+  --popover: 220 13% 14%;
+  --popover-foreground: 220 16% 92%;
+  --popover-border: 220 10% 22%;
 
-  --primary: 244 62% 72%;         /* light royal indigo on dark */
-  --primary-foreground: 244 45% 13%;
+  --primary: 158 62% 52%;         /* bright emerald mint on dark */
+  --primary-foreground: 158 60% 9%;
 
-  --secondary: 240 20% 20%;
-  --secondary-foreground: 150 44% 72%;
+  --secondary: 158 64% 54%;
+  --secondary-foreground: 158 60% 10%;
 
-  --muted: 240 20% 18%;
-  --muted-foreground: 240 12% 64%;
+  --muted: 220 12% 18%;
+  --muted-foreground: 220 10% 62%;
 
-  --accent: 240 24% 19%;          /* subtle hover */
-  --accent-foreground: 240 22% 92%;
+  --accent: 220 12% 20%;          /* subtle hover */
+  --accent-foreground: 220 16% 92%;
 
-  --destructive: 6 66% 58%;
+  --destructive: 4 68% 58%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 150 44% 52%;
-  --success-foreground: 150 45% 10%;
+  --success: 158 60% 50%;
+  --success-foreground: 158 60% 8%;
   --warning: 38 88% 60%;
   --warning-foreground: 40 60% 10%;
-  --info: 212 66% 64%;
-  --info-foreground: 212 45% 12%;
+  --info: 210 74% 62%;
+  --info-foreground: 210 45% 10%;
 
-  --border: 240 20% 21%;
-  --input: 240 20% 22%;
-  --ring: 244 62% 72%;
+  --border: 220 10% 22%;
+  --input: 220 10% 24%;
+  --ring: 158 62% 52%;
 
-  --sidebar: 243 34% 14%;
-  --sidebar-foreground: 240 22% 90%;
-  --sidebar-border: 243 26% 23%;
-  --sidebar-primary: 150 44% 56%;
-  --sidebar-primary-foreground: 150 45% 12%;
-  --sidebar-accent: 243 28% 22%;
-  --sidebar-accent-foreground: 240 22% 92%;
-  --sidebar-ring: 150 44% 56%;
+  --sidebar: 220 16% 6%;
+  --sidebar-foreground: 220 16% 90%;
+  --sidebar-border: 220 12% 18%;
+  --sidebar-primary: 158 64% 54%;
+  --sidebar-primary-foreground: 158 60% 10%;
+  --sidebar-accent: 220 10% 14%;
+  --sidebar-accent-foreground: 220 16% 92%;
+  --sidebar-ring: 158 64% 54%;
 
   --button-outline: hsl(0 0% 100% / 0.10);
   --badge-outline: hsl(0 0% 100% / 0.06);
@@ -217,6 +219,48 @@
   direction: ltr;
   display: inline-block;
 }
+
+/* ===========================================================================
+   GLOSSY GRAPHITE — surface utilities
+   .rv-floor  → the glossy shiny-gray canvas (soft light sheen top-right, cool
+                gray pool bottom-left).  .rv-bar → glossy black bar (top sheen
+                over a graphite→black vertical gradient) used for the sidebar,
+                the top bar, and dashboard hero panels.
+   =========================================================================== */
+.rv-floor {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(120% 90% at 84% -14%, hsl(0 0% 100% / 0.75), transparent 56%),
+    radial-gradient(95% 75% at 4% 112%, hsl(220 18% 74% / 0.40), transparent 58%);
+}
+.dark .rv-floor {
+  background-image:
+    radial-gradient(120% 90% at 84% -14%, hsl(220 16% 30% / 0.45), transparent 56%),
+    radial-gradient(95% 75% at 4% 112%, hsl(0 0% 0% / 0.35), transparent 58%);
+}
+
+.rv-bar {
+  background-image:
+    linear-gradient(180deg, hsl(0 0% 100% / 0.08) 0%, hsl(0 0% 100% / 0) 42%),
+    linear-gradient(158deg, hsl(220 12% 15%) 0%, hsl(220 18% 5%) 100%);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06);
+}
+.dark .rv-bar {
+  background-image:
+    linear-gradient(180deg, hsl(0 0% 100% / 0.06) 0%, hsl(0 0% 100% / 0) 42%),
+    linear-gradient(158deg, hsl(220 12% 11%) 0%, hsl(220 20% 3%) 100%);
+}
+
+/* Scrollbars — a hidden variant for the sidebar (no down-arrow), and a slim,
+   theme-tinted variant for the main content area. */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.28); border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.45); }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 
 /* ── App-shell tables (Riviera design): airy rows, calm indigo hover ──
    Scoped to #root so the print document (#print-root) keeps its own system. */
