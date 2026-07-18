@@ -128,7 +128,7 @@ export default function Cheques() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-extrabold tracking-tight">الشيكات</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الشيكات الواردة والصادرة</p></div>
         <div className="flex items-center gap-2">
           <PrintExportButton
@@ -205,7 +205,7 @@ export default function Cheques() {
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader><DialogTitle>إضافة شيك جديد</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>رقم الشيك *</Label><Input id="chequeNumber" value={form.chequeNumber} onChange={e => { setForm(f => ({ ...f, chequeNumber: e.target.value })); clear("chequeNumber"); }} aria-invalid={!!errors.chequeNumber} className={`mt-1 ltr-nums ${errors.chequeNumber ? "border-destructive" : ""}`} /><FieldError msg={errors.chequeNumber} /></div>
               <div>
                 <Label>النوع *</Label>
@@ -215,15 +215,15 @@ export default function Cheques() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>اسم المسحوب عليه *</Label><Input id="drawerName" value={form.drawerName} onChange={e => { setForm(f => ({ ...f, drawerName: e.target.value })); clear("drawerName"); }} aria-invalid={!!errors.drawerName} className={`mt-1 ${errors.drawerName ? "border-destructive" : ""}`} /><FieldError msg={errors.drawerName} /></div>
               <div><Label>البنك *</Label><Input id="bankName" value={form.bankName} onChange={e => { setForm(f => ({ ...f, bankName: e.target.value })); clear("bankName"); }} aria-invalid={!!errors.bankName} className={`mt-1 ${errors.bankName ? "border-destructive" : ""}`} /><FieldError msg={errors.bankName} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>تاريخ الشيك *</Label><SmartDateInput id="chequeDate" value={form.chequeDate} onChange={v => { setForm(f => ({ ...f, chequeDate: v })); clear("chequeDate"); }} className="mt-1" invalid={!!errors.chequeDate} /><FieldError msg={errors.chequeDate} /></div>
               <div><Label>تاريخ الاستحقاق *</Label><SmartDateInput id="dueDate" value={form.dueDate} onChange={v => { setForm(f => ({ ...f, dueDate: v })); clear("dueDate"); }} className="mt-1" invalid={!!errors.dueDate} /><FieldError msg={errors.dueDate} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>العملة *</Label>
                 <Select value={form.currency} onValueChange={c => setForm(f => ({ ...f, currency: c, exchangeRate: String(rateForCurrency(c)) }))}>

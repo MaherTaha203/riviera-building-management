@@ -80,7 +80,7 @@ export default function BankAccounts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-extrabold tracking-tight">الحسابات البنكية</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الحسابات المصرفية</p></div>
         <div className="flex items-center gap-2">
           <PrintExportButton
@@ -130,11 +130,11 @@ export default function BankAccounts() {
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader><DialogTitle>{editing ? "تعديل حساب" : "إضافة حساب بنكي"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>اسم البنك *</Label><Input value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} className="mt-1" /></div>
               <div><Label>رقم الحساب *</Label><Input value={form.accountNumber} onChange={e => setForm(f => ({ ...f, accountNumber: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>اسم الحساب *</Label><Input value={form.accountName} onChange={e => setForm(f => ({ ...f, accountName: e.target.value }))} className="mt-1" /></div>
               <div>
                 <Label>العملة *</Label>

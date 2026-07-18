@@ -203,7 +203,7 @@ export default function ReceiptVouchers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">سندات القبض</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">تسجيل المبالغ المقبوضة</p>
@@ -299,7 +299,7 @@ export default function ReceiptVouchers() {
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>التاريخ *</Label><SmartDateInput id="date" value={form.date} onChange={v => { setForm(f => ({ ...f, date: v })); clear("date"); }} className="mt-1" invalid={!!errors.date} /><FieldError msg={errors.date} /></div>
               <div>
                 <Label>طريقة الدفع *</Label>
@@ -312,7 +312,7 @@ export default function ReceiptVouchers() {
               </div>
             </div>
             <div><Label>اسم الدافع *</Label><Input id="payerName" value={form.payerName} onChange={e => { setForm(f => ({ ...f, payerName: e.target.value })); clear("payerName"); }} aria-invalid={!!errors.payerName} className={`mt-1 ${errors.payerName ? "border-destructive" : ""}`} /><FieldError msg={errors.payerName} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>المستأجر</Label>
                 <SearchableSelect
@@ -335,7 +335,7 @@ export default function ReceiptVouchers() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>العملة *</Label>
                 <Select value={form.currency} onValueChange={onCurrencyChange}>
@@ -371,7 +371,7 @@ export default function ReceiptVouchers() {
             {form.paymentMethod === "cheque" && (
               <div className="grid gap-3 p-3 border rounded-lg">
                 <p className="text-sm font-medium">بيانات الشيك</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>رقم الشيك</Label><Input value={form.chequeNumber} onChange={e => setForm(f => ({ ...f, chequeNumber: e.target.value }))} className="mt-1 ltr-nums" /></div>
                   <div><Label>البنك</Label><Input value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} className="mt-1" /></div>
                   <div><Label>تاريخ الشيك</Label><SmartDateInput value={form.chequeDate} onChange={v => setForm(f => ({ ...f, chequeDate: v }))} className="mt-1" /></div>

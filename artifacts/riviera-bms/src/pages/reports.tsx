@@ -119,7 +119,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2"><BarChart3 size={28} />التقارير</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">ملخص إحصائي شامل للعمارة</p>
