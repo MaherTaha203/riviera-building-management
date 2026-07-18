@@ -61,7 +61,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div
           onClick={onNavigate}
           className={cn(
-            "group relative flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] transition-all cursor-pointer text-[13.5px] font-medium",
+            "group relative flex items-center gap-3 px-3.5 py-[7px] rounded-[12px] transition-all cursor-pointer text-[13px] font-medium",
             isActive
               ? "bg-white/[0.14] text-white shadow-sm"
               : "text-sidebar-foreground/75 hover:bg-white/[0.07] hover:text-white",
@@ -83,13 +83,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <div className="px-3.5 mb-1.5 text-[10.5px] font-bold text-sidebar-foreground/45 tracking-[0.14em]">{children}</div>
+    <div className="px-3.5 mb-1 mt-0.5 text-[10px] font-bold text-sidebar-foreground/45 tracking-[0.14em]">{children}</div>
   );
 
   return (
-    <div className="w-[248px] h-full bg-sidebar text-sidebar-foreground rounded-[22px] shadow-md flex flex-col overflow-hidden shrink-0">
+    <div className="w-[244px] h-full rv-bar text-sidebar-foreground rounded-[22px] shadow-lg ring-1 ring-white/5 flex flex-col overflow-hidden shrink-0">
       {/* Brand */}
-      <div className="pt-5 px-5 flex items-center gap-2.5 shrink-0">
+      <div className="pt-4 px-5 flex items-center gap-2.5 shrink-0">
         <div className="w-8 h-8 bg-white/12 rounded-xl flex items-center justify-center text-sidebar-foreground shrink-0">
           <Building2 size={17} />
         </div>
@@ -97,43 +97,43 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Profile block — avatar-first, echoing the reference sidebar */}
-      <div className="mt-5 mb-1 px-5 flex flex-col items-center text-center shrink-0">
+      <div className="mt-3 mb-1 px-5 flex flex-col items-center text-center shrink-0">
         <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-[22px] font-extrabold ring-4 ring-white/10"
-          style={{ background: "linear-gradient(135deg, hsl(150 46% 62%), hsl(150 48% 46%))", color: "hsl(154 55% 14%)" }}
+          className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-[19px] font-extrabold ring-4 ring-white/10"
+          style={{ background: "linear-gradient(135deg, hsl(158 62% 56%), hsl(158 66% 42%))", color: "hsl(158 60% 12%)" }}
         >
           {initial}
         </div>
-        <div className="mt-3 text-[14.5px] font-bold text-white leading-tight">{user?.name || user?.username || "المستخدم"}</div>
-        <div className="text-[11px] text-sidebar-foreground/55 capitalize mt-0.5">{user?.role || "admin"}</div>
+        <div className="mt-2 text-[13.5px] font-bold text-white leading-tight">{user?.name || user?.username || "المستخدم"}</div>
+        <div className="text-[10.5px] text-sidebar-foreground/55 capitalize mt-0.5">{user?.role || "admin"}</div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5 scrollbar-thin">
-        <div className="space-y-1">
+      {/* Navigation — compact so all items fit; scrollbar hidden (no down-arrow) */}
+      <div className="flex-1 min-h-0 overflow-y-auto py-2.5 px-3 space-y-2.5 scrollbar-none">
+        <div className="space-y-0.5">
           {navItems.map((item) => <NavLink key={item.path} item={item} />)}
         </div>
         <div>
           <SectionLabel>المالية</SectionLabel>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {financialItems.map((item) => <NavLink key={item.path} item={item} />)}
           </div>
         </div>
         <div>
           <SectionLabel>الإدارة</SectionLabel>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {adminItems.map((item) => <NavLink key={item.path} item={item} />)}
           </div>
         </div>
       </div>
 
       {/* Logout */}
-      <div className="p-3 shrink-0">
+      <div className="p-2.5 shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85 bg-white/[0.06] hover:bg-white/[0.12] rounded-[14px] transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[12.5px] font-medium text-white/85 bg-white/[0.06] hover:bg-white/[0.12] rounded-[12px] transition-colors"
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           <span>تسجيل خروج</span>
         </button>
       </div>

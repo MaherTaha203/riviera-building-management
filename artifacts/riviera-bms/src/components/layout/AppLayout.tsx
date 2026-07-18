@@ -16,7 +16,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex h-screen w-full rv-floor overflow-hidden">
       {/* Desktop sidebar — floating rounded panel with breathing room */}
       <div className="hidden lg:block h-full shrink-0 py-3 ps-3">
         <Sidebar />

@@ -62,8 +62,8 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1 text-[12.5px]">خط السيولة أولاً — ثم ما يتطلب انتباهك</p>
       </div>
 
-      {/* ── Liquidity hero (royal indigo, mint edge) ── */}
-      <div className="relative overflow-hidden rounded-[14px] bg-sidebar text-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.25)] grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
+      {/* ── Liquidity hero (glossy black, mint edge) ── */}
+      <div className="relative overflow-hidden rounded-[14px] rv-bar ring-1 ring-white/5 text-white shadow-lg grid grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr] py-[22px] px-2 lg:px-[26px]">
         <span className="absolute inset-y-0 right-0 w-1 bg-secondary" aria-hidden="true" />
         <div className="px-4 lg:px-[22px] lg:border-l border-white/12">
           <div className="text-[10.5px] font-bold text-white/55 mb-1.5">رصيد الصندوق</div>
