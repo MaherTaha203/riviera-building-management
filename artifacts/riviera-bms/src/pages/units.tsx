@@ -110,7 +110,7 @@ export default function Units() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">الوحدات</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">إدارة وحدات عمارة الريفييرا</p>
@@ -204,11 +204,11 @@ export default function Units() {
             <DialogTitle>{editing ? "تعديل وحدة" : "إضافة وحدة جديدة"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>رقم الوحدة *</Label><Input value={form.unitNumber} onChange={e => setForm(f => ({ ...f, unitNumber: e.target.value }))} className="mt-1" /></div>
               <div><Label>الطابق *</Label><Input value={form.floor} onChange={e => setForm(f => ({ ...f, floor: e.target.value }))} className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>النوع *</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>

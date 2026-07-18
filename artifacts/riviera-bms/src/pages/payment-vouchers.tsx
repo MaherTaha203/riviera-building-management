@@ -193,7 +193,7 @@ export default function PaymentVouchers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">سندات الصرف</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">تسجيل المصروفات والمدفوعات</p>
@@ -288,7 +288,7 @@ export default function PaymentVouchers() {
             <DialogTitle>{editing ? "تعديل سند الصرف" : "إصدار سند صرف جديد"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>التاريخ *</Label>
                 <SmartDateInput id="date" value={form.date} onChange={v => { setForm(f => ({ ...f, date: v })); clear("date"); }} className="mt-1" invalid={!!errors.date} />
@@ -304,7 +304,7 @@ export default function PaymentVouchers() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>المستفيد *</Label>
                 <Input id="beneficiaryName" value={form.beneficiaryName} onChange={e => { setForm(f => ({ ...f, beneficiaryName: e.target.value })); clear("beneficiaryName"); }} aria-invalid={!!errors.beneficiaryName} className={`mt-1 ${errors.beneficiaryName ? "border-destructive" : ""}`} />
@@ -321,7 +321,7 @@ export default function PaymentVouchers() {
                 <FieldError msg={errors.category} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>العملة *</Label>
                 <Select value={form.currency} onValueChange={c => setForm(f => ({ ...f, currency: c, exchangeRate: String(rateForCurrency(c)) }))}>
@@ -363,7 +363,7 @@ export default function PaymentVouchers() {
             )}
             {form.paymentMethod === "cheque" && (
               <div className="grid gap-3 p-3 border rounded-lg">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>رقم الشيك</Label><Input value={form.chequeNumber} onChange={e => setForm(f => ({ ...f, chequeNumber: e.target.value }))} className="mt-1 ltr-nums" /></div>
                   <div><Label>البنك</Label><Input value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} className="mt-1" /></div>
                   <div><Label>تاريخ الشيك</Label><SmartDateInput value={form.chequeDate} onChange={v => setForm(f => ({ ...f, chequeDate: v }))} className="mt-1" /></div>

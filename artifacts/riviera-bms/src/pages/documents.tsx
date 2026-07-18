@@ -133,7 +133,7 @@ export default function Documents() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">المستندات</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">إدارة الملفات والوثائق</p>
@@ -233,7 +233,7 @@ export default function Documents() {
           <DialogHeader><DialogTitle><FileBox className="inline ml-2" size={18} />إضافة مستند</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
             <div><Label>اسم المستند *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>نوع الكيان</Label>
                 <Select value={form.entityType} onValueChange={v => setForm(f => ({ ...f, entityType: v, entityId: "" }))}>

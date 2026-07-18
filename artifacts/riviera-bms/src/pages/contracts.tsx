@@ -245,7 +245,7 @@ export default function Contracts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-extrabold tracking-tight">العقود</h1><p className="text-muted-foreground mt-1 text-[12.5px]">إدارة عقود الإيجار</p></div>
         <div className="flex items-center gap-2">
           <PrintExportButton
@@ -321,7 +321,7 @@ export default function Contracts() {
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader><DialogTitle>{editing ? "تعديل عقد" : "إضافة عقد جديد"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>المستأجر *</Label>
                 <SearchableSelect
@@ -351,11 +351,11 @@ export default function Contracts() {
                 <FieldError msg={errors.unitId} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>تاريخ البداية *</Label><SmartDateInput id="startDate" value={form.startDate} onChange={v => { setForm(f => ({ ...f, startDate: v })); clear("startDate"); }} className="mt-1" invalid={!!errors.startDate} /><FieldError msg={errors.startDate} /></div>
               <div><Label>تاريخ الانتهاء *</Label><SmartDateInput id="endDate" value={form.endDate} onChange={v => { setForm(f => ({ ...f, endDate: v })); clear("endDate"); }} className="mt-1" invalid={!!errors.endDate} /><FieldError msg={errors.endDate} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>العملة *</Label>
                 <Select value={form.currency} onValueChange={onCurrencyChange}>
@@ -384,7 +384,7 @@ export default function Contracts() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><Label>مبلغ التأمين</Label><Input type="number" value={form.depositAmount} onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))} className="mt-1 ltr-nums" /></div>
               <div><Label>عدد الدفعات</Label><Input type="number" value={form.paymentCount} onChange={e => setForm(f => ({ ...f, paymentCount: e.target.value }))} className="mt-1 ltr-nums" /></div>
               <div>

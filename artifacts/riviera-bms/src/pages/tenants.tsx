@@ -103,7 +103,7 @@ export default function Tenants() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">المستأجرون</h1>
           <p className="text-muted-foreground mt-1 text-[12.5px]">إدارة بيانات المستأجرين</p>
@@ -178,10 +178,10 @@ export default function Tenants() {
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader><DialogTitle>{editing ? "تعديل مستأجر" : "إضافة مستأجر جديد"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="col-span-2"><Label>الاسم *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>النوع *</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
@@ -191,7 +191,7 @@ export default function Tenants() {
               </div>
               <div><Label>رقم الهاتف *</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>البريد الإلكتروني</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1" /></div>
               <div><Label>رقم الهوية</Label><Input value={form.idNumber} onChange={e => setForm(f => ({ ...f, idNumber: e.target.value }))} className="mt-1 ltr-nums" /></div>
             </div>
