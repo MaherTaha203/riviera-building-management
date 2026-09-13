@@ -1354,6 +1354,9 @@ components:
           type: ["string", "null"]
         balance:
           type: number
+        amountDueILS:
+          description: "Receivables owed by this tenant: Σ (charge amount − allocated) over non-cancelled rent charges."
+          type: number
         createdAt:
           type: string
 

@@ -239,6 +239,8 @@ export interface Tenant {
   /** @nullable */
   notes?: string | null;
   balance?: number;
+  /** Receivables owed by this tenant: Σ (charge amount − allocated) over non-cancelled rent charges. */
+  amountDueILS?: number;
   createdAt?: string;
 }
 

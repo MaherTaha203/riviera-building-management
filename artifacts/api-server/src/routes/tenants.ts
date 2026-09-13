@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, tenantsTable, contractsTable, receiptVouchersTable, chequesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, tenantsTable, contractsTable, receiptVouchersTable, chequesTable, rentChargesTable } from "@workspace/db";
+import { eq, ne, sql } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
@@ -10,7 +10,15 @@ const router = Router();
 
 router.get("/tenants", authMiddleware, async (_req, res): Promise<void> => {
   const tenants = await db.select().from(tenantsTable).orderBy(tenantsTable.name);
-  res.json(tenants.map(t => ({ ...t, balance: Number(t.balance) })));
+  // Receivables amount due per tenant = Σ (amount − allocated) over non-cancelled
+  // rent charges. Computed in one grouped query and mapped onto the list.
+  const dues = await db
+    .select({ tenantId: rentChargesTable.tenantId, due: sql<string>`coalesce(sum(${rentChargesTable.amountILS} - ${rentChargesTable.allocatedILS}), 0)` })
+    .from(rentChargesTable)
+    .where(ne(rentChargesTable.status, "cancelled"))
+    .groupBy(rentChargesTable.tenantId);
+  const dueMap = Object.fromEntries(dues.map(d => [d.tenantId, Number(d.due)]));
+  res.json(tenants.map(t => ({ ...t, balance: Number(t.balance), amountDueILS: dueMap[t.id] ?? 0 })));
 });
 
 router.post("/tenants", authMiddleware, validateBody(CreateTenantBody), async (req, res): Promise<void> => {
