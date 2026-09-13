@@ -1011,6 +1011,115 @@ paths:
         "204":
           description: Deleted
 
+  /rent-charges:
+    get:
+      operationId: listRentCharges
+      tags: [rentCharges]
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: contractId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rent charges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentCharge"
+
+  /rent-charges/generate:
+    post:
+      operationId: generateRentCharges
+      tags: [rentCharges]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRentChargesInput"
+      responses:
+        "201":
+          description: Charges created (only newly generated periods)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentCharge"
+
+  /rent-charges/summary:
+    get:
+      operationId: getReceivablesSummary
+      tags: [rentCharges]
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tenant receivables summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceivablesSummary"
+
+  /rent-charges/{id}:
+    patch:
+      operationId: updateRentCharge
+      tags: [rentCharges]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RentChargeUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentCharge"
+        "404":
+          description: Not found
+
+  /rent-charges/{id}/cancel:
+    post:
+      operationId: cancelRentCharge
+      tags: [rentCharges]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentCharge"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -2031,4 +2140,64 @@ components:
         usdToILS:
           type: number
         jodToILS:
+          type: number
+
+    # ─── Receivables (rent charges) ──────────────────────────────────────────
+    RentCharge:
+      type: object
+      required: [id, contractId, tenantId, periodStart, periodEnd, dueDate, amountILS, allocatedILS, status]
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        tenantId:
+          type: integer
+        tenantName:
+          type: ["string", "null"]
+        periodStart:
+          type: string
+        periodEnd:
+          type: string
+        dueDate:
+          type: string
+        amountILS:
+          type: number
+        allocatedILS:
+          type: number
+        status:
+          type: string
+          enum: [open, settled, cancelled]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    GenerateRentChargesInput:
+      type: object
+      required: [contractId]
+      properties:
+        contractId:
+          type: integer
+        upToDate:
+          description: "Generate charges for periods up to this date (YYYY-MM-DD). Defaults to today."
+          type: string
+
+    RentChargeUpdate:
+      type: object
+      properties:
+        amountILS:
+          type: number
+        dueDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    ReceivablesSummary:
+      type: object
+      required: [tenantId, amountDueILS]
+      properties:
+        tenantId:
+          type: integer
+        amountDueILS:
           type: number

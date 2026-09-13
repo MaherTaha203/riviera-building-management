@@ -998,3 +998,87 @@ export const DeleteUserParams = zod.object({
 })
 
 
+export const ListRentChargesQueryParams = zod.object({
+  "tenantId": zod.coerce.number().optional(),
+  "contractId": zod.coerce.number().optional()
+})
+
+export const ListRentChargesResponseItem = zod.object({
+  "id": zod.number(),
+  "contractId": zod.number(),
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish(),
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "dueDate": zod.string(),
+  "amountILS": zod.number(),
+  "allocatedILS": zod.number(),
+  "status": zod.enum(['open', 'settled', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const ListRentChargesResponse = zod.array(ListRentChargesResponseItem)
+
+
+export const GenerateRentChargesBody = zod.object({
+  "contractId": zod.number(),
+  "upToDate": zod.string().optional().describe('Generate charges for periods up to this date (YYYY-MM-DD). Defaults to today.')
+})
+
+
+export const GetReceivablesSummaryQueryParams = zod.object({
+  "tenantId": zod.coerce.number()
+})
+
+export const GetReceivablesSummaryResponse = zod.object({
+  "tenantId": zod.number(),
+  "amountDueILS": zod.number()
+})
+
+
+export const UpdateRentChargeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateRentChargeBody = zod.object({
+  "amountILS": zod.number().optional(),
+  "dueDate": zod.string().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateRentChargeResponse = zod.object({
+  "id": zod.number(),
+  "contractId": zod.number(),
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish(),
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "dueDate": zod.string(),
+  "amountILS": zod.number(),
+  "allocatedILS": zod.number(),
+  "status": zod.enum(['open', 'settled', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+export const CancelRentChargeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CancelRentChargeResponse = zod.object({
+  "id": zod.number(),
+  "contractId": zod.number(),
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish(),
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "dueDate": zod.string(),
+  "amountILS": zod.number(),
+  "allocatedILS": zod.number(),
+  "status": zod.enum(['open', 'settled', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
