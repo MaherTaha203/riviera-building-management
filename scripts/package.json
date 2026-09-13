@@ -10,6 +10,7 @@
     "backfill:bank": "tsx ./src/backfill-bank.ts",
     "reset:data": "tsx ./src/reset-data.ts",
     "reconcile:ledger": "tsx ./src/reconcile-ledger.ts",
+    "provision:accounts": "tsx ./src/provision-accounts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
