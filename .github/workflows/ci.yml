@@ -41,3 +41,50 @@ jobs:
       # intentional, raise the matching budget in scripts/perf-budget.mjs.
       - name: Performance budget (frontend bundle)
         run: node scripts/perf-budget.mjs
+
+  # Phase 1 — ledger integrity guard. Applies the versioned migrations to a
+  # throwaway Postgres, drives receipts/payments/cheques through the real ledger
+  # bridges and asserts every projected balance (smoke:ledger), then runs the
+  # ledger invariant + projection check (reconcile:ledger). This makes the
+  # dual-write correctness a permanent gate on every PR.
+  ledger:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: riviera_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d riviera_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/riviera_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm --filter @workspace/db run migrate
+
+      - name: Ledger dual-write smoke
+        run: pnpm --filter @workspace/api-server run smoke:ledger
+
+      - name: Ledger reconciliation (invariants + projections)
+        run: pnpm --filter @workspace/scripts run reconcile:ledger
