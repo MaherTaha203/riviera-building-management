@@ -11,6 +11,7 @@ import {
   Landmark,
   Files,
   ScrollText,
+  Coins,
   FileBox,
   BarChart3,
   History,
@@ -33,6 +34,7 @@ const financialItems = [
   { name: "الصندوق", path: "/cash-fund", icon: Wallet },
   { name: "الحسابات البنكية", path: "/bank-accounts", icon: Landmark },
   { name: "الشيكات", path: "/cheques", icon: Files },
+  { name: "الذمم والاستحقاقات", path: "/receivables", icon: Coins },
   { name: "كشف الحساب", path: "/account-statements", icon: ScrollText },
 ];
 
