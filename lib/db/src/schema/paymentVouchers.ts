@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, numeric, date, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { bankAccountsTable } from "./bankAccounts";
 
 export const paymentVouchersTable = pgTable("payment_vouchers", {
   id: serial("id").primaryKey(),
@@ -14,7 +15,8 @@ export const paymentVouchersTable = pgTable("payment_vouchers", {
   paymentMethod: text("payment_method").notNull().default("cash"),
   category: text("category").notNull(),
   // Phase B — which of OUR bank accounts a bank_transfer draws money from.
-  bankAccountId: integer("bank_account_id"),
+  // Real FK (RESTRICT): a referenced bank account cannot be deleted.
+  bankAccountId: integer("bank_account_id").references(() => bankAccountsTable.id, { onDelete: "restrict" }),
   chequeNumber: text("cheque_number"),
   bankName: text("bank_name"),
   chequeDate: date("cheque_date", { mode: "string" }),

@@ -1,22 +1,27 @@
 import { pgTable, text, serial, timestamp, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { tenantsTable } from "./tenants";
+import { contractsTable } from "./contracts";
+import { bankAccountsTable } from "./bankAccounts";
 
 export const receiptVouchersTable = pgTable("receipt_vouchers", {
   id: serial("id").primaryKey(),
   voucherNumber: text("voucher_number").notNull().unique(),
   date: date("date", { mode: "string" }).notNull(),
   payerName: text("payer_name").notNull(),
-  tenantId: integer("tenant_id"),
-  contractId: integer("contract_id"),
+  // Real FKs (freeze §): a voucher's tenant/contract/bank must exist and cannot
+  // be deleted out from under it. Nullable — not every receipt names all three.
+  tenantId: integer("tenant_id").references(() => tenantsTable.id, { onDelete: "restrict" }),
+  contractId: integer("contract_id").references(() => contractsTable.id, { onDelete: "restrict" }),
   amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("ILS"),
   exchangeRate: numeric("exchange_rate", { precision: 10, scale: 4 }).notNull().default("1"),
   amountILS: numeric("amount_ils", { precision: 14, scale: 2 }).notNull(),
   paymentMethod: text("payment_method").notNull().default("cash"),
   // Phase B — which of OUR bank accounts a bank_transfer moves money into.
-  // A soft reference (like tenantId/contractId): app-level integrity + index.
-  bankAccountId: integer("bank_account_id"),
+  // Now a real FK (RESTRICT): a referenced bank account cannot be deleted.
+  bankAccountId: integer("bank_account_id").references(() => bankAccountsTable.id, { onDelete: "restrict" }),
   chequeNumber: text("cheque_number"),
   bankName: text("bank_name"),
   chequeDate: date("cheque_date", { mode: "string" }),
