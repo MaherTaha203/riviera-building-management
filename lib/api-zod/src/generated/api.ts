@@ -169,6 +169,7 @@ export const ListTenantsResponseItem = zod.object({
   "address": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "balance": zod.number().optional(),
+  "amountDueILS": zod.number().optional().describe('Receivables owed by this tenant: Σ (charge amount − allocated) over non-cancelled rent charges.'),
   "createdAt": zod.string().optional()
 })
 export const ListTenantsResponse = zod.array(ListTenantsResponseItem)
@@ -199,6 +200,7 @@ export const GetTenantResponse = zod.object({
   "address": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "balance": zod.number().optional(),
+  "amountDueILS": zod.number().optional().describe('Receivables owed by this tenant: Σ (charge amount − allocated) over non-cancelled rent charges.'),
   "createdAt": zod.string().optional()
 })
 
@@ -227,6 +229,7 @@ export const UpdateTenantResponse = zod.object({
   "address": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "balance": zod.number().optional(),
+  "amountDueILS": zod.number().optional().describe('Receivables owed by this tenant: Σ (charge amount − allocated) over non-cancelled rent charges.'),
   "createdAt": zod.string().optional()
 })
 

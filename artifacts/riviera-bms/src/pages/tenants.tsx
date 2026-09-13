@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePersistedView } from "@/lib/usePersistedView";
 import { invalidateFinancial } from "@/lib/invalidate";
-import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Phone, Mail, CreditCard, Coins } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
 import { formatAmount } from "@/lib/format";
@@ -160,6 +160,13 @@ export default function Tenants() {
                     {formatAmount(Number(t.balance), "ILS")}
                   </span>
                 </div>
+                {Number(t.amountDueILS ?? 0) > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Coins size={13} />
+                    <span className="text-muted-foreground">مستحق عليه:</span>
+                    <span className="font-medium ltr-nums text-rose-600">{formatAmount(Number(t.amountDueILS), "ILS")}</span>
+                  </div>
+                )}
                 <div className="flex gap-2 mt-3">
                   <Button size="sm" variant="outline" onClick={() => openEdit(t)} className="flex-1"><Pencil size={14} className="ml-1" />تعديل</Button>
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(t.id)}><Trash2 size={14} /></Button>
