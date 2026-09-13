@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { PrintExportButton } from "@/components/PrintExportButton";
-import { useListCheques, useCreateCheque, useUpdateCheque, useListTenants, useGetExchangeRates, useListBankAccounts } from "@workspace/api-client-react";
+import { useListCheques, useCreateCheque, useUpdateCheque, useDeleteCheque, useListTenants, useGetExchangeRates, useListBankAccounts } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/FilterBar";
@@ -17,7 +18,7 @@ import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
 import { useFormErrors } from "@/lib/useFormErrors";
 import { FieldError } from "@/components/ui/field-error";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { usePrint, PrintButton, fmtMoney, fmtDate } from "@/lib/print";
 import { ReportTable } from "@/lib/print/documents";
 import { formatAmount, formatDate } from "@/lib/format";
@@ -46,11 +47,14 @@ export default function Cheques() {
   const { data: bankAccounts = [] } = useListBankAccounts();
   const create = useCreateCheque();
   const update = useUpdateCheque();
+  const del = useDeleteCheque();
   const { toast } = useToast();
   const { errors, validate, clear, reset } = useFormErrors();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
   // Advanced combinable filters (V1.1 §8) — combined with the type buttons above.
@@ -81,23 +85,58 @@ export default function Cheques() {
       toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
       return;
     }
+    const payload = {
+      ...form,
+      amount: Number(form.amount),
+      exchangeRate: Number(form.exchangeRate),
+      amountILS,
+      tenantId: form.tenantId ? Number(form.tenantId) : null,
+      bankAccountId: form.bankAccountId ? Number(form.bankAccountId) : null,
+      notes: form.notes || null,
+    };
     try {
-      await create.mutateAsync({
-        data: {
-          ...form,
-          amount: Number(form.amount),
-          exchangeRate: Number(form.exchangeRate),
-          amountILS,
-          tenantId: form.tenantId ? Number(form.tenantId) : undefined,
-          bankAccountId: form.bankAccountId ? Number(form.bankAccountId) : undefined,
-          notes: form.notes || undefined,
-        } as any
-      });
+      if (editing != null) {
+        await update.mutateAsync({ id: editing, data: payload as any });
+        toast({ title: "تم تعديل الشيك" });
+      } else {
+        await create.mutateAsync({ data: payload as any });
+        toast({ title: "تمت إضافة الشيك" });
+      }
       invalidateFinancial(qc);
-      toast({ title: "تمت إضافة الشيك" });
       setOpen(false);
+      setEditing(null);
       setForm({ ...emptyForm });
     } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
+  };
+
+  const openEdit = (c: any) => {
+    setEditing(c.id);
+    reset();
+    setForm({
+      chequeNumber: c.chequeNumber ?? "",
+      type: c.type ?? "incoming",
+      amount: String(c.amount ?? ""),
+      currency: c.currency ?? "ILS",
+      exchangeRate: String(c.exchangeRate ?? "1"),
+      bankName: c.bankName ?? "",
+      chequeDate: c.chequeDate ?? new Date().toISOString().split("T")[0],
+      dueDate: c.dueDate ?? new Date().toISOString().split("T")[0],
+      drawerName: c.drawerName ?? "",
+      tenantId: c.tenantId ? String(c.tenantId) : "",
+      bankAccountId: c.bankAccountId ? String(c.bankAccountId) : "",
+      notes: c.notes ?? "",
+    });
+    setOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (deleteId == null) return;
+    try {
+      await del.mutateAsync({ id: deleteId });
+      invalidateFinancial(qc);
+      toast({ title: "تم حذف الشيك" });
+    } catch (e: any) { toast({ title: "خطأ", description: e.message, variant: "destructive" }); }
+    finally { setDeleteId(null); }
   };
 
   const changeStatus = async (id: number, status: string) => {
@@ -136,7 +175,7 @@ export default function Cheques() {
             exportSpec={{ filename: "cheques", headers: ["رقم الشيك","النوع","الساحب","البنك","تاريخ الاستحقاق","المبلغ (شيكل)","الحالة"],
               getRows: () => filtered.map((c: any) => [c.chequeNumber, c.type, c.drawerName, c.bankName, c.dueDate, Number(c.amountILS), c.status]) }}
           />
-          <Button onClick={() => { setForm({ ...emptyForm }); reset(); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
+          <Button onClick={() => { setEditing(null); setForm({ ...emptyForm }); reset(); setOpen(true); }} className="flex items-center gap-2"><Plus size={16} />إضافة شيك</Button>
         </div>
       </div>
 
@@ -186,12 +225,16 @@ export default function Cheques() {
                   <TableCell className="font-semibold ltr-nums">{formatAmount(c.amountILS, "ILS")}</TableCell>
                   <TableCell><Badge variant={statusColors[c.status] ?? "outline"}>{statusLabels[c.status] ?? c.status}</Badge></TableCell>
                   <TableCell>
-                    {c.status === "pending" && (
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "cleared")}>محصل</Button>
-                        <Button size="sm" variant="ghost" className="text-rose-600 text-xs" onClick={() => changeStatus(c.id, "bounced")}>مرتجع</Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {c.status === "pending" && (
+                        <>
+                          <Button size="sm" variant="ghost" className="text-emerald-600 text-xs" onClick={() => changeStatus(c.id, "cleared")}>محصل</Button>
+                          <Button size="sm" variant="ghost" className="text-rose-600 text-xs" onClick={() => changeStatus(c.id, "bounced")}>مرتجع</Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="ghost" title="تعديل" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
+                      <Button size="sm" variant="ghost" title="حذف" className="text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 size={14} /></Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -203,7 +246,7 @@ export default function Cheques() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg" dir="rtl">
-          <DialogHeader><DialogTitle>إضافة شيك جديد</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing != null ? "تعديل الشيك" : "إضافة شيك جديد"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>رقم الشيك *</Label><Input id="chequeNumber" value={form.chequeNumber} onChange={e => { setForm(f => ({ ...f, chequeNumber: e.target.value })); clear("chequeNumber"); }} aria-invalid={!!errors.chequeNumber} className={`mt-1 ltr-nums ${errors.chequeNumber ? "border-destructive" : ""}`} /><FieldError msg={errors.chequeNumber} /></div>
@@ -257,11 +300,24 @@ export default function Cheques() {
             <div><Label>ملاحظات</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" /></div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2">
-            <Button onClick={handleSave} disabled={create.isPending}>إضافة</Button>
+            <Button onClick={handleSave} disabled={create.isPending || update.isPending}>{editing != null ? "حفظ التعديلات" : "إضافة"}</Button>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={o => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>هل أنت متأكد من حذف هذا الشيك؟ إن كان محصّلاً فسيُعكَس أثره على رصيد البنك تلقائياً. لا يمكن التراجع عن هذا الإجراء.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">حذف</AlertDialogAction>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -5,9 +5,25 @@
  * Riviera Building Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ChequeUpdateCurrency } from './chequeUpdateCurrency';
 import type { ChequeUpdateStatus } from './chequeUpdateStatus';
+import type { ChequeUpdateType } from './chequeUpdateType';
 
+/**
+ * All fields optional — a partial update. Correcting core fields (amount / type / dates / drawer …) is allowed; the server recomputes any bank-balance contribution when amount, type, status, or settlement account change.
+ */
 export interface ChequeUpdate {
+  chequeNumber?: string;
+  type?: ChequeUpdateType;
+  amount?: number;
+  currency?: ChequeUpdateCurrency;
+  exchangeRate?: number;
+  amountILS?: number;
+  bankName?: string;
+  chequeDate?: string;
+  drawerName?: string;
+  /** @nullable */
+  tenantId?: number | null;
   status?: ChequeUpdateStatus;
   /** @nullable */
   notes?: string | null;

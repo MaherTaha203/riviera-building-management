@@ -28,13 +28,16 @@
 }
 
 /* ---- Document design system (shared by every printable) ----
-   Corporate Riviera palette: deep navy (--primary 222 47% 11%) + gold accent
-   (--accent 43 74% 49%). Kept in sync with the app theme. */
+   Riviera "Glossy Graphite" identity on paper: graphite near-black
+   (--p-navy) as the strong ink/panel color + emerald-mint accent (--p-gold)
+   for rules and highlights. Kept legible for print: black text on white.
+   The --p-navy / --p-gold variable names are retained (values only changed)
+   so the shared document markup needs no edits. */
 .print-doc {
-  --p-navy: #11182b;
-  --p-navy-soft: #eef0f4;
-  --p-gold: #c1991f;
-  --p-ink: #1d2530;
+  --p-navy: #141519;        /* graphite near-black (the "bar" color) */
+  --p-navy-soft: #eef1f0;   /* faint cool-graphite tint */
+  --p-gold: #159465;        /* emerald-mint accent (print-legible) */
+  --p-ink: #1b2229;
   --p-muted: #6b7480;
   --p-faint: #9aa2ad;
   --p-line: #e4e7ec;

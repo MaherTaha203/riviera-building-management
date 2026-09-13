@@ -761,11 +761,21 @@ export const UpdateChequeParams = zod.object({
 })
 
 export const UpdateChequeBody = zod.object({
+  "chequeNumber": zod.string().optional(),
+  "type": zod.enum(['incoming', 'outgoing']).optional(),
+  "amount": zod.number().optional(),
+  "currency": zod.enum(['ILS', 'USD', 'JOD']).optional(),
+  "exchangeRate": zod.number().optional(),
+  "amountILS": zod.number().optional(),
+  "bankName": zod.string().optional(),
+  "chequeDate": zod.string().optional(),
+  "drawerName": zod.string().optional(),
+  "tenantId": zod.number().nullish(),
   "status": zod.enum(['pending', 'deposited', 'cleared', 'bounced', 'cancelled']).optional(),
   "notes": zod.string().nullish(),
   "dueDate": zod.string().optional(),
   "bankAccountId": zod.number().nullish()
-})
+}).describe('All fields optional — a partial update. Correcting core fields (amount \/ type \/ dates \/ drawer …) is allowed; the server recomputes any bank-balance contribution when amount, type, status, or settlement account change.')
 
 export const UpdateChequeResponse = zod.object({
   "id": zod.number(),
