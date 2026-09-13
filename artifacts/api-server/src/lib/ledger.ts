@@ -187,6 +187,21 @@ export async function setSourceLedgerEffect(
   return postMovement(tx, { ...effect, sourceType: key.sourceType, sourceId: key.sourceId });
 }
 
+/**
+ * How many posted movements an account has. Used by the read-cutover to decide
+ * whether the ledger is authoritative for this account yet: once it carries any
+ * posted movement, its balance is read from the ledger; before that (a brand-new
+ * or not-yet-populated account) callers fall back to the legacy figure, so a
+ * balance is never wrongly shown as zero.
+ */
+export async function accountPostedMovementCount(exec: Exec, accountId: number): Promise<number> {
+  const [row] = await exec
+    .select({ n: sql<number>`count(*)::int` })
+    .from(financialMovementsTable)
+    .where(and(eq(financialMovementsTable.accountId, accountId), eq(financialMovementsTable.status, "posted")));
+  return Number(row?.n ?? 0);
+}
+
 /** Projected balance for every account (opening + Σ movements). */
 export async function allAccountBalancesILS(exec: Exec = db): Promise<Array<{ id: number; kind: string; name: string; balanceILS: number }>> {
   const accounts = await exec.select().from(accountsTable).orderBy(accountsTable.id);

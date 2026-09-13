@@ -2,13 +2,25 @@ import { Router } from "express";
 import { db, receiptVouchersTable, paymentVouchersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth";
+import { accountBalanceILS, accountPostedMovementCount } from "../lib/ledger";
+import { resolveCashAccountId } from "../lib/accounts";
 
 const router = Router();
 
 router.get("/cash-fund", authMiddleware, async (_req, res): Promise<void> => {
+  // Read-cutover (Phase 1): the cash balance is now the ledger projection of the
+  // main cash account — the authoritative source (freeze: balances are
+  // projections). The legacy voucher-sum is kept as a self-guarding fallback:
+  // until the cash account has any posted movement, we still trust the legacy
+  // figure so a balance is never wrongly shown as zero.
   const [cashIn] = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(receiptVouchersTable).where(eq(receiptVouchersTable.paymentMethod, "cash"));
   const [cashOut] = await db.select({ total: sql<number>`coalesce(sum(amount_ils), 0)` }).from(paymentVouchersTable).where(eq(paymentVouchersTable.paymentMethod, "cash"));
-  const balance = Number(cashIn.total) - Number(cashOut.total);
+  const legacy = Number(cashIn.total) - Number(cashOut.total);
+
+  const cashAccId = await resolveCashAccountId(db);
+  const balance = (cashAccId != null && (await accountPostedMovementCount(db, cashAccId)) > 0)
+    ? await accountBalanceILS(db, cashAccId)
+    : legacy;
   res.json({ balanceILS: balance, lastUpdated: new Date().toISOString() });
 });
 
