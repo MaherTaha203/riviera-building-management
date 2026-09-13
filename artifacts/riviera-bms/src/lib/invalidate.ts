@@ -34,6 +34,9 @@ const FINANCIAL_QUERY_KEYS: readonly string[] = [
   "/api/units",
   "/api/account-statements",
   "/api/audit-log",
+  // Receivables: a tenant receipt is allocated FIFO to rent charges, so a
+  // financial write also changes charge allocation + tenant amount due.
+  "/api/rent-charges",
 ];
 
 /**
