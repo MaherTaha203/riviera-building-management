@@ -9,3 +9,7 @@ export * from "./cheques";
 export * from "./documents";
 export * from "./auditLog";
 export * from "./settings";
+// Phase 1 — financial core (ledger, accounts, periods)
+export * from "./accounts";
+export * from "./financialPeriods";
+export * from "./financialMovements";
