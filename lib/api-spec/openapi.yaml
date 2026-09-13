@@ -1808,7 +1808,34 @@ components:
 
     ChequeUpdate:
       type: object
+      description: >-
+        All fields optional — a partial update. Correcting core fields
+        (amount / type / dates / drawer …) is allowed; the server recomputes any
+        bank-balance contribution when amount, type, status, or settlement
+        account change.
       properties:
+        chequeNumber:
+          type: string
+        type:
+          type: string
+          enum: [incoming, outgoing]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [ILS, USD, JOD]
+        exchangeRate:
+          type: number
+        amountILS:
+          type: number
+        bankName:
+          type: string
+        chequeDate:
+          type: string
+        drawerName:
+          type: string
+        tenantId:
+          type: ["integer", "null"]
         status:
           type: string
           enum: [pending, deposited, cleared, bounced, cancelled]

@@ -900,6 +900,23 @@ export interface ChequeInput {
   notes?: string | null;
 }
 
+export type ChequeUpdateType = typeof ChequeUpdateType[keyof typeof ChequeUpdateType];
+
+
+export const ChequeUpdateType = {
+  incoming: 'incoming',
+  outgoing: 'outgoing',
+} as const;
+
+export type ChequeUpdateCurrency = typeof ChequeUpdateCurrency[keyof typeof ChequeUpdateCurrency];
+
+
+export const ChequeUpdateCurrency = {
+  ILS: 'ILS',
+  USD: 'USD',
+  JOD: 'JOD',
+} as const;
+
 export type ChequeUpdateStatus = typeof ChequeUpdateStatus[keyof typeof ChequeUpdateStatus];
 
 
@@ -911,7 +928,21 @@ export const ChequeUpdateStatus = {
   cancelled: 'cancelled',
 } as const;
 
+/**
+ * All fields optional — a partial update. Correcting core fields (amount / type / dates / drawer …) is allowed; the server recomputes any bank-balance contribution when amount, type, status, or settlement account change.
+ */
 export interface ChequeUpdate {
+  chequeNumber?: string;
+  type?: ChequeUpdateType;
+  amount?: number;
+  currency?: ChequeUpdateCurrency;
+  exchangeRate?: number;
+  amountILS?: number;
+  bankName?: string;
+  chequeDate?: string;
+  drawerName?: string;
+  /** @nullable */
+  tenantId?: number | null;
   status?: ChequeUpdateStatus;
   /** @nullable */
   notes?: string | null;

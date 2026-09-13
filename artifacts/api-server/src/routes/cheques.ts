@@ -52,23 +52,30 @@ router.get("/cheques/:id", authMiddleware, async (req, res): Promise<void> => {
 router.patch("/cheques/:id", authMiddleware, validateBody(UpdateChequeBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const { status, notes, dueDate, bankAccountId } = req.body;
+  const {
+    status, notes, dueDate, bankAccountId,
+    chequeNumber, type, amount, currency, exchangeRate, amountILS: amountILSBody,
+    bankName, chequeDate, drawerName, tenantId,
+  } = req.body;
 
-  // Clearing/bouncing a cheque (or moving its settlement account) changes the
-  // bank balance. Reverse the old contribution and apply the new one — keyed by
-  // bank_account_id — atomically with the update. Amount and type are immutable
-  // here, so only status and the account can change the contribution.
+  // A cheque is fully editable (to correct data-entry mistakes). Any change to
+  // amount, type, status, or the settlement account can change the bank-balance
+  // contribution, so we reverse the OLD contribution (using the existing values)
+  // and apply the NEW one (using the incoming values) — keyed by bank_account_id
+  // — atomically with the update.
   const c = await db.transaction(async (tx) => {
     const [existing] = await tx.select().from(chequesTable).where(eq(chequesTable.id, id));
     if (!existing) return null;
 
+    const newType = type != null ? type : existing.type;
     const newStatus = status != null ? status : existing.status;
+    const newAmountILS = amountILSBody != null ? Number(amountILSBody) : Number(existing.amountILS);
     const newBankAccountId = bankAccountId !== undefined
       ? (bankAccountId != null ? Number(bankAccountId) : null)
       : existing.bankAccountId;
-    const amountILS = Number(existing.amountILS);
-    const oldContribution = chequeBankContribution(existing.type, existing.status, amountILS);
-    const newContribution = chequeBankContribution(existing.type, newStatus, amountILS);
+
+    const oldContribution = chequeBankContribution(existing.type, existing.status, Number(existing.amountILS));
+    const newContribution = chequeBankContribution(newType, newStatus, newAmountILS);
 
     if (oldContribution !== 0 || newContribution !== 0 || newBankAccountId !== existing.bankAccountId) {
       // bankName is the drawer's bank, not ours — resolve strictly by id.
@@ -77,6 +84,18 @@ router.patch("/cheques/:id", authMiddleware, validateBody(UpdateChequeBody), asy
     }
 
     const updates: Record<string, unknown> = {};
+    // Core (correctable) fields — decimals stored as strings, matching insert.
+    if (chequeNumber != null) updates.chequeNumber = chequeNumber;
+    if (type != null) updates.type = type;
+    if (amount != null) updates.amount = String(amount);
+    if (currency != null) updates.currency = currency;
+    if (exchangeRate != null) updates.exchangeRate = String(exchangeRate);
+    if (amountILSBody != null) updates.amountILS = String(amountILSBody);
+    if (bankName != null) updates.bankName = bankName;
+    if (chequeDate != null) updates.chequeDate = chequeDate;
+    if (drawerName != null) updates.drawerName = drawerName;
+    if (tenantId !== undefined) updates.tenantId = tenantId != null ? Number(tenantId) : null;
+    // Status / lifecycle / settlement fields.
     if (status != null) updates.status = status;
     if (notes !== undefined) updates.notes = notes;
     if (dueDate != null) updates.dueDate = dueDate;

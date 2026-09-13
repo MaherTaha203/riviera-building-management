@@ -8,6 +8,7 @@
     "reconcile:units": "tsx ./src/reconcile-units.ts",
     "reconcile:bank": "tsx ./src/reconcile-bank.ts",
     "backfill:bank": "tsx ./src/backfill-bank.ts",
+    "reset:data": "tsx ./src/reset-data.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
