@@ -15,6 +15,13 @@
       "when": 1789295511755,
       "tag": "0001_financial_core",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789299112987,
+      "tag": "0002_accounts_legacy_bridge",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, numeric, boolean, date, index, check } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, numeric, boolean, date, integer, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -21,6 +21,11 @@ export const accountsTable = pgTable(
     openingBalanceILS: numeric("opening_balance_ils", { precision: 14, scale: 2 }).notNull().default("0"),
     openingDate: date("opening_date"),
     openingSource: text("opening_source"),
+    // Transitional bridge to the legacy bank_accounts row this account mirrors
+    // (Phase 1 migration). Lets vouchers/cheques that still carry a legacy
+    // bank_account_id resolve their unified account. Removed once the legacy
+    // table is retired. Plain unique integer (no FK to a deprecated table).
+    legacyBankAccountId: integer("legacy_bank_account_id").unique(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },

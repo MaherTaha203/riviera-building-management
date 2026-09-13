@@ -1,0 +1,2 @@
+ALTER TABLE "accounts" ADD COLUMN "legacy_bank_account_id" integer;--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_legacy_bank_account_id_unique" UNIQUE("legacy_bank_account_id");
