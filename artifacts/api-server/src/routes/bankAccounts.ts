@@ -3,6 +3,7 @@ import { db, bankAccountsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
+import { mirrorBankAccount } from "../lib/accounts";
 import { validateBody } from "../lib/validate";
 import { CreateBankAccountBody, UpdateBankAccountBody } from "@workspace/api-zod";
 
@@ -20,7 +21,13 @@ router.post("/bank-accounts", authMiddleware, validateBody(CreateBankAccountBody
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
-  const [account] = await db.insert(bankAccountsTable).values({ bankName, accountNumber, accountName, currency, notes: notes ?? null }).returning();
+  // Create the legacy row AND its unified-accounts mirror atomically, so every
+  // bank account is always resolvable as a ledger account (Phase 1, D3).
+  const account = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(bankAccountsTable).values({ bankName, accountNumber, accountName, currency, notes: notes ?? null }).returning();
+    await mirrorBankAccount(tx, created);
+    return created;
+  });
   await logAction(user, "CREATE", "bank_account", account.id);
   res.status(201).json({ ...account, balanceILS: Number(account.balanceILS) });
 });
