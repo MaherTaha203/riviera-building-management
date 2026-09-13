@@ -5,6 +5,7 @@ import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { generatePaymentVoucherNumber } from "../lib/vouchers";
 import { applyBankDelta } from "../lib/bank";
+import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
 import { validateBody } from "../lib/validate";
 import { CreatePaymentVoucherBody, UpdatePaymentVoucherBody } from "@workspace/api-zod";
 
@@ -39,6 +40,12 @@ router.post("/payment-vouchers", authMiddleware, validateBody(CreatePaymentVouch
     if (paymentMethod === "bank_transfer") {
       await applyBankDelta(tx, { bankAccountId: bankAccountId != null ? Number(bankAccountId) : null, bankName }, -Number(amountILS));
     }
+    // Ledger dual-write (Phase 1): mirror this payment as a ledger movement.
+    await syncVoucherLedger(tx, {
+      kind: "payment", voucherId: inserted.id, paymentMethod,
+      bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
+      amountILS, txnDate: date, createdBy: user.userId,
+    });
     return inserted;
   });
   await logAction(user, "CREATE", "payment_voucher", voucher.id);
@@ -96,6 +103,11 @@ router.patch("/payment-vouchers/:id", authMiddleware, validateBody(UpdatePayment
       }
     }
     const [updated] = await tx.update(paymentVouchersTable).set(updates).where(eq(paymentVouchersTable.id, id)).returning();
+    // Ledger dual-write: reverse the old movement and post the new effect.
+    await syncVoucherLedger(tx, {
+      kind: "payment", voucherId: id, paymentMethod: newMethod, bankAccountId: newBankAccountId,
+      amountILS: newAmountILS, txnDate: (req.body.date ?? existing.date), createdBy: user.userId,
+    });
     return updated ?? null;
   });
 
@@ -114,6 +126,8 @@ router.delete("/payment-vouchers/:id", authMiddleware, async (req, res): Promise
     if (row.paymentMethod === "bank_transfer") {
       await applyBankDelta(tx, { bankAccountId: row.bankAccountId, bankName: row.bankName }, Number(row.amountILS));
     }
+    // Ledger dual-write: reverse this payment's movement before removing the row.
+    await clearVoucherLedger(tx, "payment", id);
     await tx.delete(paymentVouchersTable).where(eq(paymentVouchersTable.id, id));
     return row;
   });
