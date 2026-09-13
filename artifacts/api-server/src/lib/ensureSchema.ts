@@ -20,6 +20,13 @@ const GUARD_STATEMENTS: string[] = [
   `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS payment_count integer`,
   `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS additional_terms text`,
   `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS payment_method text`,
+  // Phase B — bank_account_id links vouchers/cheques to a bank account so
+  // clearing/transfer moves the right balance. The deploy has no migration
+  // step, so without this guard production is missing the column and every
+  // Drizzle insert/select on these tables 500s ("column ... does not exist").
+  `ALTER TABLE receipt_vouchers ADD COLUMN IF NOT EXISTS bank_account_id integer`,
+  `ALTER TABLE payment_vouchers ADD COLUMN IF NOT EXISTS bank_account_id integer`,
+  `ALTER TABLE cheques ADD COLUMN IF NOT EXISTS bank_account_id integer`,
 ];
 
 export async function ensureSchema(): Promise<void> {
