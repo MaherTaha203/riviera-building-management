@@ -29,6 +29,13 @@
       "when": 1789323945175,
       "tag": "0003_wet_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789325539838,
+      "tag": "0004_fixed_zaran",
+      "breakpoints": true
     }
   ]
 }

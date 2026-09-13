@@ -13,3 +13,6 @@ export * from "./settings";
 export * from "./accounts";
 export * from "./financialPeriods";
 export * from "./financialMovements";
+// Phase 1 — receivables (rent charges + receipt allocations)
+export * from "./rentCharges";
+export * from "./receiptAllocations";
