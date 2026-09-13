@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { mirrorBankAccount } from "../lib/accounts";
+import { accountBalanceILS, accountPostedMovementCount } from "../lib/ledger";
 import { validateBody } from "../lib/validate";
 import { CreateBankAccountBody, UpdateBankAccountBody } from "@workspace/api-zod";
 
@@ -11,7 +12,21 @@ const router = Router();
 
 router.get("/bank-accounts", authMiddleware, async (_req, res): Promise<void> => {
   const accounts = await db.select().from(bankAccountsTable).orderBy(bankAccountsTable.bankName);
-  res.json(accounts.map(a => ({ ...a, balanceILS: Number(a.balanceILS) })));
+  // Read-cutover (Phase 1): each bank balance is the ledger projection of its
+  // mirror account (authoritative). The stored balance_ils is a self-guarding
+  // fallback — used only until the mirror carries a posted movement — so a
+  // balance is never wrongly shown as zero on a not-yet-populated account.
+  const mirrors = await db.select({ id: accountsTable.id, legacyId: accountsTable.legacyBankAccountId }).from(accountsTable);
+  const mirrorByLegacy = new Map(mirrors.filter(m => m.legacyId != null).map(m => [m.legacyId as number, m.id]));
+  const out = [];
+  for (const a of accounts) {
+    const mirrorId = mirrorByLegacy.get(a.id);
+    const balanceILS = (mirrorId != null && (await accountPostedMovementCount(db, mirrorId)) > 0)
+      ? await accountBalanceILS(db, mirrorId)
+      : Number(a.balanceILS);
+    out.push({ ...a, balanceILS });
+  }
+  res.json(out);
 });
 
 router.post("/bank-accounts", authMiddleware, validateBody(CreateBankAccountBody), async (req, res): Promise<void> => {
