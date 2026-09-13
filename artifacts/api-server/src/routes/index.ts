@@ -15,6 +15,7 @@ import accountStatementsRouter from "./accountStatements";
 import documentsRouter from "./documents";
 import auditLogRouter from "./auditLog";
 import settingsRouter from "./settings";
+import ledgerRouter from "./ledger";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(accountStatementsRouter);
 router.use(documentsRouter);
 router.use(auditLogRouter);
 router.use(settingsRouter);
+router.use(ledgerRouter);
 
 export default router;
