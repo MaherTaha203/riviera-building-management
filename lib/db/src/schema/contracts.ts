@@ -1,12 +1,16 @@
 import { pgTable, text, serial, timestamp, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { tenantsTable } from "./tenants";
+import { unitsTable } from "./units";
 
 export const contractsTable = pgTable("contracts", {
   id: serial("id").primaryKey(),
   contractNumber: text("contract_number").notNull().unique(),
-  tenantId: integer("tenant_id").notNull(),
-  unitId: integer("unit_id").notNull(),
+  // Real FKs (freeze §): never orphan a contract's tenant/unit. RESTRICT so a
+  // referenced tenant/unit cannot be deleted out from under a contract.
+  tenantId: integer("tenant_id").notNull().references(() => tenantsTable.id, { onDelete: "restrict" }),
+  unitId: integer("unit_id").notNull().references(() => unitsTable.id, { onDelete: "restrict" }),
   startDate: date("start_date", { mode: "string" }).notNull(),
   endDate: date("end_date", { mode: "string" }).notNull(),
   rentAmount: numeric("rent_amount", { precision: 14, scale: 2 }).notNull(),

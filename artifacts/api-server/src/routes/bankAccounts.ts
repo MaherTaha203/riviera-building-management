@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, bankAccountsTable } from "@workspace/db";
+import { db, bankAccountsTable, receiptVouchersTable, paymentVouchersTable, chequesTable, accountsTable, financialMovementsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
@@ -58,9 +58,40 @@ router.patch("/bank-accounts/:id", authMiddleware, validateBody(UpdateBankAccoun
 router.delete("/bank-accounts/:id", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [a] = await db.delete(bankAccountsTable).where(eq(bankAccountsTable.id, id)).returning();
-  if (!a) { res.status(404).json({ error: "Not found" }); return; }
-  await logAction(user, "DELETE", "bank_account", a.id);
+  // F2 guard: block deletion while any financial record still references this
+  // bank account — otherwise the DB FK (ON DELETE RESTRICT) would reject it with
+  // a raw 500. Give a clean 409 instead, and reverse the ledger mirror in-tx.
+  const result = await db.transaction(async (tx) => {
+    const [dep] =
+      (await tx.select({ id: receiptVouchersTable.id }).from(receiptVouchersTable).where(eq(receiptVouchersTable.bankAccountId, id)).limit(1))
+      .concat(await tx.select({ id: paymentVouchersTable.id }).from(paymentVouchersTable).where(eq(paymentVouchersTable.bankAccountId, id)).limit(1))
+      .concat(await tx.select({ id: chequesTable.id }).from(chequesTable).where(eq(chequesTable.bankAccountId, id)).limit(1));
+    if (dep) return { conflict: "refs" as const };
+
+    // The ledger mirror (kept in sync since slice 4) may carry posted movements
+    // — including reversals that outlive a deleted voucher (append-only: history
+    // is never erased, freeze §15). An account with any ledger history is not
+    // hard-deletable; it would be deactivated instead. Only a truly unused bank
+    // (no movements ever) can be removed, mirror and all.
+    const [mirror] = await tx.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.legacyBankAccountId, id));
+    if (mirror) {
+      const [mov] = await tx.select({ id: financialMovementsTable.id }).from(financialMovementsTable).where(eq(financialMovementsTable.accountId, mirror.id)).limit(1);
+      if (mov) return { conflict: "history" as const };
+      await tx.delete(accountsTable).where(eq(accountsTable.id, mirror.id));
+    }
+    const [a] = await tx.delete(bankAccountsTable).where(eq(bankAccountsTable.id, id)).returning();
+    return { deleted: a ?? null };
+  });
+
+  if ("conflict" in result) {
+    const msg = result.conflict === "refs"
+      ? "لا يمكن حذف الحساب البنكي لارتباطه بسندات أو شيكات"
+      : "لا يمكن حذف الحساب البنكي لوجود حركات مالية مسجّلة عليه؛ يمكن إلغاء تفعيله بدلاً من حذفه";
+    res.status(409).json({ error: msg });
+    return;
+  }
+  if (!result.deleted) { res.status(404).json({ error: "Not found" }); return; }
+  await logAction(user, "DELETE", "bank_account", result.deleted.id);
   res.sendStatus(204);
 });
 

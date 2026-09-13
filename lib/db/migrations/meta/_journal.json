@@ -22,6 +22,13 @@
       "when": 1789299112987,
       "tag": "0002_accounts_legacy_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789323945175,
+      "tag": "0003_wet_puma",
+      "breakpoints": true
     }
   ]
 }

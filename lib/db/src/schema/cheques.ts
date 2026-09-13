@@ -1,6 +1,8 @@
 import { pgTable, text, serial, timestamp, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { tenantsTable } from "./tenants";
+import { bankAccountsTable } from "./bankAccounts";
 
 export const chequesTable = pgTable("cheques", {
   id: serial("id").primaryKey(),
@@ -15,11 +17,13 @@ export const chequesTable = pgTable("cheques", {
   dueDate: date("due_date", { mode: "string" }).notNull(),
   status: text("status").notNull().default("pending"),
   drawerName: text("drawer_name").notNull(),
-  tenantId: integer("tenant_id"),
+  // Real FK (RESTRICT): a referenced tenant cannot be deleted while cheques point to them.
+  tenantId: integer("tenant_id").references(() => tenantsTable.id, { onDelete: "restrict" }),
   // Phase C — which of OUR bank accounts the cheque settles against when it
   // clears: an incoming cheque is deposited into it (+), an outgoing one is
   // drawn from it (−). NB: `bankName` above is the DRAWER's bank, not ours.
-  bankAccountId: integer("bank_account_id"),
+  // Real FK (RESTRICT): a referenced bank account cannot be deleted.
+  bankAccountId: integer("bank_account_id").references(() => bankAccountsTable.id, { onDelete: "restrict" }),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
