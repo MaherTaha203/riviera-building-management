@@ -6,6 +6,7 @@ import { logAction } from "../lib/audit";
 import { generateReceiptVoucherNumber } from "../lib/vouchers";
 import { applyBankDelta } from "../lib/bank";
 import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
+import { allocateReceiptFIFO, deallocateReceipt } from "../lib/receivables";
 import { validateBody } from "../lib/validate";
 import { CreateReceiptVoucherBody, UpdateReceiptVoucherBody } from "@workspace/api-zod";
 
@@ -92,6 +93,12 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
       bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
       amountILS, txnDate: date, tenantId: tenantId ? Number(tenantId) : null, createdBy: user.userId,
     });
+    // Receivables (Phase 1): a tenant receipt is applied FIFO to open rent
+    // charges. A general receipt (no tenant) allocates nothing. No-op until
+    // charges exist; the remainder is an unallocated credit.
+    if (tenantId) {
+      await allocateReceiptFIFO(tx, { receiptVoucherId: inserted.id, tenantId: Number(tenantId), amountILS });
+    }
     return inserted;
   });
   await logAction(user, "CREATE", "receipt_voucher", voucher.id);
@@ -187,6 +194,11 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
       kind: "receipt", voucherId: id, paymentMethod: newMethod, bankAccountId: newBankAccountId,
       amountILS: newAmountILS, txnDate: (req.body.date ?? existing.date), tenantId: newTenantId, createdBy: user.userId,
     });
+    // Receivables: reverse the old FIFO allocation and re-apply with new values.
+    await deallocateReceipt(tx, id);
+    if (newTenantId) {
+      await allocateReceiptFIFO(tx, { receiptVoucherId: id, tenantId: newTenantId, amountILS: newAmountILS });
+    }
     return updated ?? null;
   });
 
@@ -208,6 +220,9 @@ router.delete("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise
     if (row.paymentMethod === "bank_transfer") {
       await applyBankDelta(tx, { bankAccountId: row.bankAccountId, bankName: row.bankName }, -Number(row.amountILS));
     }
+    // Receivables: remove this receipt's FIFO allocations (frees the charges)
+    // before the row goes — receipt_allocations → receipt_vouchers is RESTRICT.
+    await deallocateReceipt(tx, id);
     // Ledger dual-write: reverse this receipt's movement before removing the row.
     await clearVoucherLedger(tx, "receipt", id);
     await tx.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
