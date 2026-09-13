@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { applyBankDelta, chequeBankContribution } from "../lib/bank";
+import { syncChequeLedger, clearChequeLedger } from "../lib/chequeLedger";
 import { validateBody } from "../lib/validate";
 import { CreateChequeBody, UpdateChequeBody } from "@workspace/api-zod";
 
@@ -31,13 +32,22 @@ router.post("/cheques", authMiddleware, validateBody(CreateChequeBody), async (r
   }
   // Created as "pending", so no bank movement yet — the balance only moves when
   // the cheque later clears (see PATCH). We just record the settlement account.
-  const [cheque] = await db.insert(chequesTable).values({
-    chequeNumber, type, amount: String(amount), currency, exchangeRate: String(exchangeRate ?? 1), amountILS: String(amountILS),
-    bankName, chequeDate, dueDate, status: "pending", drawerName,
-    tenantId: tenantId ? Number(tenantId) : null,
-    bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
-    notes: notes ?? null,
-  }).returning();
+  const cheque = await db.transaction(async (tx) => {
+    const [inserted] = await tx.insert(chequesTable).values({
+      chequeNumber, type, amount: String(amount), currency, exchangeRate: String(exchangeRate ?? 1), amountILS: String(amountILS),
+      bankName, chequeDate, dueDate, status: "pending", drawerName,
+      tenantId: tenantId ? Number(tenantId) : null,
+      bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
+      notes: notes ?? null,
+    }).returning();
+    // Ledger dual-write (Phase 1): pending posts nothing; keeps the effect in sync.
+    await syncChequeLedger(tx, {
+      chequeId: inserted.id, type: inserted.type, status: inserted.status,
+      amountILS: inserted.amountILS, bankAccountId: inserted.bankAccountId,
+      txnDate: inserted.dueDate, tenantId: inserted.tenantId, createdBy: user.userId,
+    });
+    return inserted;
+  });
   await logAction(user, "CREATE", "cheque", cheque.id);
   res.status(201).json({ ...cheque, amount: Number(cheque.amount), exchangeRate: Number(cheque.exchangeRate), amountILS: Number(cheque.amountILS), tenantName: null });
 });
@@ -101,6 +111,15 @@ router.patch("/cheques/:id", authMiddleware, validateBody(UpdateChequeBody), asy
     if (dueDate != null) updates.dueDate = dueDate;
     if (bankAccountId !== undefined) updates.bankAccountId = newBankAccountId;
     const [updated] = await tx.update(chequesTable).set(updates).where(eq(chequesTable.id, id)).returning();
+    if (updated) {
+      // Ledger dual-write: recompute this cheque's effect from the new values —
+      // clearing posts the movement, un-clearing/editing reverses+reposts.
+      await syncChequeLedger(tx, {
+        chequeId: updated.id, type: updated.type, status: updated.status,
+        amountILS: updated.amountILS, bankAccountId: updated.bankAccountId,
+        txnDate: updated.dueDate, tenantId: updated.tenantId, createdBy: user.userId,
+      });
+    }
     return updated ?? null;
   });
   if (!c) { res.status(404).json({ error: "Not found" }); return; }
@@ -117,6 +136,8 @@ router.delete("/cheques/:id", authMiddleware, async (req, res): Promise<void> =>
     if (!existing) return null;
     const contribution = chequeBankContribution(existing.type, existing.status, Number(existing.amountILS));
     if (contribution !== 0) await applyBankDelta(tx, { bankAccountId: existing.bankAccountId }, -contribution);
+    // Ledger dual-write: reverse this cheque's movement before removing the row.
+    await clearChequeLedger(tx, id);
     await tx.delete(chequesTable).where(eq(chequesTable.id, id));
     return existing;
   });
