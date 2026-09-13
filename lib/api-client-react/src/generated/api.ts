@@ -42,11 +42,14 @@ import type {
   DocumentInput,
   ExchangeRates,
   ExchangeRatesUpdate,
+  GenerateRentChargesInput,
+  GetReceivablesSummaryParams,
   HealthStatus,
   ListAccountStatementsParams,
   ListAuditLogParams,
   ListChequesParams,
   ListDocumentsParams,
+  ListRentChargesParams,
   LoginInput,
   PaymentVoucher,
   PaymentVoucherInput,
@@ -54,6 +57,9 @@ import type {
   ReceiptVoucher,
   ReceiptVoucherInput,
   ReceiptVoucherUpdate,
+  ReceivablesSummary,
+  RentCharge,
+  RentChargeUpdate,
   Settings,
   SettingsUpdate,
   Tenant,
@@ -4118,5 +4124,356 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeleteUserMutationOptions(options));
+    }
+
+export const getListRentChargesUrl = (params?: ListRentChargesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/rent-charges?${stringifiedParams}` : `/api/rent-charges`
+}
+
+export const listRentCharges = async (params?: ListRentChargesParams, options?: RequestInit): Promise<RentCharge[]> => {
+
+  return customFetch<RentCharge[]>(getListRentChargesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRentChargesQueryKey = (params?: ListRentChargesParams,) => {
+    return [
+    `/api/rent-charges`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListRentChargesQueryOptions = <TData = Awaited<ReturnType<typeof listRentCharges>>, TError = ErrorType<unknown>>(params?: ListRentChargesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRentCharges>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRentChargesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRentCharges>>> = ({ signal }) => listRentCharges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRentCharges>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRentChargesQueryResult = NonNullable<Awaited<ReturnType<typeof listRentCharges>>>
+export type ListRentChargesQueryError = ErrorType<unknown>
+
+
+
+export function useListRentCharges<TData = Awaited<ReturnType<typeof listRentCharges>>, TError = ErrorType<unknown>>(
+ params?: ListRentChargesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRentCharges>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRentChargesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGenerateRentChargesUrl = () => {
+
+
+
+
+  return `/api/rent-charges/generate`
+}
+
+export const generateRentCharges = async (generateRentChargesInput: GenerateRentChargesInput, options?: RequestInit): Promise<RentCharge[]> => {
+
+  return customFetch<RentCharge[]>(getGenerateRentChargesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      generateRentChargesInput,)
+  }
+);}
+
+
+
+
+export const getGenerateRentChargesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateRentCharges>>, TError,{data: BodyType<GenerateRentChargesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateRentCharges>>, TError,{data: BodyType<GenerateRentChargesInput>}, TContext> => {
+
+const mutationKey = ['generateRentCharges'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateRentCharges>>, {data: BodyType<GenerateRentChargesInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  generateRentCharges(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateRentChargesMutationResult = NonNullable<Awaited<ReturnType<typeof generateRentCharges>>>
+    export type GenerateRentChargesMutationBody = BodyType<GenerateRentChargesInput>
+    export type GenerateRentChargesMutationError = ErrorType<unknown>
+
+    export const useGenerateRentCharges = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateRentCharges>>, TError,{data: BodyType<GenerateRentChargesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateRentCharges>>,
+        TError,
+        {data: BodyType<GenerateRentChargesInput>},
+        TContext
+      > => {
+      return useMutation(getGenerateRentChargesMutationOptions(options));
+    }
+
+export const getGetReceivablesSummaryUrl = (params: GetReceivablesSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/rent-charges/summary?${stringifiedParams}` : `/api/rent-charges/summary`
+}
+
+export const getReceivablesSummary = async (params: GetReceivablesSummaryParams, options?: RequestInit): Promise<ReceivablesSummary> => {
+
+  return customFetch<ReceivablesSummary>(getGetReceivablesSummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReceivablesSummaryQueryKey = (params?: GetReceivablesSummaryParams,) => {
+    return [
+    `/api/rent-charges/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReceivablesSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getReceivablesSummary>>, TError = ErrorType<unknown>>(params: GetReceivablesSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceivablesSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReceivablesSummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceivablesSummary>>> = ({ signal }) => getReceivablesSummary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReceivablesSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReceivablesSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getReceivablesSummary>>>
+export type GetReceivablesSummaryQueryError = ErrorType<unknown>
+
+
+
+export function useGetReceivablesSummary<TData = Awaited<ReturnType<typeof getReceivablesSummary>>, TError = ErrorType<unknown>>(
+ params: GetReceivablesSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceivablesSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReceivablesSummaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateRentChargeUrl = (id: number,) => {
+
+
+
+
+  return `/api/rent-charges/${id}`
+}
+
+export const updateRentCharge = async (id: number,
+    rentChargeUpdate: RentChargeUpdate, options?: RequestInit): Promise<RentCharge> => {
+
+  return customFetch<RentCharge>(getUpdateRentChargeUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      rentChargeUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateRentChargeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRentCharge>>, TError,{id: number;data: BodyType<RentChargeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRentCharge>>, TError,{id: number;data: BodyType<RentChargeUpdate>}, TContext> => {
+
+const mutationKey = ['updateRentCharge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRentCharge>>, {id: number;data: BodyType<RentChargeUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateRentCharge(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRentChargeMutationResult = NonNullable<Awaited<ReturnType<typeof updateRentCharge>>>
+    export type UpdateRentChargeMutationBody = BodyType<RentChargeUpdate>
+    export type UpdateRentChargeMutationError = ErrorType<void>
+
+    export const useUpdateRentCharge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRentCharge>>, TError,{id: number;data: BodyType<RentChargeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRentCharge>>,
+        TError,
+        {id: number;data: BodyType<RentChargeUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateRentChargeMutationOptions(options));
+    }
+
+export const getCancelRentChargeUrl = (id: number,) => {
+
+
+
+
+  return `/api/rent-charges/${id}/cancel`
+}
+
+export const cancelRentCharge = async (id: number, options?: RequestInit): Promise<RentCharge> => {
+
+  return customFetch<RentCharge>(getCancelRentChargeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCancelRentChargeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelRentCharge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelRentCharge>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['cancelRentCharge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelRentCharge>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  cancelRentCharge(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelRentChargeMutationResult = NonNullable<Awaited<ReturnType<typeof cancelRentCharge>>>
+
+    export type CancelRentChargeMutationError = ErrorType<void>
+
+    export const useCancelRentCharge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelRentCharge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelRentCharge>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getCancelRentChargeMutationOptions(options));
     }
 

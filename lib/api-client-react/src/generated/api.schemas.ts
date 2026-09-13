@@ -1112,6 +1112,50 @@ export interface ExchangeRatesUpdate {
   jodToILS: number;
 }
 
+export type RentChargeStatus = typeof RentChargeStatus[keyof typeof RentChargeStatus];
+
+
+export const RentChargeStatus = {
+  open: 'open',
+  settled: 'settled',
+  cancelled: 'cancelled',
+} as const;
+
+export interface RentCharge {
+  id: number;
+  contractId: number;
+  tenantId: number;
+  /** @nullable */
+  tenantName?: string | null;
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  amountILS: number;
+  allocatedILS: number;
+  status: RentChargeStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt?: string;
+}
+
+export interface GenerateRentChargesInput {
+  contractId: number;
+  /** Generate charges for periods up to this date (YYYY-MM-DD). Defaults to today. */
+  upToDate?: string;
+}
+
+export interface RentChargeUpdate {
+  amountILS?: number;
+  dueDate?: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ReceivablesSummary {
+  tenantId: number;
+  amountDueILS: number;
+}
+
 export type ListChequesParams = {
 type?: ListChequesType;
 };
@@ -1139,5 +1183,14 @@ entityId?: number;
 export type ListAuditLogParams = {
 page?: number;
 limit?: number;
+};
+
+export type ListRentChargesParams = {
+tenantId?: number;
+contractId?: number;
+};
+
+export type GetReceivablesSummaryParams = {
+tenantId: number;
 };
 
