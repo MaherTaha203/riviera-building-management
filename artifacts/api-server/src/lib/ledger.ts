@@ -16,7 +16,7 @@
 // special-casing: original + reversal = 0.
 // ---------------------------------------------------------------------------
 import { db, accountsTable, financialMovementsTable } from "@workspace/db";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, isNull, lte, sql } from "drizzle-orm";
 
 // Accepts either the base db or a transaction client.
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -144,6 +144,47 @@ export async function accountBalanceILS(exec: Exec, accountId: number, opts: { a
     .from(financialMovementsTable)
     .where(and(...conds));
   return Number(acc.openingBalanceILS) + Number(agg?.credit ?? 0) - Number(agg?.debit ?? 0);
+}
+
+/**
+ * Set a source document's ledger effect to exactly `effect` (or none), keeping
+ * the ledger consistent across create / edit / delete without ever mutating a
+ * posted row. It reverses every still-active movement this source posted (via
+ * an offsetting row), then posts the new movement if an effect is given.
+ *
+ *   create → effect set        (posts one movement)
+ *   edit   → effect changed     (reverses the old, posts the new)
+ *   delete → effect = null      (reverses the old only)
+ *
+ * "Active" = a posted original (reverses_id IS NULL) that has not yet been
+ * reversed. Idempotent-safe within a transaction. Returns the new movement (or
+ * null when only reversing).
+ */
+export async function setSourceLedgerEffect(
+  tx: Exec,
+  key: { sourceType: MovementSourceType; sourceId: number },
+  effect: Omit<PostMovementInput, "sourceType" | "sourceId" | "idempotencyKey"> | null,
+) {
+  const active = await tx
+    .select()
+    .from(financialMovementsTable)
+    .where(and(
+      eq(financialMovementsTable.sourceType, key.sourceType),
+      eq(financialMovementsTable.sourceId, key.sourceId),
+      isNull(financialMovementsTable.reversesId),
+      eq(financialMovementsTable.status, "posted"),
+    ));
+  for (const m of active) {
+    const [alreadyReversed] = await tx
+      .select({ id: financialMovementsTable.id })
+      .from(financialMovementsTable)
+      .where(eq(financialMovementsTable.reversesId, m.id));
+    if (!alreadyReversed) {
+      await reverseMovement(tx, m.id, { createdBy: effect?.createdBy ?? null, reason: "superseded by edit/cancel" });
+    }
+  }
+  if (!effect) return null;
+  return postMovement(tx, { ...effect, sourceType: key.sourceType, sourceId: key.sourceId });
 }
 
 /** Projected balance for every account (opening + Σ movements). */

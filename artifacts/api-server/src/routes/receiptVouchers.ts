@@ -5,6 +5,7 @@ import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { generateReceiptVoucherNumber } from "../lib/vouchers";
 import { applyBankDelta } from "../lib/bank";
+import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
 import { validateBody } from "../lib/validate";
 import { CreateReceiptVoucherBody, UpdateReceiptVoucherBody } from "@workspace/api-zod";
 
@@ -85,6 +86,12 @@ router.post("/receipt-vouchers", authMiddleware, validateBody(CreateReceiptVouch
     if (paymentMethod === "bank_transfer") {
       await applyBankDelta(tx, { bankAccountId: bankAccountId != null ? Number(bankAccountId) : null, bankName }, Number(amountILS));
     }
+    // Ledger dual-write (Phase 1): mirror this receipt as a ledger movement.
+    await syncVoucherLedger(tx, {
+      kind: "receipt", voucherId: inserted.id, paymentMethod,
+      bankAccountId: bankAccountId != null ? Number(bankAccountId) : null,
+      amountILS, txnDate: date, tenantId: tenantId ? Number(tenantId) : null, createdBy: user.userId,
+    });
     return inserted;
   });
   await logAction(user, "CREATE", "receipt_voucher", voucher.id);
@@ -175,6 +182,11 @@ router.patch("/receipt-vouchers/:id", authMiddleware, validateBody(UpdateReceipt
     }
 
     const [updated] = await tx.update(receiptVouchersTable).set(updates).where(eq(receiptVouchersTable.id, id)).returning();
+    // Ledger dual-write: reverse the old movement and post the new effect.
+    await syncVoucherLedger(tx, {
+      kind: "receipt", voucherId: id, paymentMethod: newMethod, bankAccountId: newBankAccountId,
+      amountILS: newAmountILS, txnDate: (req.body.date ?? existing.date), tenantId: newTenantId, createdBy: user.userId,
+    });
     return updated ?? null;
   });
 
@@ -196,6 +208,8 @@ router.delete("/receipt-vouchers/:id", authMiddleware, async (req, res): Promise
     if (row.paymentMethod === "bank_transfer") {
       await applyBankDelta(tx, { bankAccountId: row.bankAccountId, bankName: row.bankName }, -Number(row.amountILS));
     }
+    // Ledger dual-write: reverse this receipt's movement before removing the row.
+    await clearVoucherLedger(tx, "receipt", id);
     await tx.delete(receiptVouchersTable).where(eq(receiptVouchersTable.id, id));
     return row;
   });
