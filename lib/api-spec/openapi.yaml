@@ -2380,13 +2380,25 @@ components:
 
     LedgerAccount:
       type: object
-      required: [id, kind, name, balanceILS]
+      required: [id, type, name, balanceILS]
       properties:
         id:
           type: integer
         kind:
           type: string
-          enum: [cash, bank]
+          nullable: true
+          enum: [cash, bank, null]
+        type:
+          type: string
+          enum: [asset, liability, equity, income, expense]
+        code:
+          type: string
+          nullable: true
+        isSystem:
+          type: boolean
+        parentId:
+          type: integer
+          nullable: true
         name:
           type: string
         balanceILS:

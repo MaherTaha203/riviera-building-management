@@ -6,10 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LedgerAccountKind } from './ledgerAccountKind';
+import type { LedgerAccountType } from './ledgerAccountType';
 
 export interface LedgerAccount {
   id: number;
-  kind: LedgerAccountKind;
+  kind?: LedgerAccountKind;
+  type: LedgerAccountType;
+  code?: string | null;
+  isSystem?: boolean;
+  parentId?: number | null;
   name: string;
   balanceILS: number;
 }

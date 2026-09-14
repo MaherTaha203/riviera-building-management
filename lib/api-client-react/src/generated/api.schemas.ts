@@ -1186,7 +1186,7 @@ export interface TransferInput {
   notes?: string | null;
 }
 
-export type LedgerAccountKind = typeof LedgerAccountKind[keyof typeof LedgerAccountKind];
+export type LedgerAccountKind = typeof LedgerAccountKind[keyof typeof LedgerAccountKind] | null;
 
 
 export const LedgerAccountKind = {
@@ -1194,9 +1194,24 @@ export const LedgerAccountKind = {
   bank: 'bank',
 } as const;
 
+export type LedgerAccountType = typeof LedgerAccountType[keyof typeof LedgerAccountType];
+
+
+export const LedgerAccountType = {
+  asset: 'asset',
+  liability: 'liability',
+  equity: 'equity',
+  income: 'income',
+  expense: 'expense',
+} as const;
+
 export interface LedgerAccount {
   id: number;
-  kind: LedgerAccountKind;
+  kind?: LedgerAccountKind;
+  type: LedgerAccountType;
+  code?: string | null;
+  isSystem?: boolean;
+  parentId?: number | null;
   name: string;
   balanceILS: number;
 }

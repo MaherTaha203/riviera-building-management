@@ -1117,7 +1117,11 @@ export const DeleteTransferParams = zod.object({
 
 export const ListLedgerAccountsResponseItem = zod.object({
   "id": zod.number(),
-  "kind": zod.enum(['cash', 'bank']),
+  "kind": zod.union([zod.literal('cash'),zod.literal('bank'),zod.literal(null)]).nullish(),
+  "type": zod.enum(['asset', 'liability', 'equity', 'income', 'expense']),
+  "code": zod.string().nullish(),
+  "isSystem": zod.boolean().optional(),
+  "parentId": zod.number().nullish(),
   "name": zod.string(),
   "balanceILS": zod.number()
 })

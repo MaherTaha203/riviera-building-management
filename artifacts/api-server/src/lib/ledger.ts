@@ -297,12 +297,26 @@ export async function accountTransferDeltaILS(exec: Exec, accountId: number): Pr
   return Number(agg?.credit ?? 0) - Number(agg?.debit ?? 0);
 }
 
-/** Projected balance for every account (opening + Σ movements). */
-export async function allAccountBalancesILS(exec: Exec = db): Promise<Array<{ id: number; kind: string; name: string; balanceILS: number }>> {
-  const accounts = await exec.select().from(accountsTable).orderBy(accountsTable.id);
-  const out: Array<{ id: number; kind: string; name: string; balanceILS: number }> = [];
+export interface AccountBalanceRow {
+  id: number;
+  kind: string | null;
+  type: string;
+  code: string | null;
+  isSystem: boolean;
+  parentId: number | null;
+  name: string;
+  balanceILS: number;
+}
+
+/** Projected balance for every account (opening + Σ movements), with its chart classification. */
+export async function allAccountBalancesILS(exec: Exec = db): Promise<AccountBalanceRow[]> {
+  const accounts = await exec.select().from(accountsTable).orderBy(accountsTable.code, accountsTable.id);
+  const out: AccountBalanceRow[] = [];
   for (const a of accounts) {
-    out.push({ id: a.id, kind: a.kind, name: a.name, balanceILS: await accountBalanceILS(exec, a.id) });
+    out.push({
+      id: a.id, kind: a.kind, type: a.type, code: a.code, isSystem: a.isSystem,
+      parentId: a.parentId, name: a.name, balanceILS: await accountBalanceILS(exec, a.id),
+    });
   }
   return out;
 }

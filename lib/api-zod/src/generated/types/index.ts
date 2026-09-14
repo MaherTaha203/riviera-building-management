@@ -64,6 +64,7 @@ export * from './getReceivablesSummaryParams';
 export * from './healthStatus';
 export * from './ledgerAccount';
 export * from './ledgerAccountKind';
+export * from './ledgerAccountType';
 export * from './listAccountStatementsParams';
 export * from './listAuditLogParams';
 export * from './listChequesParams';

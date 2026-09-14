@@ -56,3 +56,38 @@ export async function resolveCashAccountId(tx: Exec): Promise<number | null> {
     .orderBy(accountsTable.id);
   return a?.id ?? null;
 }
+
+/**
+ * Fixed codes for the seeded system chart of accounts (Phase 2, slice 1). These
+ * are the contra accounts double-entry postings hit. Kept in sync with the
+ * SYSTEM_ACCOUNTS seed in scripts/src/provision-accounts.ts.
+ */
+export const SYSTEM_ACCOUNTS = {
+  CASH: "1000",
+  RECEIVABLE: "1100",
+  PAYABLE: "2000",
+  OWNER_EQUITY: "3000",
+  RETAINED_EARNINGS: "3100",
+  OPENING_EQUITY: "3900",
+  RENT_INCOME: "4000",
+  LATE_FEE_INCOME: "4100",
+  EXPENSES: "5000",
+  OTHER_EXPENSES: "5900",
+} as const;
+
+/** Resolve a system account id by its fixed code (or null if not provisioned). */
+export async function resolveSystemAccountId(tx: Exec, code: string): Promise<number | null> {
+  const [a] = await tx.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.code, code));
+  return a?.id ?? null;
+}
+
+/**
+ * Resolve a system account id by code, throwing a clear error if it is missing.
+ * Double-entry postings depend on these contra accounts existing (run
+ * provision:accounts), so a missing one is a provisioning fault, not a user error.
+ */
+export async function requireSystemAccountId(tx: Exec, code: string): Promise<number> {
+  const id = await resolveSystemAccountId(tx, code);
+  if (id == null) throw new Error(`system account ${code} not provisioned — run provision:accounts`);
+  return id;
+}
