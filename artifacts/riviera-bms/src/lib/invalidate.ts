@@ -42,6 +42,9 @@ const FINANCIAL_QUERY_KEYS: readonly string[] = [
   "/api/ledger/accounts",
   // Closing/opening a financial period gates future postings.
   "/api/financial-periods",
+  // Notices (expiry + overdue) and late-fee previews recompute after any write.
+  "/api/notices",
+  "/api/rent-charges/late-fees/preview",
 ];
 
 /**

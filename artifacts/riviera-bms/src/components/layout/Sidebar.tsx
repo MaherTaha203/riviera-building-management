@@ -12,6 +12,7 @@ import {
   Files,
   ScrollText,
   Coins,
+  BellRing,
   ArrowLeftRight,
   FileBox,
   BarChart3,
@@ -39,6 +40,7 @@ const financialItems = [
   { name: "التحويلات", path: "/transfers", icon: ArrowLeftRight },
   { name: "الشيكات", path: "/cheques", icon: Files },
   { name: "الذمم والاستحقاقات", path: "/receivables", icon: Coins },
+  { name: "المتابعة والتحصيل", path: "/arrears", icon: BellRing },
   { name: "كشف الحساب", path: "/account-statements", icon: ScrollText },
 ];
 
