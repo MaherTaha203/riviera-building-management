@@ -12,7 +12,7 @@
 //
 //   DATABASE_URL=… tsx src/smoke/ledgerSmoke.ts
 // ---------------------------------------------------------------------------
-import { db, pool, accountsTable, bankAccountsTable } from "@workspace/db";
+import { db, pool, accountsTable, bankAccountsTable, financialPeriodsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { accountBalanceILS, setTransferLedgerEffect } from "../lib/ledger";
 import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
@@ -136,6 +136,23 @@ async function main() {
   await db.transaction((tx) => setTransferLedgerEffect(tx, 9201, null));
   assertEq("cash after reversing the transfer", await bal(cashAccId), 1500);
   assertEq("bank after reversing the transfer", await bal(bankAccId), 500);
+
+  // --- closed periods (slice 17): posting into a closed period is rejected ---
+  console.log("\nclosed periods:");
+  await db.insert(financialPeriodsTable).values({ label: "2026-08", startDate: "2026-08-01", endDate: "2026-08-31", status: "closed" });
+  let blocked = false;
+  try {
+    await db.transaction((tx) => syncVoucherLedger(tx, {
+      kind: "receipt", voucherId: 9301, paymentMethod: "cash", amountILS: 100, txnDate: "2026-08-15", createdBy: USER,
+    }));
+  } catch { blocked = true; }
+  console.log(`  ${blocked ? "✓" : "✗"} a receipt dated inside the closed period (2026-08) is rejected`);
+  if (!blocked) failures++;
+  // A date outside any period is unaffected.
+  await db.transaction((tx) => syncVoucherLedger(tx, {
+    kind: "receipt", voucherId: 9302, paymentMethod: "cash", amountILS: 100, txnDate: "2026-07-15", createdBy: USER,
+  }));
+  assertEq("cash after a receipt outside any period", await bal(cashAccId), 1600);
 
   console.log(failures === 0 ? "\n✓ ledger smoke passed" : `\n✗ ledger smoke failed (${failures})`);
   await pool.end();

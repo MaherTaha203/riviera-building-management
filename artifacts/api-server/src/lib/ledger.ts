@@ -15,11 +15,18 @@
 // row (§15). Reversals are ordinary posted rows, so the projection needs no
 // special-casing: original + reversal = 0.
 // ---------------------------------------------------------------------------
-import { db, accountsTable, financialMovementsTable } from "@workspace/db";
-import { and, eq, isNull, lte, sql } from "drizzle-orm";
+import { db, accountsTable, financialMovementsTable, financialPeriodsTable } from "@workspace/db";
+import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 // Accepts either the base db or a transaction client.
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** An error whose message is safe to show the user, with an HTTP status. */
+export class ClosedPeriodError extends Error {
+  readonly status = 409;
+  readonly expose = true;
+  constructor(message: string) { super(message); this.name = "ClosedPeriodError"; }
+}
 
 export type MovementDirection = "credit" | "debit";
 export type MovementSourceType =
@@ -45,6 +52,27 @@ export interface PostMovementInput {
   fxRate?: number | null;
 }
 
+/**
+ * Resolve the financial period that contains `txnDate` (start ≤ date ≤ end) and
+ * enforce the closed-period rule (freeze D5): a closed period is frozen, so any
+ * attempt to post OR reverse a movement dated within it is rejected — a
+ * correction goes through reopening the period, or a corrective document in an
+ * open period. Returns the period id to stamp on the movement (null when no
+ * period covers the date — periods are opt-in, so enforcement only bites once a
+ * covering period exists and is closed).
+ */
+export async function resolvePeriodForDate(tx: Exec, txnDate: string): Promise<number | null> {
+  const [p] = await tx
+    .select({ id: financialPeriodsTable.id, status: financialPeriodsTable.status, label: financialPeriodsTable.label })
+    .from(financialPeriodsTable)
+    .where(and(lte(financialPeriodsTable.startDate, txnDate), gte(financialPeriodsTable.endDate, txnDate)))
+    .limit(1);
+  if (p && p.status === "closed") {
+    throw new ClosedPeriodError(`الفترة المالية «${p.label}» مقفلة — لا يمكن تسجيل أو تعديل حركة بتاريخها`);
+  }
+  return p?.id ?? null;
+}
+
 /** Signed ILS effect of a movement on its account (credit +, debit −). */
 export function signedDeltaILS(direction: string, amountILS: number | string): number {
   const n = Number(amountILS);
@@ -68,13 +96,15 @@ export async function postMovement(tx: Exec, input: PostMovementInput) {
       .where(eq(financialMovementsTable.idempotencyKey, input.idempotencyKey));
     if (existing) return existing;
   }
+  // Closed-period enforcement + period assignment (D5).
+  const periodId = await resolvePeriodForDate(tx, input.txnDate);
   const [row] = await tx
     .insert(financialMovementsTable)
     .values({
       sourceType: input.sourceType,
       sourceId: input.sourceId ?? null,
       accountId: input.accountId,
-      periodId: input.periodId ?? null,
+      periodId: periodId ?? input.periodId ?? null,
       txnDate: input.txnDate,
       amountILS: String(input.amountILS),
       direction: input.direction,
@@ -105,13 +135,17 @@ export async function reverseMovement(
 ) {
   const [orig] = await tx.select().from(financialMovementsTable).where(eq(financialMovementsTable.id, originalId));
   if (!orig) throw new Error(`reverseMovement: movement ${originalId} not found`);
+  // Closed-period enforcement (D5): a reversal is dated like its original, so a
+  // document in a closed period cannot be edited/deleted until the period is
+  // reopened. Also re-stamps the reversal's period.
+  const periodId = await resolvePeriodForDate(tx, orig.txnDate);
   const [rev] = await tx
     .insert(financialMovementsTable)
     .values({
       sourceType: orig.sourceType,
       sourceId: orig.sourceId,
       accountId: orig.accountId,
-      periodId: opts.periodId ?? orig.periodId,
+      periodId: opts.periodId ?? periodId ?? orig.periodId,
       txnDate: orig.txnDate,
       amountILS: orig.amountILS,
       direction: orig.direction === "credit" ? "debit" : "credit",

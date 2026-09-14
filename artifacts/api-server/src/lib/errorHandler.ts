@@ -74,6 +74,14 @@ export function errorHandler(
     return;
   }
 
+  // Errors explicitly marked safe to surface (e.g. ClosedPeriodError) carry
+  // their own user-facing Arabic message + status.
+  const exposable = err as { expose?: boolean; status?: number; message?: string };
+  if (exposable?.expose === true && typeof exposable.status === "number") {
+    res.status(exposable.status).json({ error: exposable.message || "تعذّر إتمام الطلب" });
+    return;
+  }
+
   // Body-parser and other errors that carry an explicit HTTP status (e.g.
   // PayloadTooLargeError 413, malformed JSON 400) — surface it as clean JSON
   // instead of a generic 500.

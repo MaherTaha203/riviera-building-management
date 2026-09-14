@@ -1201,6 +1201,31 @@ export interface LedgerAccount {
   balanceILS: number;
 }
 
+export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
+
+
+export const FinancialPeriodStatus = {
+  open: 'open',
+  closed: 'closed',
+} as const;
+
+export interface FinancialPeriod {
+  id: number;
+  label: string;
+  startDate: string;
+  endDate: string;
+  status: FinancialPeriodStatus;
+  /** @nullable */
+  closedAt?: string | null;
+  createdAt?: string;
+}
+
+export interface FinancialPeriodInput {
+  label: string;
+  startDate: string;
+  endDate: string;
+}
+
 export type ListChequesParams = {
 type?: ListChequesType;
 };

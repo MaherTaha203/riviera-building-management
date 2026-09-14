@@ -1124,3 +1124,52 @@ export const ListLedgerAccountsResponseItem = zod.object({
 export const ListLedgerAccountsResponse = zod.array(ListLedgerAccountsResponseItem)
 
 
+export const ListFinancialPeriodsResponseItem = zod.object({
+  "id": zod.number(),
+  "label": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const ListFinancialPeriodsResponse = zod.array(ListFinancialPeriodsResponseItem)
+
+
+export const CreateFinancialPeriodBody = zod.object({
+  "label": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string()
+})
+
+
+export const CloseFinancialPeriodParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CloseFinancialPeriodResponse = zod.object({
+  "id": zod.number(),
+  "label": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+export const ReopenFinancialPeriodParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReopenFinancialPeriodResponse = zod.object({
+  "id": zod.number(),
+  "label": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
