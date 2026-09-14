@@ -1057,6 +1057,22 @@ export const SettingsDefaultCurrency = {
   JOD: 'JOD',
 } as const;
 
+export type SettingsLateFeeEnabled = typeof SettingsLateFeeEnabled[keyof typeof SettingsLateFeeEnabled];
+
+
+export const SettingsLateFeeEnabled = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type SettingsLateFeeMode = typeof SettingsLateFeeMode[keyof typeof SettingsLateFeeMode];
+
+
+export const SettingsLateFeeMode = {
+  percent: 'percent',
+  flat: 'flat',
+} as const;
+
 export interface Settings {
   buildingName: string;
   buildingAddress: string;
@@ -1067,6 +1083,10 @@ export interface Settings {
   email?: string | null;
   /** @nullable */
   taxNumber?: string | null;
+  lateFeeEnabled?: SettingsLateFeeEnabled;
+  lateFeeGraceDays?: number;
+  lateFeeMode?: SettingsLateFeeMode;
+  lateFeeRate?: number;
 }
 
 export type SettingsUpdateDefaultCurrency = typeof SettingsUpdateDefaultCurrency[keyof typeof SettingsUpdateDefaultCurrency];
@@ -1076,6 +1096,22 @@ export const SettingsUpdateDefaultCurrency = {
   ILS: 'ILS',
   USD: 'USD',
   JOD: 'JOD',
+} as const;
+
+export type SettingsUpdateLateFeeEnabled = typeof SettingsUpdateLateFeeEnabled[keyof typeof SettingsUpdateLateFeeEnabled];
+
+
+export const SettingsUpdateLateFeeEnabled = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type SettingsUpdateLateFeeMode = typeof SettingsUpdateLateFeeMode[keyof typeof SettingsUpdateLateFeeMode];
+
+
+export const SettingsUpdateLateFeeMode = {
+  percent: 'percent',
+  flat: 'flat',
 } as const;
 
 export interface SettingsUpdate {
@@ -1088,6 +1124,10 @@ export interface SettingsUpdate {
   email?: string | null;
   /** @nullable */
   taxNumber?: string | null;
+  lateFeeEnabled?: SettingsUpdateLateFeeEnabled;
+  lateFeeGraceDays?: number;
+  lateFeeMode?: SettingsUpdateLateFeeMode;
+  lateFeeRate?: number;
 }
 
 /**
@@ -1123,6 +1163,14 @@ export const RentChargeStatus = {
   cancelled: 'cancelled',
 } as const;
 
+export type RentChargeKind = typeof RentChargeKind[keyof typeof RentChargeKind];
+
+
+export const RentChargeKind = {
+  rent: 'rent',
+  late_fee: 'late_fee',
+} as const;
+
 export interface RentCharge {
   id: number;
   contractId: number;
@@ -1135,9 +1183,56 @@ export interface RentCharge {
   amountILS: number;
   allocatedILS: number;
   status: RentChargeStatus;
+  kind?: RentChargeKind;
+  /** @nullable */
+  sourceChargeId?: number | null;
   /** @nullable */
   notes?: string | null;
   createdAt?: string;
+}
+
+export interface LateFeeApplyInput {
+  asOf?: string;
+}
+
+export interface LateFeeCandidate {
+  sourceChargeId: number;
+  contractId: number;
+  tenantId: number;
+  periodStart?: string;
+  periodEnd?: string;
+  outstandingILS: number;
+  feeILS: number;
+}
+
+export type LateFeePreviewPolicyMode = typeof LateFeePreviewPolicyMode[keyof typeof LateFeePreviewPolicyMode];
+
+
+export const LateFeePreviewPolicyMode = {
+  percent: 'percent',
+  flat: 'flat',
+} as const;
+
+export type LateFeePreviewPolicy = {
+  enabled?: boolean;
+  graceDays?: number;
+  mode?: LateFeePreviewPolicyMode;
+  rate?: number;
+};
+
+export interface LateFeePreview {
+  asOf: string;
+  policy?: LateFeePreviewPolicy;
+  candidates: LateFeeCandidate[];
+  count: number;
+  totalFeeILS: number;
+}
+
+export interface LateFeeApplyResult {
+  asOf: string;
+  count: number;
+  totalFeeILS: number;
+  created: RentCharge[];
 }
 
 export interface GenerateRentChargesInput {
@@ -1386,6 +1481,10 @@ limit?: number;
 export type ListRentChargesParams = {
 tenantId?: number;
 contractId?: number;
+};
+
+export type PreviewLateFeesParams = {
+asOf?: string;
 };
 
 export type GetReceivablesSummaryParams = {

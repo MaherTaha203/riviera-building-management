@@ -915,7 +915,11 @@ export const GetSettingsResponse = zod.object({
   "defaultCurrency": zod.enum(['ILS', 'USD', 'JOD']),
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
-  "taxNumber": zod.string().nullish()
+  "taxNumber": zod.string().nullish(),
+  "lateFeeEnabled": zod.enum(['true', 'false']).optional(),
+  "lateFeeGraceDays": zod.number().optional(),
+  "lateFeeMode": zod.enum(['percent', 'flat']).optional(),
+  "lateFeeRate": zod.number().optional()
 })
 
 
@@ -925,7 +929,11 @@ export const UpdateSettingsBody = zod.object({
   "defaultCurrency": zod.enum(['ILS', 'USD', 'JOD']).optional(),
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
-  "taxNumber": zod.string().nullish()
+  "taxNumber": zod.string().nullish(),
+  "lateFeeEnabled": zod.enum(['true', 'false']).optional(),
+  "lateFeeGraceDays": zod.number().optional(),
+  "lateFeeMode": zod.enum(['percent', 'flat']).optional(),
+  "lateFeeRate": zod.number().optional()
 })
 
 export const UpdateSettingsResponse = zod.object({
@@ -934,7 +942,11 @@ export const UpdateSettingsResponse = zod.object({
   "defaultCurrency": zod.enum(['ILS', 'USD', 'JOD']),
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
-  "taxNumber": zod.string().nullish()
+  "taxNumber": zod.string().nullish(),
+  "lateFeeEnabled": zod.enum(['true', 'false']).optional(),
+  "lateFeeGraceDays": zod.number().optional(),
+  "lateFeeMode": zod.enum(['percent', 'flat']).optional(),
+  "lateFeeRate": zod.number().optional()
 })
 
 
@@ -1017,6 +1029,8 @@ export const ListRentChargesResponseItem = zod.object({
   "amountILS": zod.number(),
   "allocatedILS": zod.number(),
   "status": zod.enum(['open', 'settled', 'cancelled']),
+  "kind": zod.enum(['rent', 'late_fee']).optional(),
+  "sourceChargeId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()
 })
@@ -1026,6 +1040,37 @@ export const ListRentChargesResponse = zod.array(ListRentChargesResponseItem)
 export const GenerateRentChargesBody = zod.object({
   "contractId": zod.number(),
   "upToDate": zod.string().optional().describe('Generate charges for periods up to this date (YYYY-MM-DD). Defaults to today.')
+})
+
+
+export const PreviewLateFeesQueryParams = zod.object({
+  "asOf": zod.coerce.string().optional()
+})
+
+export const PreviewLateFeesResponse = zod.object({
+  "asOf": zod.string(),
+  "policy": zod.object({
+  "enabled": zod.boolean().optional(),
+  "graceDays": zod.number().optional(),
+  "mode": zod.enum(['percent', 'flat']).optional(),
+  "rate": zod.number().optional()
+}).optional(),
+  "candidates": zod.array(zod.object({
+  "sourceChargeId": zod.number(),
+  "contractId": zod.number(),
+  "tenantId": zod.number(),
+  "periodStart": zod.string().optional(),
+  "periodEnd": zod.string().optional(),
+  "outstandingILS": zod.number(),
+  "feeILS": zod.number()
+})),
+  "count": zod.number(),
+  "totalFeeILS": zod.number()
+})
+
+
+export const ApplyLateFeesBody = zod.object({
+  "asOf": zod.string().optional()
 })
 
 
@@ -1060,6 +1105,8 @@ export const UpdateRentChargeResponse = zod.object({
   "amountILS": zod.number(),
   "allocatedILS": zod.number(),
   "status": zod.enum(['open', 'settled', 'cancelled']),
+  "kind": zod.enum(['rent', 'late_fee']).optional(),
+  "sourceChargeId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()
 })
@@ -1080,6 +1127,8 @@ export const CancelRentChargeResponse = zod.object({
   "amountILS": zod.number(),
   "allocatedILS": zod.number(),
   "status": zod.enum(['open', 'settled', 'cancelled']),
+  "kind": zod.enum(['rent', 'late_fee']).optional(),
+  "sourceChargeId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string().optional()
 })

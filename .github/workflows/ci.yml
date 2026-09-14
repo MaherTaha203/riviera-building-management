@@ -92,5 +92,8 @@ jobs:
       - name: Reports (trial balance / income statement / balance sheet) smoke
         run: pnpm --filter @workspace/api-server run smoke:reports
 
+      - name: Late-fee automation smoke
+        run: pnpm --filter @workspace/api-server run smoke:latefees
+
       - name: Ledger reconciliation (invariants + projections)
         run: pnpm --filter @workspace/scripts run reconcile:ledger

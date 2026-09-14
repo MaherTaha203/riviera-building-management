@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SettingsUpdateDefaultCurrency } from './settingsUpdateDefaultCurrency';
+import type { SettingsUpdateLateFeeEnabled } from './settingsUpdateLateFeeEnabled';
+import type { SettingsUpdateLateFeeMode } from './settingsUpdateLateFeeMode';
 
 export interface SettingsUpdate {
   buildingName?: string;
@@ -17,4 +19,8 @@ export interface SettingsUpdate {
   email?: string | null;
   /** @nullable */
   taxNumber?: string | null;
+  lateFeeEnabled?: SettingsUpdateLateFeeEnabled;
+  lateFeeGraceDays?: number;
+  lateFeeMode?: SettingsUpdateLateFeeMode;
+  lateFeeRate?: number;
 }

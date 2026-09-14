@@ -56,6 +56,9 @@ import type {
   GetTrialBalanceParams,
   HealthStatus,
   IncomeStatement,
+  LateFeeApplyInput,
+  LateFeeApplyResult,
+  LateFeePreview,
   LedgerAccount,
   ListAccountStatementsParams,
   ListAuditLogParams,
@@ -66,6 +69,7 @@ import type {
   PaymentVoucher,
   PaymentVoucherInput,
   PaymentVoucherUpdate,
+  PreviewLateFeesParams,
   ReceiptVoucher,
   ReceiptVoucherInput,
   ReceiptVoucherUpdate,
@@ -4282,6 +4286,149 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getGenerateRentChargesMutationOptions(options));
+    }
+
+export const getPreviewLateFeesUrl = (params?: PreviewLateFeesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/rent-charges/late-fees/preview?${stringifiedParams}` : `/api/rent-charges/late-fees/preview`
+}
+
+export const previewLateFees = async (params?: PreviewLateFeesParams, options?: RequestInit): Promise<LateFeePreview> => {
+
+  return customFetch<LateFeePreview>(getPreviewLateFeesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPreviewLateFeesQueryKey = (params?: PreviewLateFeesParams,) => {
+    return [
+    `/api/rent-charges/late-fees/preview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getPreviewLateFeesQueryOptions = <TData = Awaited<ReturnType<typeof previewLateFees>>, TError = ErrorType<unknown>>(params?: PreviewLateFeesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof previewLateFees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPreviewLateFeesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof previewLateFees>>> = ({ signal }) => previewLateFees(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof previewLateFees>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type PreviewLateFeesQueryResult = NonNullable<Awaited<ReturnType<typeof previewLateFees>>>
+export type PreviewLateFeesQueryError = ErrorType<unknown>
+
+
+
+export function usePreviewLateFees<TData = Awaited<ReturnType<typeof previewLateFees>>, TError = ErrorType<unknown>>(
+ params?: PreviewLateFeesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof previewLateFees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getPreviewLateFeesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getApplyLateFeesUrl = () => {
+
+
+
+
+  return `/api/rent-charges/late-fees/apply`
+}
+
+export const applyLateFees = async (lateFeeApplyInput?: LateFeeApplyInput, options?: RequestInit): Promise<LateFeeApplyResult> => {
+
+  return customFetch<LateFeeApplyResult>(getApplyLateFeesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      lateFeeApplyInput,)
+  }
+);}
+
+
+
+
+export const getApplyLateFeesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyLateFees>>, TError,{data?: BodyType<LateFeeApplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyLateFees>>, TError,{data?: BodyType<LateFeeApplyInput>}, TContext> => {
+
+const mutationKey = ['applyLateFees'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyLateFees>>, {data?: BodyType<LateFeeApplyInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyLateFees(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyLateFeesMutationResult = NonNullable<Awaited<ReturnType<typeof applyLateFees>>>
+    export type ApplyLateFeesMutationBody = BodyType<LateFeeApplyInput> | undefined
+    export type ApplyLateFeesMutationError = ErrorType<void>
+
+    export const useApplyLateFees = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyLateFees>>, TError,{data?: BodyType<LateFeeApplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyLateFees>>,
+        TError,
+        {data?: BodyType<LateFeeApplyInput>},
+        TContext
+      > => {
+      return useMutation(getApplyLateFeesMutationOptions(options));
     }
 
 export const getGetReceivablesSummaryUrl = (params: GetReceivablesSummaryParams,) => {

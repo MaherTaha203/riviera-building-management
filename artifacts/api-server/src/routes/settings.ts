@@ -16,13 +16,14 @@ router.get("/settings", authMiddleware, async (_req, res): Promise<void> => {
   if (!s) {
     [s] = await db.insert(settingsTable).values({}).returning();
   }
-  res.json(s);
+  res.json({ ...s, lateFeeGraceDays: Number(s.lateFeeGraceDays), lateFeeRate: Number(s.lateFeeRate) });
 });
 
 router.patch("/settings", authMiddleware, validateBody(UpdateSettingsBody), async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const [s] = await db.select().from(settingsTable);
-  const { buildingName, buildingAddress, defaultCurrency, phone, email, taxNumber } = req.body;
+  const { buildingName, buildingAddress, defaultCurrency, phone, email, taxNumber,
+    lateFeeEnabled, lateFeeGraceDays, lateFeeMode, lateFeeRate } = req.body;
   const updates: Record<string, unknown> = {};
   if (buildingName != null) updates.buildingName = buildingName;
   if (buildingAddress != null) updates.buildingAddress = buildingAddress;
@@ -30,6 +31,10 @@ router.patch("/settings", authMiddleware, validateBody(UpdateSettingsBody), asyn
   if (phone !== undefined) updates.phone = phone;
   if (email !== undefined) updates.email = email;
   if (taxNumber !== undefined) updates.taxNumber = taxNumber;
+  if (lateFeeEnabled != null) updates.lateFeeEnabled = String(lateFeeEnabled);
+  if (lateFeeGraceDays != null) updates.lateFeeGraceDays = String(Math.max(0, Math.trunc(Number(lateFeeGraceDays))));
+  if (lateFeeMode != null) updates.lateFeeMode = lateFeeMode;
+  if (lateFeeRate != null) updates.lateFeeRate = String(Number(lateFeeRate));
   let updated;
   if (s) {
     [updated] = await db.update(settingsTable).set(updates).where(eq(settingsTable.id, s.id)).returning();
@@ -37,7 +42,7 @@ router.patch("/settings", authMiddleware, validateBody(UpdateSettingsBody), asyn
     [updated] = await db.insert(settingsTable).values(updates).returning();
   }
   await logAction(user, "UPDATE", "settings");
-  res.json(updated);
+  res.json({ ...updated, lateFeeGraceDays: Number(updated.lateFeeGraceDays), lateFeeRate: Number(updated.lateFeeRate) });
 });
 
 // Exchange rates. The stored row is the manual fallback / last-known-good;

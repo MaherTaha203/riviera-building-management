@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke:ledger": "tsx src/smoke/ledgerSmoke.ts",
     "smoke:receivables": "tsx src/smoke/receivablesSmoke.ts",
-    "smoke:reports": "tsx src/smoke/reportsCheck.ts"
+    "smoke:reports": "tsx src/smoke/reportsCheck.ts",
+    "smoke:latefees": "tsx src/smoke/lateFeesSmoke.ts"
   },
   "dependencies": {
     "@node-rs/bcrypt": "^1.10.7",

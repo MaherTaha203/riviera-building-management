@@ -5,6 +5,7 @@
  * Riviera Building Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { RentChargeKind } from './rentChargeKind';
 import type { RentChargeStatus } from './rentChargeStatus';
 
 export interface RentCharge {
@@ -19,6 +20,9 @@ export interface RentCharge {
   amountILS: number;
   allocatedILS: number;
   status: RentChargeStatus;
+  kind?: RentChargeKind;
+  /** @nullable */
+  sourceChargeId?: number | null;
   /** @nullable */
   notes?: string | null;
   createdAt?: string;
