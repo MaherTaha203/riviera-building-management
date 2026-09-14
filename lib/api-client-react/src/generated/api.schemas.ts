@@ -1216,6 +1216,43 @@ export interface LedgerAccount {
   balanceILS: number;
 }
 
+export type TrialBalanceLineType = typeof TrialBalanceLineType[keyof typeof TrialBalanceLineType];
+
+
+export const TrialBalanceLineType = {
+  asset: 'asset',
+  liability: 'liability',
+  equity: 'equity',
+  income: 'income',
+  expense: 'expense',
+} as const;
+
+export type TrialBalanceLineNormalBalance = typeof TrialBalanceLineNormalBalance[keyof typeof TrialBalanceLineNormalBalance];
+
+
+export const TrialBalanceLineNormalBalance = {
+  debit: 'debit',
+  credit: 'credit',
+} as const;
+
+export interface TrialBalanceLine {
+  accountId: number;
+  code?: string | null;
+  name: string;
+  type: TrialBalanceLineType;
+  normalBalance: TrialBalanceLineNormalBalance;
+  debit: number;
+  credit: number;
+}
+
+export interface TrialBalance {
+  asOf?: string | null;
+  lines: TrialBalanceLine[];
+  totalDebit: number;
+  totalCredit: number;
+  balanced: boolean;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1277,5 +1314,12 @@ contractId?: number;
 
 export type GetReceivablesSummaryParams = {
 tenantId: number;
+};
+
+export type GetTrialBalanceParams = {
+/**
+ * Balances as of this date (YYYY-MM-DD); omit for latest.
+ */
+asOf?: string;
 };
 

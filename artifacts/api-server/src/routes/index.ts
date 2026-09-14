@@ -19,6 +19,7 @@ import ledgerRouter from "./ledger";
 import rentChargesRouter from "./rentCharges";
 import transfersRouter from "./transfers";
 import financialPeriodsRouter from "./financialPeriods";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(ledgerRouter);
 router.use(rentChargesRouter);
 router.use(transfersRouter);
 router.use(financialPeriodsRouter);
+router.use(reportsRouter);
 
 export default router;
