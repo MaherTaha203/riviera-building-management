@@ -17,6 +17,7 @@
 // ---------------------------------------------------------------------------
 import { db, accountsTable, financialMovementsTable, financialPeriodsTable } from "@workspace/db";
 import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 // Accepts either the base db or a transaction client.
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -45,6 +46,7 @@ export interface PostMovementInput {
   reference?: string | null;
   reason?: string | null;
   idempotencyKey?: string | null;
+  entryId?: string | null;      // double-entry group (set by postJournalEntry)
   createdBy?: number | null;
   // optional non-authoritative currency memo
   originalAmount?: number | null;
@@ -112,6 +114,7 @@ export async function postMovement(tx: Exec, input: PostMovementInput) {
       relatedPartyId: input.relatedPartyId ?? null,
       reference: input.reference ?? null,
       status: "posted",
+      entryId: input.entryId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
       createdBy: input.createdBy ?? null,
       reason: input.reason ?? null,
@@ -121,6 +124,101 @@ export async function postMovement(tx: Exec, input: PostMovementInput) {
     })
     .returning();
   return row;
+}
+
+/** One leg of a balanced journal entry. */
+export interface JournalLeg {
+  accountId: number;
+  direction: MovementDirection;
+  amountILS: number;              // >= 0; sign carried by direction
+  relatedPartyType?: string | null;
+  relatedPartyId?: number | null;
+  reference?: string | null;
+  reason?: string | null;
+  originalAmount?: number | null;
+  originalCurrency?: string | null;
+  fxRate?: number | null;
+}
+
+/** Shared attributes of every leg in one journal entry. */
+export interface JournalEntryCommon {
+  sourceType: MovementSourceType;
+  sourceId?: number | null;
+  txnDate: string;                // YYYY-MM-DD
+  createdBy?: number | null;
+  // Base idempotency key; each leg is posted with `${key}:${i}` so a retry of the
+  // whole entry never double-posts a leg.
+  idempotencyKey?: string | null;
+  // Explicit group id; defaults to a fresh uuid.
+  entryId?: string | null;
+}
+
+/**
+ * Post a balanced double-entry journal entry (Phase 2, slice 2). Every leg is
+ * appended to the ledger sharing one `entryId`, and the entry is REJECTED unless
+ * its legs net to zero in signed ILS (Σ signedDelta = 0) — this is the core
+ * double-entry invariant enforced at the write. Runs inside the caller's
+ * transaction so an unbalanced or failed leg rolls the whole entry back.
+ */
+export async function postJournalEntry(tx: Exec, legs: JournalLeg[], common: JournalEntryCommon) {
+  if (legs.length < 2) throw new Error("postJournalEntry: a journal entry needs at least two legs");
+  const net = legs.reduce((s, l) => s + signedDeltaILS(l.direction, l.amountILS), 0);
+  if (Math.abs(net) >= 0.005) {
+    throw new Error(`postJournalEntry: unbalanced entry (Σ signedDelta = ${net.toFixed(2)}, must be 0)`);
+  }
+  const entryId = common.entryId ?? randomUUID();
+  const movements = [];
+  for (let i = 0; i < legs.length; i++) {
+    const l = legs[i];
+    movements.push(await postMovement(tx, {
+      sourceType: common.sourceType,
+      sourceId: common.sourceId ?? null,
+      accountId: l.accountId,
+      txnDate: common.txnDate,
+      amountILS: l.amountILS,
+      direction: l.direction,
+      relatedPartyType: l.relatedPartyType ?? null,
+      relatedPartyId: l.relatedPartyId ?? null,
+      reference: l.reference ?? null,
+      reason: l.reason ?? null,
+      entryId,
+      idempotencyKey: common.idempotencyKey ? `${common.idempotencyKey}:${i}` : null,
+      createdBy: common.createdBy ?? null,
+      originalAmount: l.originalAmount ?? null,
+      originalCurrency: l.originalCurrency ?? null,
+      fxRate: l.fxRate ?? null,
+    }));
+  }
+  return { entryId, movements };
+}
+
+/**
+ * Reverse an entire journal entry as a group: append an offsetting movement for
+ * every still-active leg sharing `entryId`. Because each leg's reversal carries
+ * the same entryId, the group's Σ signedDelta stays 0 after a full reversal.
+ */
+export async function reverseJournalEntry(
+  tx: Exec,
+  entryId: string,
+  opts: { reason?: string; createdBy?: number | null } = {},
+) {
+  const active = await tx
+    .select()
+    .from(financialMovementsTable)
+    .where(and(
+      eq(financialMovementsTable.entryId, entryId),
+      isNull(financialMovementsTable.reversesId),
+      eq(financialMovementsTable.status, "posted"),
+    ));
+  const revs = [];
+  for (const m of active) {
+    const [already] = await tx
+      .select({ id: financialMovementsTable.id })
+      .from(financialMovementsTable)
+      .where(eq(financialMovementsTable.reversesId, m.id));
+    if (!already) revs.push(await reverseMovement(tx, m.id, opts));
+  }
+  return revs;
 }
 
 /**
@@ -153,6 +251,7 @@ export async function reverseMovement(
       relatedPartyId: orig.relatedPartyId,
       reference: orig.reference,
       status: "posted",
+      entryId: orig.entryId, // stay in the original's journal-entry group
       reversesId: orig.id,
       createdBy: opts.createdBy ?? null,
       reason: opts.reason ?? `reversal of movement #${orig.id}`,

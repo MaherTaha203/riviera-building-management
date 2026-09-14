@@ -14,10 +14,10 @@
 // ---------------------------------------------------------------------------
 import { db, pool, accountsTable, bankAccountsTable, financialPeriodsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { accountBalanceILS, setTransferLedgerEffect } from "../lib/ledger";
+import { accountBalanceILS, setTransferLedgerEffect, postJournalEntry, reverseJournalEntry } from "../lib/ledger";
 import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
 import { syncChequeLedger, clearChequeLedger } from "../lib/chequeLedger";
-import { mirrorBankAccount, resolveCashAccountId } from "../lib/accounts";
+import { mirrorBankAccount, resolveCashAccountId, SYSTEM_ACCOUNTS } from "../lib/accounts";
 
 const USER = 1;
 let failures = 0;
@@ -28,7 +28,7 @@ function assertEq(label: string, actual: number, expected: number) {
   if (!ok) failures++;
 }
 
-async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: number }> {
+async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: number; receivableAccId: number }> {
   // A user row for created_by (FK → users.id). Idempotent.
   await db.execute(sql`
     insert into users (id, username, password_hash, name, role)
@@ -39,21 +39,29 @@ async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: numbe
   let cashAccId = await resolveCashAccountId(db);
   if (cashAccId == null) {
     const [cash] = await db.insert(accountsTable).values({
-      kind: "cash", name: "الصندوق الرئيسي", currency: "ILS",
+      kind: "cash", type: "asset", name: "الصندوق الرئيسي", currency: "ILS",
       openingBalanceILS: "0", openingDate: "2026-01-01", openingSource: "smoke",
     }).returning();
     cashAccId = cash.id;
   }
+  // The Tenant Receivable system account (code 1100) — a contra account for the
+  // double-entry check. Idempotent: CI runs migrate (not provision) before this.
+  await db.execute(sql`
+    insert into accounts (type, code, name, is_system, currency, opening_balance_ils, opening_source)
+    values ('asset', ${SYSTEM_ACCOUNTS.RECEIVABLE}, 'ذمم مدينة — مستأجرون', true, 'ILS', '0', 'smoke')
+    on conflict (code) do nothing
+  `);
+  const [recv] = await db.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.code, SYSTEM_ACCOUNTS.RECEIVABLE));
   // A legacy bank account + its unified mirror.
   const [bank] = await db.insert(bankAccountsTable).values({
     bankName: "بنك الاختبار", accountNumber: "SMOKE-1", accountName: "جاري", currency: "ILS",
   }).returning();
   await mirrorBankAccount(db, bank);
-  return { cashAccId, bankLegacyId: bank.id };
+  return { cashAccId, bankLegacyId: bank.id, receivableAccId: recv.id };
 }
 
 async function main() {
-  const { cashAccId, bankLegacyId } = await ensurePrereqs();
+  const { cashAccId, bankLegacyId, receivableAccId } = await ensurePrereqs();
   const bal = (id: number) => accountBalanceILS(db, id);
 
   console.log("ledger dual-write smoke\n");
@@ -153,6 +161,34 @@ async function main() {
     kind: "receipt", voucherId: 9302, paymentMethod: "cash", amountILS: 100, txnDate: "2026-07-15", createdBy: USER,
   }));
   assertEq("cash after a receipt outside any period", await bal(cashAccId), 1600);
+
+  // --- double-entry journal (slice 2): balanced legs, grouped, reversible ----
+  console.log("\ndouble-entry journal:");
+  const cashBefore = await bal(cashAccId);
+  const recvBefore = await bal(receivableAccId);
+  // A receipt-shaped entry: cash +250 (credit), receivable −250 (debit). Nets 0.
+  const { entryId } = await db.transaction((tx) => postJournalEntry(tx, [
+    { accountId: cashAccId, direction: "credit", amountILS: 250 },
+    { accountId: receivableAccId, direction: "debit", amountILS: 250 },
+  ], { sourceType: "receipt", sourceId: 9401, txnDate: "2026-07-20", createdBy: USER }));
+  assertEq("cash after balanced entry (+250)", await bal(cashAccId), cashBefore + 250);
+  assertEq("receivable after balanced entry (−250)", await bal(receivableAccId), recvBefore - 250);
+
+  // An unbalanced entry must be rejected before any leg is written.
+  let rejected = false;
+  try {
+    await db.transaction((tx) => postJournalEntry(tx, [
+      { accountId: cashAccId, direction: "credit", amountILS: 100 },
+      { accountId: receivableAccId, direction: "debit", amountILS: 90 },
+    ], { sourceType: "adjustment", sourceId: 9402, txnDate: "2026-07-20", createdBy: USER }));
+  } catch { rejected = true; }
+  console.log(`  ${rejected ? "✓" : "✗"} an unbalanced entry (Σ ≠ 0) is rejected`);
+  if (!rejected) failures++;
+
+  // Reversing the whole entry restores both accounts.
+  await db.transaction((tx) => reverseJournalEntry(tx, entryId, { createdBy: USER, reason: "smoke reversal" }));
+  assertEq("cash after reversing the entry", await bal(cashAccId), cashBefore);
+  assertEq("receivable after reversing the entry", await bal(receivableAccId), recvBefore);
 
   console.log(failures === 0 ? "\n✓ ledger smoke passed" : `\n✗ ledger smoke failed (${failures})`);
   await pool.end();

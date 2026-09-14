@@ -42,11 +42,21 @@ async function main() {
     }
   }
 
-  const [{ rows: movCount }, { rows: nullPeriod }, { rows: negAmount }, { rows: badRev }] = await Promise.all([
+  const [{ rows: movCount }, { rows: nullPeriod }, { rows: negAmount }, { rows: badRev }, { rows: unbalanced }] = await Promise.all([
     pool.query(`select count(*)::int as n from financial_movements`),
     pool.query(`select count(*)::int as n from financial_movements where period_id is null`),
     pool.query(`select count(*)::int as n from financial_movements where amount_ils < 0`),
     pool.query(`select count(*)::int as n from financial_movements r where r.reverses_id is not null and not exists (select 1 from financial_movements o where o.id = r.reverses_id)`),
+    // Double-entry invariant (Phase 2): every journal-entry group must net to
+    // zero in signed ILS (credit +, debit −). Legacy single-leg rows carry a
+    // NULL entry_id and are excluded.
+    pool.query(`select count(*)::int as n from (
+        select entry_id
+          from financial_movements
+         where entry_id is not null and status = 'posted'
+         group by entry_id
+        having abs(coalesce(sum(case when direction='credit' then amount_ils else -amount_ils end),0)) >= 0.005
+      ) g`),
   ]);
 
   console.log(`\n  Movements: ${(movCount[0] as any).n} total`);
@@ -54,6 +64,7 @@ async function main() {
   if ((nullPeriod[0] as any).n > 0) console.log(`  · ${(nullPeriod[0] as any).n} movement(s) have no period (allowed until period assignment is enabled)`);
   if ((negAmount[0] as any).n > 0) issues.push(`${(negAmount[0] as any).n} movement(s) have a negative amount_ils (invariant violation)`);
   if ((badRev[0] as any).n > 0) issues.push(`${(badRev[0] as any).n} reversal(s) point to a missing original movement`);
+  if ((unbalanced[0] as any).n > 0) issues.push(`${(unbalanced[0] as any).n} journal entry group(s) do not balance (Σ signedDelta ≠ 0)`);
 
   if (issues.length === 0) {
     console.log("\n✓ No ledger integrity violations detected.");
