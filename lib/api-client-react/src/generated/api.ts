@@ -23,6 +23,7 @@ import type {
   AccountLedger,
   AccountStatementResult,
   ActivityItem,
+  AgingReport,
   AuditLogResult,
   AuthResponse,
   BalanceSheet,
@@ -48,6 +49,7 @@ import type {
   FinancialPeriodInput,
   GenerateRentChargesInput,
   GetAccountLedgerParams,
+  GetAgingReportParams,
   GetBalanceSheetParams,
   GetIncomeStatementParams,
   GetReceivablesSummaryParams,
@@ -5061,6 +5063,84 @@ export function useGetAccountLedger<TData = Awaited<ReturnType<typeof getAccount
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAccountLedgerQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAgingReportUrl = (params?: GetAgingReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/aging?${stringifiedParams}` : `/api/reports/aging`
+}
+
+export const getAgingReport = async (params?: GetAgingReportParams, options?: RequestInit): Promise<AgingReport> => {
+
+  return customFetch<AgingReport>(getGetAgingReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAgingReportQueryKey = (params?: GetAgingReportParams,) => {
+    return [
+    `/api/reports/aging`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAgingReportQueryOptions = <TData = Awaited<ReturnType<typeof getAgingReport>>, TError = ErrorType<unknown>>(params?: GetAgingReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAgingReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAgingReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAgingReport>>> = ({ signal }) => getAgingReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAgingReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAgingReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAgingReport>>>
+export type GetAgingReportQueryError = ErrorType<unknown>
+
+
+
+export function useGetAgingReport<TData = Awaited<ReturnType<typeof getAgingReport>>, TError = ErrorType<unknown>>(
+ params?: GetAgingReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAgingReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAgingReportQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

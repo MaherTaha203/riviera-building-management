@@ -1309,6 +1309,26 @@ export interface AccountLedger {
   entries: AccountLedgerEntry[];
 }
 
+export interface AgingBuckets {
+  current: number;
+  d1_30: number;
+  d31_60: number;
+  d61_90: number;
+  d90_plus: number;
+  total: number;
+}
+
+export type AgingRow = AgingBuckets & ({
+  tenantId: number;
+  tenantName?: string | null;
+});
+
+export interface AgingReport {
+  asOf: string;
+  rows: AgingRow[];
+  totals: AgingBuckets;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1407,5 +1427,12 @@ from?: string;
  * Window end (YYYY-MM-DD), inclusive.
  */
 to?: string;
+};
+
+export type GetAgingReportParams = {
+/**
+ * Age receivables as of this date (YYYY-MM-DD); omit for today.
+ */
+asOf?: string;
 };
 

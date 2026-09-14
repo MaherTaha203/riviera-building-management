@@ -5,7 +5,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { authMiddleware } from "../lib/auth";
-import { trialBalance, incomeStatement, balanceSheet, accountLedger } from "../lib/reports";
+import { trialBalance, incomeStatement, balanceSheet, accountLedger, agingReport } from "../lib/reports";
 
 const router = Router();
 
@@ -36,6 +36,11 @@ router.get("/reports/account-ledger", authMiddleware, async (req, res): Promise<
   const result = await accountLedger(db, accountId, asOfParam(req.query.from), asOfParam(req.query.to));
   if (!result) { res.status(404).json({ error: "Account not found" }); return; }
   res.json(result);
+});
+
+/** Receivables aging: per-tenant outstanding charges bucketed by days overdue. */
+router.get("/reports/aging", authMiddleware, async (req, res): Promise<void> => {
+  res.json(await agingReport(db, asOfParam(req.query.asOf)));
 });
 
 export default router;

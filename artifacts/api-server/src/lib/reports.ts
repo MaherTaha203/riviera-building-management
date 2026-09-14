@@ -13,8 +13,8 @@
 // treats each as an opening entry against Opening Balance Equity (code 3900) so
 // the sheet always foots.
 // ---------------------------------------------------------------------------
-import { db, accountsTable, financialMovementsTable } from "@workspace/db";
-import { and, asc, eq, gte, lt, lte, sql } from "drizzle-orm";
+import { db, accountsTable, financialMovementsTable, rentChargesTable, tenantsTable } from "@workspace/db";
+import { and, asc, eq, gte, lt, lte, ne, sql } from "drizzle-orm";
 import { accountNormalBalance } from "@workspace/db";
 import { SYSTEM_ACCOUNTS } from "./accounts";
 
@@ -320,4 +320,80 @@ export async function accountLedger(
     from: from ?? null, to: to ?? null,
     openingBalance: opening, closingBalance: balance, entries,
   };
+}
+
+// ─── Receivables aging ───────────────────────────────────────────────────────
+
+export interface AgingBuckets {
+  current: number;   // not yet due (due date on/after asOf)
+  d1_30: number;
+  d31_60: number;
+  d61_90: number;
+  d90_plus: number;
+  total: number;
+}
+
+export interface AgingRow extends AgingBuckets {
+  tenantId: number;
+  tenantName: string | null;
+}
+
+export interface AgingReport {
+  asOf: string;
+  rows: AgingRow[];
+  totals: AgingBuckets;
+}
+
+const emptyBuckets = (): AgingBuckets => ({ current: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0, total: 0 });
+
+/**
+ * Receivables aging as of a date. Each tenant's outstanding rent charges
+ * (amount − allocated, non-cancelled) are bucketed by how overdue they are
+ * relative to `asOf` (dueDate): not-yet-due → current, else 1–30 / 31–60 /
+ * 61–90 / 90+ days past due. Sourced from rent_charges (the accrual subsystem),
+ * which the ledger receivable account mirrors.
+ */
+export async function agingReport(exec: Exec = db, asOf?: string): Promise<AgingReport> {
+  const on = asOf ?? new Date().toISOString().slice(0, 10);
+  const age = sql<number>`(${on}::date - ${rentChargesTable.dueDate}::date)`;
+  const outstanding = sql`(${rentChargesTable.amountILS} - ${rentChargesTable.allocatedILS})`;
+  const bucket = (lo: number | null, hi: number | null) => {
+    const conds = [sql`${age} >= ${lo ?? -999999}`];
+    if (hi != null) conds.push(sql`${age} <= ${hi}`);
+    return sql<string>`coalesce(sum(${outstanding}) filter (where ${sql.join(conds, sql` and `)}), 0)`;
+  };
+  const rows = await exec
+    .select({
+      tenantId: rentChargesTable.tenantId,
+      tenantName: tenantsTable.name,
+      current: sql<string>`coalesce(sum(${outstanding}) filter (where ${age} <= 0), 0)`,
+      d1_30: bucket(1, 30),
+      d31_60: bucket(31, 60),
+      d61_90: bucket(61, 90),
+      d90_plus: bucket(91, null),
+      total: sql<string>`coalesce(sum(${outstanding}), 0)`,
+    })
+    .from(rentChargesTable)
+    .leftJoin(tenantsTable, eq(tenantsTable.id, rentChargesTable.tenantId))
+    .where(and(ne(rentChargesTable.status, "cancelled"), sql`${outstanding} > 0.005`))
+    .groupBy(rentChargesTable.tenantId, tenantsTable.name);
+
+  const totals = emptyBuckets();
+  const out: AgingRow[] = rows.map((r) => {
+    const row: AgingRow = {
+      tenantId: r.tenantId, tenantName: r.tenantName ?? null,
+      current: round2(Number(r.current)), d1_30: round2(Number(r.d1_30)),
+      d31_60: round2(Number(r.d31_60)), d61_90: round2(Number(r.d61_90)),
+      d90_plus: round2(Number(r.d90_plus)), total: round2(Number(r.total)),
+    };
+    totals.current = round2(totals.current + row.current);
+    totals.d1_30 = round2(totals.d1_30 + row.d1_30);
+    totals.d31_60 = round2(totals.d31_60 + row.d31_60);
+    totals.d61_90 = round2(totals.d61_90 + row.d61_90);
+    totals.d90_plus = round2(totals.d90_plus + row.d90_plus);
+    totals.total = round2(totals.total + row.total);
+    return row;
+  });
+  out.sort((a, b) => b.total - a.total); // largest debtors first
+  return { asOf: on, rows: out, totals };
 }
