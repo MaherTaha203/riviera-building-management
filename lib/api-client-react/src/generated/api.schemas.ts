@@ -1476,6 +1476,49 @@ export interface ClosingPreview {
   hasEntry: boolean;
 }
 
+export interface AuditMovement {
+  id: number;
+  txnDate: string;
+  accountId: number;
+  /** @nullable */
+  accountName?: string | null;
+  /** @nullable */
+  code?: string | null;
+  sourceType: string;
+  /** @nullable */
+  sourceId?: number | null;
+  /** @nullable */
+  entryId?: string | null;
+  direction: string;
+  amountILS: number;
+  status: string;
+  /** @nullable */
+  reversesId?: number | null;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  createdBy?: number | null;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+export interface Correction {
+  reversalId: number;
+  originalId: number;
+  accountId: number;
+  /** @nullable */
+  accountName?: string | null;
+  amountILS: number;
+  direction: string;
+  txnDate: string;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1593,5 +1636,17 @@ asOf?: string;
  * Contract-expiry horizon in days (default 60).
  */
 expiryDays?: number;
+};
+
+export type GetAuditTrailParams = {
+from?: string;
+to?: string;
+accountId?: number;
+sourceType?: string;
+limit?: number;
+};
+
+export type GetCorrectionsParams = {
+limit?: number;
 };
 

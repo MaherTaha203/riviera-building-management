@@ -5,7 +5,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { authMiddleware } from "../lib/auth";
-import { trialBalance, incomeStatement, balanceSheet, accountLedger, agingReport } from "../lib/reports";
+import { trialBalance, incomeStatement, balanceSheet, accountLedger, agingReport, auditMovements, corrections } from "../lib/reports";
 
 const router = Router();
 
@@ -41,6 +41,23 @@ router.get("/reports/account-ledger", authMiddleware, async (req, res): Promise<
 /** Receivables aging: per-tenant outstanding charges bucketed by days overdue. */
 router.get("/reports/aging", authMiddleware, async (req, res): Promise<void> => {
   res.json(await agingReport(db, asOfParam(req.query.asOf)));
+});
+
+/** Audit trail: raw ledger movements (who/when/why), newest first. */
+router.get("/reports/audit-trail", authMiddleware, async (req, res): Promise<void> => {
+  const accountId = req.query.accountId ? parseInt(req.query.accountId as string, 10) : undefined;
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+  const sourceType = typeof req.query.sourceType === "string" ? req.query.sourceType : undefined;
+  res.json(await auditMovements(db, {
+    from: asOfParam(req.query.from), to: asOfParam(req.query.to),
+    accountId: accountId || undefined, sourceType, limit,
+  }));
+});
+
+/** Corrections log: every reversal movement with the original it offsets. */
+router.get("/reports/corrections", authMiddleware, async (req, res): Promise<void> => {
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+  res.json(await corrections(db, limit ?? 200));
 });
 
 export default router;

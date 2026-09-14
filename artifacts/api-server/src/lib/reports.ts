@@ -13,8 +13,8 @@
 // treats each as an opening entry against Opening Balance Equity (code 3900) so
 // the sheet always foots.
 // ---------------------------------------------------------------------------
-import { db, accountsTable, financialMovementsTable, rentChargesTable, tenantsTable } from "@workspace/db";
-import { and, asc, eq, gte, lt, lte, ne, sql } from "drizzle-orm";
+import { db, accountsTable, financialMovementsTable, rentChargesTable, tenantsTable, usersTable } from "@workspace/db";
+import { and, asc, desc, eq, gte, lt, lte, ne, sql } from "drizzle-orm";
 import { accountNormalBalance } from "@workspace/db";
 import { SYSTEM_ACCOUNTS } from "./accounts";
 
@@ -396,4 +396,115 @@ export async function agingReport(exec: Exec = db, asOf?: string): Promise<Aging
   });
   out.sort((a, b) => b.total - a.total); // largest debtors first
   return { asOf: on, rows: out, totals };
+}
+
+// ─── Audit trail (movement log + corrections) ────────────────────────────────
+
+export interface AuditMovement {
+  id: number;
+  txnDate: string;
+  accountId: number;
+  accountName: string | null;
+  code: string | null;
+  sourceType: string;
+  sourceId: number | null;
+  entryId: string | null;
+  direction: string;
+  amountILS: number;
+  status: string;
+  reversesId: number | null;
+  reason: string | null;
+  createdBy: number | null;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+/**
+ * Audit trail of ledger movements, newest first. Every posted/reversed row with
+ * its account, source document, who created it and why. Filterable by date range,
+ * account and source type; capped by `limit` (default 200, max 1000).
+ */
+export async function auditMovements(
+  exec: Exec = db,
+  opts: { from?: string; to?: string; accountId?: number; sourceType?: string; limit?: number } = {},
+): Promise<AuditMovement[]> {
+  const conds = [] as any[];
+  if (opts.from) conds.push(gte(financialMovementsTable.txnDate, opts.from));
+  if (opts.to) conds.push(lte(financialMovementsTable.txnDate, opts.to));
+  if (opts.accountId) conds.push(eq(financialMovementsTable.accountId, opts.accountId));
+  if (opts.sourceType) conds.push(eq(financialMovementsTable.sourceType, opts.sourceType));
+  const limit = Math.min(Math.max(1, opts.limit ?? 200), 1000);
+  const rows = await exec
+    .select({
+      id: financialMovementsTable.id,
+      txnDate: financialMovementsTable.txnDate,
+      accountId: financialMovementsTable.accountId,
+      accountName: accountsTable.name,
+      code: accountsTable.code,
+      sourceType: financialMovementsTable.sourceType,
+      sourceId: financialMovementsTable.sourceId,
+      entryId: financialMovementsTable.entryId,
+      direction: financialMovementsTable.direction,
+      amountILS: financialMovementsTable.amountILS,
+      status: financialMovementsTable.status,
+      reversesId: financialMovementsTable.reversesId,
+      reason: financialMovementsTable.reason,
+      createdBy: financialMovementsTable.createdBy,
+      createdByName: usersTable.name,
+      createdAt: financialMovementsTable.createdAt,
+    })
+    .from(financialMovementsTable)
+    .leftJoin(accountsTable, eq(accountsTable.id, financialMovementsTable.accountId))
+    .leftJoin(usersTable, eq(usersTable.id, financialMovementsTable.createdBy))
+    .where(conds.length ? and(...conds) : undefined)
+    .orderBy(desc(financialMovementsTable.id))
+    .limit(limit);
+  return rows.map((r) => ({
+    ...r, amountILS: Number(r.amountILS),
+    accountName: r.accountName ?? null, code: r.code ?? null,
+    createdByName: r.createdByName ?? null,
+    createdAt: new Date(r.createdAt as any).toISOString(),
+  }));
+}
+
+export interface Correction {
+  reversalId: number;
+  originalId: number;
+  accountId: number;
+  accountName: string | null;
+  amountILS: number;
+  direction: string;
+  txnDate: string;
+  reason: string | null;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+/** Corrections log: every reversal movement with the original it offsets. */
+export async function corrections(exec: Exec = db, limit = 200): Promise<Correction[]> {
+  const capped = Math.min(Math.max(1, limit), 1000);
+  const rows = await exec
+    .select({
+      reversalId: financialMovementsTable.id,
+      originalId: financialMovementsTable.reversesId,
+      accountId: financialMovementsTable.accountId,
+      accountName: accountsTable.name,
+      amountILS: financialMovementsTable.amountILS,
+      direction: financialMovementsTable.direction,
+      txnDate: financialMovementsTable.txnDate,
+      reason: financialMovementsTable.reason,
+      createdByName: usersTable.name,
+      createdAt: financialMovementsTable.createdAt,
+    })
+    .from(financialMovementsTable)
+    .leftJoin(accountsTable, eq(accountsTable.id, financialMovementsTable.accountId))
+    .leftJoin(usersTable, eq(usersTable.id, financialMovementsTable.createdBy))
+    .where(sql`${financialMovementsTable.reversesId} is not null`)
+    .orderBy(desc(financialMovementsTable.id))
+    .limit(capped);
+  return rows.map((r) => ({
+    ...r, originalId: r.originalId as number, amountILS: Number(r.amountILS),
+    accountName: r.accountName ?? null, createdByName: r.createdByName ?? null,
+    createdAt: new Date(r.createdAt as any).toISOString(),
+  }));
 }

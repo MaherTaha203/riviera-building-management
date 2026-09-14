@@ -1346,6 +1346,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/Notices"
 
+  /reports/audit-trail:
+    get:
+      operationId: getAuditTrail
+      tags: [reports]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string }
+        - name: accountId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: sourceType
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ledger movement audit trail (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditMovement"
+
+  /reports/corrections:
+    get:
+      operationId: getCorrections
+      tags: [reports]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Reversal (correction) movements with their originals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Correction"
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2894,6 +2948,41 @@ components:
         netIncomeILS: { type: number }
         retainedEarningsDeltaILS: { type: number }
         hasEntry: { type: boolean }
+
+    AuditMovement:
+      type: object
+      required: [id, txnDate, accountId, sourceType, direction, amountILS, status, createdAt]
+      properties:
+        id: { type: integer }
+        txnDate: { type: string }
+        accountId: { type: integer }
+        accountName: { type: ["string", "null"] }
+        code: { type: ["string", "null"] }
+        sourceType: { type: string }
+        sourceId: { type: ["integer", "null"] }
+        entryId: { type: ["string", "null"] }
+        direction: { type: string }
+        amountILS: { type: number }
+        status: { type: string }
+        reversesId: { type: ["integer", "null"] }
+        reason: { type: ["string", "null"] }
+        createdBy: { type: ["integer", "null"] }
+        createdByName: { type: ["string", "null"] }
+        createdAt: { type: string }
+    Correction:
+      type: object
+      required: [reversalId, originalId, accountId, amountILS, direction, txnDate, createdAt]
+      properties:
+        reversalId: { type: integer }
+        originalId: { type: integer }
+        accountId: { type: integer }
+        accountName: { type: ["string", "null"] }
+        amountILS: { type: number }
+        direction: { type: string }
+        txnDate: { type: string }
+        reason: { type: ["string", "null"] }
+        createdByName: { type: ["string", "null"] }
+        createdAt: { type: string }
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
