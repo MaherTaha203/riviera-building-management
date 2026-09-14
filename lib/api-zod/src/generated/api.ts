@@ -1347,6 +1347,54 @@ export const GetNoticesResponse = zod.object({
 })
 
 
+export const GetAuditTrailQueryParams = zod.object({
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional(),
+  "accountId": zod.coerce.number().optional(),
+  "sourceType": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetAuditTrailResponseItem = zod.object({
+  "id": zod.number(),
+  "txnDate": zod.string(),
+  "accountId": zod.number(),
+  "accountName": zod.string().nullish(),
+  "code": zod.string().nullish(),
+  "sourceType": zod.string(),
+  "sourceId": zod.number().nullish(),
+  "entryId": zod.string().nullish(),
+  "direction": zod.string(),
+  "amountILS": zod.number(),
+  "status": zod.string(),
+  "reversesId": zod.number().nullish(),
+  "reason": zod.string().nullish(),
+  "createdBy": zod.number().nullish(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetAuditTrailResponse = zod.array(GetAuditTrailResponseItem)
+
+
+export const GetCorrectionsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetCorrectionsResponseItem = zod.object({
+  "reversalId": zod.number(),
+  "originalId": zod.number(),
+  "accountId": zod.number(),
+  "accountName": zod.string().nullish(),
+  "amountILS": zod.number(),
+  "direction": zod.string(),
+  "txnDate": zod.string(),
+  "reason": zod.string().nullish(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetCorrectionsResponse = zod.array(GetCorrectionsResponseItem)
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

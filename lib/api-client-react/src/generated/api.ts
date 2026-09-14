@@ -25,6 +25,7 @@ import type {
   ActivityItem,
   AgingReport,
   AuditLogResult,
+  AuditMovement,
   AuthResponse,
   BalanceSheet,
   BankAccount,
@@ -39,6 +40,7 @@ import type {
   Contract,
   ContractInput,
   ContractUpdate,
+  Correction,
   DashboardLatestReceipt,
   DashboardNotice,
   DashboardSummary,
@@ -51,7 +53,9 @@ import type {
   GenerateRentChargesInput,
   GetAccountLedgerParams,
   GetAgingReportParams,
+  GetAuditTrailParams,
   GetBalanceSheetParams,
+  GetCorrectionsParams,
   GetIncomeStatementParams,
   GetNoticesParams,
   GetReceivablesSummaryParams,
@@ -5369,6 +5373,162 @@ export function useGetNotices<TData = Awaited<ReturnType<typeof getNotices>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetNoticesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAuditTrailUrl = (params?: GetAuditTrailParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/audit-trail?${stringifiedParams}` : `/api/reports/audit-trail`
+}
+
+export const getAuditTrail = async (params?: GetAuditTrailParams, options?: RequestInit): Promise<AuditMovement[]> => {
+
+  return customFetch<AuditMovement[]>(getGetAuditTrailUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuditTrailQueryKey = (params?: GetAuditTrailParams,) => {
+    return [
+    `/api/reports/audit-trail`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAuditTrailQueryOptions = <TData = Awaited<ReturnType<typeof getAuditTrail>>, TError = ErrorType<unknown>>(params?: GetAuditTrailParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditTrail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuditTrailQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuditTrail>>> = ({ signal }) => getAuditTrail(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuditTrail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuditTrailQueryResult = NonNullable<Awaited<ReturnType<typeof getAuditTrail>>>
+export type GetAuditTrailQueryError = ErrorType<unknown>
+
+
+
+export function useGetAuditTrail<TData = Awaited<ReturnType<typeof getAuditTrail>>, TError = ErrorType<unknown>>(
+ params?: GetAuditTrailParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditTrail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuditTrailQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCorrectionsUrl = (params?: GetCorrectionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/corrections?${stringifiedParams}` : `/api/reports/corrections`
+}
+
+export const getCorrections = async (params?: GetCorrectionsParams, options?: RequestInit): Promise<Correction[]> => {
+
+  return customFetch<Correction[]>(getGetCorrectionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCorrectionsQueryKey = (params?: GetCorrectionsParams,) => {
+    return [
+    `/api/reports/corrections`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCorrectionsQueryOptions = <TData = Awaited<ReturnType<typeof getCorrections>>, TError = ErrorType<unknown>>(params?: GetCorrectionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCorrections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCorrectionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCorrections>>> = ({ signal }) => getCorrections(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCorrections>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCorrectionsQueryResult = NonNullable<Awaited<ReturnType<typeof getCorrections>>>
+export type GetCorrectionsQueryError = ErrorType<unknown>
+
+
+
+export function useGetCorrections<TData = Awaited<ReturnType<typeof getCorrections>>, TError = ErrorType<unknown>>(
+ params?: GetCorrectionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCorrections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCorrectionsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
