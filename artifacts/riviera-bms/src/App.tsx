@@ -22,6 +22,7 @@ const CashFund = lazy(() => import("@/pages/cash-fund"));
 const BankAccounts = lazy(() => import("@/pages/bank-accounts"));
 const Cheques = lazy(() => import("@/pages/cheques"));
 const Receivables = lazy(() => import("@/pages/receivables"));
+const Arrears = lazy(() => import("@/pages/arrears"));
 const Transfers = lazy(() => import("@/pages/transfers"));
 const AccountStatements = lazy(() => import("@/pages/account-statements"));
 const Documents = lazy(() => import("@/pages/documents"));
@@ -44,6 +45,7 @@ const routeImporters: Array<() => Promise<unknown>> = [
   () => import("@/pages/bank-accounts"),
   () => import("@/pages/cheques"),
   () => import("@/pages/receivables"),
+  () => import("@/pages/arrears"),
   () => import("@/pages/transfers"),
   () => import("@/pages/account-statements"),
   () => import("@/pages/documents"),
@@ -144,6 +146,7 @@ function Router() {
               <Route path="/bank-accounts" component={BankAccounts} />
               <Route path="/cheques" component={Cheques} />
               <Route path="/receivables" component={Receivables} />
+              <Route path="/arrears" component={Arrears} />
               <Route path="/transfers" component={Transfers} />
               <Route path="/account-statements" component={AccountStatements} />
               <Route path="/documents" component={Documents} />
