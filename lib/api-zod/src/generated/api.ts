@@ -1316,6 +1316,37 @@ export const GetAgingReportResponse = zod.object({
 })
 
 
+export const GetNoticesQueryParams = zod.object({
+  "asOf": zod.coerce.string().optional(),
+  "expiryDays": zod.coerce.number().optional().describe('Contract-expiry horizon in days (default 60).')
+})
+
+export const GetNoticesResponse = zod.object({
+  "asOf": zod.string(),
+  "expiryHorizonDays": zod.number(),
+  "expiringContracts": zod.array(zod.object({
+  "contractId": zod.number(),
+  "contractNumber": zod.string(),
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish(),
+  "unitId": zod.number(),
+  "unitNumber": zod.string().nullish(),
+  "endDate": zod.string(),
+  "daysToExpiry": zod.number()
+})),
+  "overdueTenants": zod.array(zod.object({
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish(),
+  "overdueILS": zod.number(),
+  "totalDueILS": zod.number()
+})),
+  "counts": zod.object({
+  "expiring": zod.number(),
+  "overdue": zod.number()
+})
+})
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

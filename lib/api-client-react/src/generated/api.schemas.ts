@@ -1424,6 +1424,40 @@ export interface AgingReport {
   totals: AgingBuckets;
 }
 
+export interface ExpiringContract {
+  contractId: number;
+  contractNumber: string;
+  tenantId: number;
+  /** @nullable */
+  tenantName?: string | null;
+  unitId: number;
+  /** @nullable */
+  unitNumber?: string | null;
+  endDate: string;
+  daysToExpiry: number;
+}
+
+export interface OverdueTenant {
+  tenantId: number;
+  /** @nullable */
+  tenantName?: string | null;
+  overdueILS: number;
+  totalDueILS: number;
+}
+
+export type NoticesCounts = {
+  expiring: number;
+  overdue: number;
+};
+
+export interface Notices {
+  asOf: string;
+  expiryHorizonDays: number;
+  expiringContracts: ExpiringContract[];
+  overdueTenants: OverdueTenant[];
+  counts: NoticesCounts;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1533,5 +1567,13 @@ export type GetAgingReportParams = {
  * Age receivables as of this date (YYYY-MM-DD); omit for today.
  */
 asOf?: string;
+};
+
+export type GetNoticesParams = {
+asOf?: string;
+/**
+ * Contract-expiry horizon in days (default 60).
+ */
+expiryDays?: number;
 };
 

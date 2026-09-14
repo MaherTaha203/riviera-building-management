@@ -1324,6 +1324,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/AgingReport"
 
+  /notices:
+    get:
+      operationId: getNotices
+      tags: [notices]
+      parameters:
+        - name: asOf
+          in: query
+          required: false
+          schema: { type: string }
+        - name: expiryDays
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Contract-expiry horizon in days (default 60).
+      responses:
+        "200":
+          description: Computed operational alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notices"
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2788,6 +2810,47 @@ components:
             $ref: "#/components/schemas/AgingRow"
         totals:
           $ref: "#/components/schemas/AgingBuckets"
+
+    ExpiringContract:
+      type: object
+      required: [contractId, contractNumber, tenantId, unitId, endDate, daysToExpiry]
+      properties:
+        contractId: { type: integer }
+        contractNumber: { type: string }
+        tenantId: { type: integer }
+        tenantName: { type: ["string", "null"] }
+        unitId: { type: integer }
+        unitNumber: { type: ["string", "null"] }
+        endDate: { type: string }
+        daysToExpiry: { type: integer }
+    OverdueTenant:
+      type: object
+      required: [tenantId, overdueILS, totalDueILS]
+      properties:
+        tenantId: { type: integer }
+        tenantName: { type: ["string", "null"] }
+        overdueILS: { type: number }
+        totalDueILS: { type: number }
+    Notices:
+      type: object
+      required: [asOf, expiryHorizonDays, expiringContracts, overdueTenants, counts]
+      properties:
+        asOf: { type: string }
+        expiryHorizonDays: { type: integer }
+        expiringContracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpiringContract"
+        overdueTenants:
+          type: array
+          items:
+            $ref: "#/components/schemas/OverdueTenant"
+        counts:
+          type: object
+          required: [expiring, overdue]
+          properties:
+            expiring: { type: integer }
+            overdue: { type: integer }
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
