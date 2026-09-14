@@ -26,6 +26,7 @@ export interface ChargeLedgerParams {
   amountILS: number | string;
   txnDate: string;          // the charge's due date / period start
   status?: string;          // 'open' | 'settled' | 'cancelled'
+  kind?: string;            // 'rent' | 'late_fee' — selects the income account
   createdBy?: number | null;
 }
 
@@ -39,7 +40,7 @@ export async function syncChargeLedger(tx: Exec, p: ChargeLedgerParams): Promise
   const amountILS = Number(p.amountILS);
   const party = { relatedPartyType: "tenant", relatedPartyId: p.tenantId };
   const receivableId = await requireSystemAccountId(tx, SYSTEM_ACCOUNTS.RECEIVABLE);
-  const incomeId = await requireSystemAccountId(tx, SYSTEM_ACCOUNTS.RENT_INCOME);
+  const incomeId = await requireSystemAccountId(tx, p.kind === "late_fee" ? SYSTEM_ACCOUNTS.LATE_FEE_INCOME : SYSTEM_ACCOUNTS.RENT_INCOME);
   const legs: JournalLeg[] = [
     { accountId: receivableId, direction: "credit", amountILS, ...party },
     { accountId: incomeId, direction: "debit", amountILS, ...party },

@@ -7,9 +7,11 @@
 //   tenant amount due = Σ (amount − allocated) over their non-cancelled charges
 // ---------------------------------------------------------------------------
 import { db, rentChargesTable, receiptAllocationsTable } from "@workspace/db";
-import { and, eq, ne, sql, asc } from "drizzle-orm";
+import { and, eq, lte, ne, sql, asc } from "drizzle-orm";
 
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const FREQ_MONTHS: Record<string, number> = { monthly: 1, quarterly: 3, annually: 12 };
 
@@ -70,7 +72,7 @@ export async function generateChargesForContract(tx: Exec, contract: ContractLik
         amountILS: amount,
         createdBy: createdBy ?? null,
       })
-      .onConflictDoNothing({ target: [rentChargesTable.contractId, rentChargesTable.periodStart] })
+      .onConflictDoNothing({ target: [rentChargesTable.contractId, rentChargesTable.periodStart, rentChargesTable.kind] })
       .returning();
     if (row) created.push(row);
     periodStart = nextStart;
@@ -148,4 +150,83 @@ export async function deallocateReceipt(tx: Exec, receiptVoucherId: number): Pro
     }
     await tx.delete(receiptAllocationsTable).where(eq(receiptAllocationsTable.id, a.id));
   }
+}
+
+// ─── Late fees (Phase 2, slice 9) ────────────────────────────────────────────
+
+export interface LateFeePolicy {
+  enabled: boolean;
+  graceDays: number;
+  mode: "percent" | "flat";
+  rate: number; // percent of outstanding (percent) or ILS amount (flat)
+}
+
+export interface LateFeeCandidate {
+  sourceChargeId: number;
+  contractId: number;
+  tenantId: number;
+  periodStart: string;
+  periodEnd: string;
+  outstandingILS: number;
+  feeILS: number;
+}
+
+const feeFor = (policy: LateFeePolicy, outstanding: number): number =>
+  policy.mode === "flat" ? round2(policy.rate) : round2((outstanding * policy.rate) / 100);
+
+/**
+ * Overdue rent charges eligible for a late fee as of `asOf`: kind='rent', still
+ * open, outstanding > 0, past their due date by more than the grace period, and
+ * without an existing late-fee charge. Returns the fee each would incur. Pure
+ * read — writes nothing.
+ */
+export async function computeLateFees(exec: Exec, policy: LateFeePolicy, asOf: string): Promise<LateFeeCandidate[]> {
+  if (!policy.enabled || !(policy.rate > 0)) return [];
+  const cutoff = addDays(asOf, -Math.max(0, Math.trunc(policy.graceDays))); // due on/before cutoff = past grace
+  const rows = await exec
+    .select()
+    .from(rentChargesTable)
+    .where(and(
+      eq(rentChargesTable.kind, "rent"),
+      eq(rentChargesTable.status, "open"),
+      lte(rentChargesTable.dueDate, cutoff),
+    ))
+    .orderBy(asc(rentChargesTable.dueDate), asc(rentChargesTable.id));
+  const out: LateFeeCandidate[] = [];
+  for (const c of rows) {
+    const outstanding = round2(Number(c.amountILS) - Number(c.allocatedILS));
+    if (outstanding <= 0.005) continue;
+    const [existing] = await exec.select({ id: rentChargesTable.id }).from(rentChargesTable).where(eq(rentChargesTable.sourceChargeId, c.id));
+    if (existing) continue;
+    const feeILS = feeFor(policy, outstanding);
+    if (feeILS <= 0.005) continue;
+    out.push({ sourceChargeId: c.id, contractId: c.contractId, tenantId: c.tenantId, periodStart: c.periodStart, periodEnd: c.periodEnd, outstandingILS: outstanding, feeILS });
+  }
+  return out;
+}
+
+/**
+ * Apply late fees as of `asOf`: for every eligible overdue charge, insert a
+ * late-fee rent charge (kind='late_fee', source_charge_id set, due `asOf`).
+ * Idempotent via the unique source_charge_id. Returns the charges created; the
+ * caller posts each one's ledger accrual (DR Late-fee Income / CR Receivable).
+ */
+export async function applyLateFees(tx: Exec, policy: LateFeePolicy, asOf: string, createdBy?: number | null) {
+  const candidates = await computeLateFees(tx, policy, asOf);
+  const created: Array<typeof rentChargesTable.$inferSelect> = [];
+  for (const cand of candidates) {
+    const [row] = await tx
+      .insert(rentChargesTable)
+      .values({
+        contractId: cand.contractId, tenantId: cand.tenantId,
+        periodStart: cand.periodStart, periodEnd: cand.periodEnd, dueDate: asOf,
+        kind: "late_fee", sourceChargeId: cand.sourceChargeId,
+        amountILS: cand.feeILS.toFixed(2), createdBy: createdBy ?? null,
+        notes: `رسوم تأخير على استحقاق #${cand.sourceChargeId}`,
+      })
+      .onConflictDoNothing({ target: rentChargesTable.sourceChargeId })
+      .returning();
+    if (row) created.push(row);
+  }
+  return created;
 }

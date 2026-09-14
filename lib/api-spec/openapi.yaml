@@ -1056,6 +1056,43 @@ paths:
                 items:
                   $ref: "#/components/schemas/RentCharge"
 
+  /rent-charges/late-fees/preview:
+    get:
+      operationId: previewLateFees
+      tags: [rentCharges]
+      parameters:
+        - name: asOf
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Late-fee candidates as of the date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LateFeePreview"
+
+  /rent-charges/late-fees/apply:
+    post:
+      operationId: applyLateFees
+      tags: [rentCharges]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LateFeeApplyInput"
+      responses:
+        "201":
+          description: Late-fee charges created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LateFeeApplyResult"
+        "400":
+          description: Late fees not enabled
+
   /rent-charges/summary:
     get:
       operationId: getReceivablesSummary
@@ -2340,6 +2377,16 @@ components:
           type: ["string", "null"]
         taxNumber:
           type: ["string", "null"]
+        lateFeeEnabled:
+          type: string
+          enum: ["true", "false"]
+        lateFeeGraceDays:
+          type: number
+        lateFeeMode:
+          type: string
+          enum: [percent, flat]
+        lateFeeRate:
+          type: number
 
     SettingsUpdate:
       type: object
@@ -2357,6 +2404,16 @@ components:
           type: ["string", "null"]
         taxNumber:
           type: ["string", "null"]
+        lateFeeEnabled:
+          type: string
+          enum: ["true", "false"]
+        lateFeeGraceDays:
+          type: number
+        lateFeeMode:
+          type: string
+          enum: [percent, flat]
+        lateFeeRate:
+          type: number
 
     ExchangeRates:
       type: object
@@ -2408,10 +2465,60 @@ components:
         status:
           type: string
           enum: [open, settled, cancelled]
+        kind:
+          type: string
+          enum: [rent, late_fee]
+        sourceChargeId:
+          type: ["integer", "null"]
         notes:
           type: ["string", "null"]
         createdAt:
           type: string
+
+    LateFeeApplyInput:
+      type: object
+      properties:
+        asOf: { type: string }
+    LateFeeCandidate:
+      type: object
+      required: [sourceChargeId, contractId, tenantId, outstandingILS, feeILS]
+      properties:
+        sourceChargeId: { type: integer }
+        contractId: { type: integer }
+        tenantId: { type: integer }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        outstandingILS: { type: number }
+        feeILS: { type: number }
+    LateFeePreview:
+      type: object
+      required: [asOf, candidates, count, totalFeeILS]
+      properties:
+        asOf: { type: string }
+        policy:
+          type: object
+          properties:
+            enabled: { type: boolean }
+            graceDays: { type: number }
+            mode: { type: string, enum: [percent, flat] }
+            rate: { type: number }
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/LateFeeCandidate"
+        count: { type: integer }
+        totalFeeILS: { type: number }
+    LateFeeApplyResult:
+      type: object
+      required: [asOf, count, totalFeeILS, created]
+      properties:
+        asOf: { type: string }
+        count: { type: integer }
+        totalFeeILS: { type: number }
+        created:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentCharge"
 
     GenerateRentChargesInput:
       type: object

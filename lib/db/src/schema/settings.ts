@@ -10,6 +10,12 @@ export const settingsTable = pgTable("settings", {
   phone: text("phone"),
   email: text("email"),
   taxNumber: text("tax_number"),
+  // Late-fee policy (Phase 2). Off by default; when enabled, a penalty accrues on
+  // a rent charge still open `graceDays` after its due date.
+  lateFeeEnabled: text("late_fee_enabled").notNull().default("false"), // 'true' | 'false'
+  lateFeeGraceDays: numeric("late_fee_grace_days", { precision: 5, scale: 0 }).notNull().default("0"),
+  lateFeeMode: text("late_fee_mode").notNull().default("percent"),      // 'percent' | 'flat'
+  lateFeeRate: numeric("late_fee_rate", { precision: 14, scale: 4 }).notNull().default("0"), // % (percent) or ILS (flat)
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

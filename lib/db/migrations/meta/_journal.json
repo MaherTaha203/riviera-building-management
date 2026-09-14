@@ -57,6 +57,13 @@
       "when": 1789365015829,
       "tag": "0007_nebulous_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789380453395,
+      "tag": "0008_square_mandrill",
+      "breakpoints": true
     }
   ]
 }

@@ -1,12 +1,25 @@
 import { Router } from "express";
-import { db, rentChargesTable, contractsTable, tenantsTable } from "@workspace/db";
+import { db, rentChargesTable, contractsTable, tenantsTable, settingsTable } from "@workspace/db";
 import { and, eq, sql, asc } from "drizzle-orm";
 import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
 import { GenerateRentChargesBody, UpdateRentChargeBody } from "@workspace/api-zod";
-import { generateChargesForContract, tenantAmountDueILS } from "../lib/receivables";
+import { generateChargesForContract, tenantAmountDueILS, computeLateFees, applyLateFees, type LateFeePolicy } from "../lib/receivables";
 import { syncChargeLedger, clearChargeLedger } from "../lib/chargeLedger";
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Read the late-fee policy from settings (defaults: disabled). */
+async function readLateFeePolicy(): Promise<LateFeePolicy> {
+  const [s] = await db.select().from(settingsTable);
+  return {
+    enabled: s?.lateFeeEnabled === "true",
+    graceDays: Number(s?.lateFeeGraceDays ?? 0),
+    mode: (s?.lateFeeMode === "flat" ? "flat" : "percent"),
+    rate: Number(s?.lateFeeRate ?? 0),
+  };
+}
 
 const router = Router();
 
@@ -49,12 +62,37 @@ router.post("/rent-charges/generate", authMiddleware, validateBody(GenerateRentC
     }, upToDate, user.userId);
     // Post the accrual entry (DR income / CR receivable) for each new charge.
     for (const row of rows) {
-      await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, createdBy: user.userId });
+      await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, kind: row.kind, createdBy: user.userId });
     }
     return rows;
   });
   if (created.length) await logAction(user, "CREATE", "rent_charge", contractId);
   res.status(201).json(created.map((c) => shape(c)));
+});
+
+/** Preview late fees that would be applied as of a date (read-only). */
+router.get("/rent-charges/late-fees/preview", authMiddleware, async (req, res): Promise<void> => {
+  const asOf = typeof req.query.asOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.asOf) ? req.query.asOf : today();
+  const policy = await readLateFeePolicy();
+  const candidates = await computeLateFees(db, policy, asOf);
+  res.json({ asOf, policy, candidates, count: candidates.length, totalFeeILS: candidates.reduce((s, c) => s + c.feeILS, 0) });
+});
+
+/** Apply late fees as of a date: insert late-fee charges + post their ledger accrual. */
+router.post("/rent-charges/late-fees/apply", authMiddleware, async (req, res): Promise<void> => {
+  const user = (req as typeof req & { user: JwtPayload }).user;
+  const asOf = typeof req.body?.asOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.body.asOf) ? req.body.asOf : today();
+  const policy = await readLateFeePolicy();
+  if (!policy.enabled) { res.status(400).json({ error: "رسوم التأخير غير مفعّلة في الإعدادات" }); return; }
+  const created = await db.transaction(async (tx) => {
+    const rows = await applyLateFees(tx, policy, asOf, user.userId);
+    for (const row of rows) {
+      await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, kind: row.kind, createdBy: user.userId });
+    }
+    return rows;
+  });
+  if (created.length) await logAction(user, "CREATE", "rent_charge");
+  res.status(201).json({ asOf, count: created.length, totalFeeILS: created.reduce((s, c) => s + Number(c.amountILS), 0), created: created.map((c) => shape(c)) });
 });
 
 /** Adjust a charge's amount / due date / notes (corrects a data-entry mistake). */
@@ -74,7 +112,7 @@ router.patch("/rent-charges/:id", authMiddleware, validateBody(UpdateRentChargeB
     }
     const [row] = await tx.update(rentChargesTable).set(updates).where(eq(rentChargesTable.id, id)).returning();
     // Re-sync the accrual entry to the (possibly new) amount / due date / status.
-    if (row) await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, createdBy: user.userId });
+    if (row) await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, kind: row.kind, createdBy: user.userId });
     return row ?? null;
   });
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
