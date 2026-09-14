@@ -17,6 +17,7 @@ import {
   ArrowLeftRight,
   FileBox,
   BarChart3,
+  Scale,
   History,
   CalendarClock,
   Settings,
@@ -64,6 +65,7 @@ const moreGroups: { label: string; items: Item[] }[] = [
     items: [
       { name: "المستندات", path: "/documents", icon: FileBox },
       { name: "التقارير", path: "/reports", icon: BarChart3 },
+      { name: "القوائم المالية", path: "/financial-reports", icon: Scale },
       { name: "الفترات المالية", path: "/financial-periods", icon: CalendarClock },
       { name: "سجل التدقيق", path: "/audit-log", icon: History },
       { name: "الإعدادات", path: "/settings", icon: Settings },

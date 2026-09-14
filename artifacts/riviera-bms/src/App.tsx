@@ -26,6 +26,7 @@ const Transfers = lazy(() => import("@/pages/transfers"));
 const AccountStatements = lazy(() => import("@/pages/account-statements"));
 const Documents = lazy(() => import("@/pages/documents"));
 const Reports = lazy(() => import("@/pages/reports"));
+const FinancialReports = lazy(() => import("@/pages/financial-reports"));
 const AuditLog = lazy(() => import("@/pages/audit-log"));
 const FinancialPeriods = lazy(() => import("@/pages/financial-periods"));
 const Settings = lazy(() => import("@/pages/settings"));
@@ -47,6 +48,7 @@ const routeImporters: Array<() => Promise<unknown>> = [
   () => import("@/pages/account-statements"),
   () => import("@/pages/documents"),
   () => import("@/pages/reports"),
+  () => import("@/pages/financial-reports"),
   () => import("@/pages/audit-log"),
   () => import("@/pages/financial-periods"),
   () => import("@/pages/settings"),
@@ -146,6 +148,7 @@ function Router() {
               <Route path="/account-statements" component={AccountStatements} />
               <Route path="/documents" component={Documents} />
               <Route path="/reports" component={Reports} />
+              <Route path="/financial-reports" component={FinancialReports} />
               <Route path="/audit-log" component={AuditLog} />
               <Route path="/financial-periods" component={FinancialPeriods} />
               <Route path="/settings" component={Settings} />
