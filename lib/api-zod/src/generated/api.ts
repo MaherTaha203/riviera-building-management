@@ -1208,6 +1208,37 @@ export const GetBalanceSheetResponse = zod.object({
 })
 
 
+export const GetAccountLedgerQueryParams = zod.object({
+  "accountId": zod.coerce.number(),
+  "from": zod.coerce.string().optional().describe('Window start (YYYY-MM-DD), inclusive.'),
+  "to": zod.coerce.string().optional().describe('Window end (YYYY-MM-DD), inclusive.')
+})
+
+export const GetAccountLedgerResponse = zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "openingBalance": zod.number(),
+  "closingBalance": zod.number(),
+  "entries": zod.array(zod.object({
+  "id": zod.number(),
+  "txnDate": zod.string(),
+  "sourceType": zod.string(),
+  "sourceId": zod.number().nullish(),
+  "entryId": zod.string().nullish(),
+  "reference": zod.string().nullish(),
+  "reason": zod.string().nullish(),
+  "status": zod.string(),
+  "debit": zod.number(),
+  "credit": zod.number(),
+  "balance": zod.number()
+}))
+})
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountLedger,
   AccountStatementResult,
   ActivityItem,
   AuditLogResult,
@@ -46,6 +47,7 @@ import type {
   FinancialPeriod,
   FinancialPeriodInput,
   GenerateRentChargesInput,
+  GetAccountLedgerParams,
   GetBalanceSheetParams,
   GetIncomeStatementParams,
   GetReceivablesSummaryParams,
@@ -4981,6 +4983,84 @@ export function useGetBalanceSheet<TData = Awaited<ReturnType<typeof getBalanceS
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetBalanceSheetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAccountLedgerUrl = (params: GetAccountLedgerParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/account-ledger?${stringifiedParams}` : `/api/reports/account-ledger`
+}
+
+export const getAccountLedger = async (params: GetAccountLedgerParams, options?: RequestInit): Promise<AccountLedger> => {
+
+  return customFetch<AccountLedger>(getGetAccountLedgerUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAccountLedgerQueryKey = (params?: GetAccountLedgerParams,) => {
+    return [
+    `/api/reports/account-ledger`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAccountLedgerQueryOptions = <TData = Awaited<ReturnType<typeof getAccountLedger>>, TError = ErrorType<void>>(params: GetAccountLedgerParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountLedgerQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountLedger>>> = ({ signal }) => getAccountLedger(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAccountLedgerQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountLedger>>>
+export type GetAccountLedgerQueryError = ErrorType<void>
+
+
+
+export function useGetAccountLedger<TData = Awaited<ReturnType<typeof getAccountLedger>>, TError = ErrorType<void>>(
+ params: GetAccountLedgerParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAccountLedgerQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
