@@ -37,6 +37,8 @@ export * from './chequeUpdate';
 export * from './chequeUpdateCurrency';
 export * from './chequeUpdateStatus';
 export * from './chequeUpdateType';
+export * from './closingLine';
+export * from './closingPreview';
 export * from './contract';
 export * from './contractCurrency';
 export * from './contractInput';

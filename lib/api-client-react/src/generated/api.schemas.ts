@@ -1458,6 +1458,24 @@ export interface Notices {
   counts: NoticesCounts;
 }
 
+export interface ClosingLine {
+  accountId: number;
+  /** @nullable */
+  code?: string | null;
+  name: string;
+  type: string;
+  balanceILS: number;
+}
+
+export interface ClosingPreview {
+  periodId: number;
+  endDate: string;
+  lines: ClosingLine[];
+  netIncomeILS: number;
+  retainedEarningsDeltaILS: number;
+  hasEntry: boolean;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 

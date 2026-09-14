@@ -35,6 +35,7 @@ import type {
   Cheque,
   ChequeInput,
   ChequeUpdate,
+  ClosingPreview,
   Contract,
   ContractInput,
   ContractUpdate,
@@ -5515,6 +5516,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getCreateFinancialPeriodMutationOptions(options));
     }
+
+export const getGetClosingPreviewUrl = (id: number,) => {
+
+
+
+
+  return `/api/financial-periods/${id}/closing-preview`
+}
+
+export const getClosingPreview = async (id: number, options?: RequestInit): Promise<ClosingPreview> => {
+
+  return customFetch<ClosingPreview>(getGetClosingPreviewUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetClosingPreviewQueryKey = (id: number,) => {
+    return [
+    `/api/financial-periods/${id}/closing-preview`
+    ] as const;
+    }
+
+
+export const getGetClosingPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getClosingPreview>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClosingPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetClosingPreviewQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getClosingPreview>>> = ({ signal }) => getClosingPreview(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getClosingPreview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetClosingPreviewQueryResult = NonNullable<Awaited<ReturnType<typeof getClosingPreview>>>
+export type GetClosingPreviewQueryError = ErrorType<void>
+
+
+
+export function useGetClosingPreview<TData = Awaited<ReturnType<typeof getClosingPreview>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClosingPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetClosingPreviewQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getCloseFinancialPeriodUrl = (id: number,) => {
 
