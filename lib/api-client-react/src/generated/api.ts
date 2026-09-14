@@ -24,6 +24,7 @@ import type {
   ActivityItem,
   AuditLogResult,
   AuthResponse,
+  BalanceSheet,
   BankAccount,
   BankAccountInput,
   BankAccountUpdate,
@@ -45,9 +46,12 @@ import type {
   FinancialPeriod,
   FinancialPeriodInput,
   GenerateRentChargesInput,
+  GetBalanceSheetParams,
+  GetIncomeStatementParams,
   GetReceivablesSummaryParams,
   GetTrialBalanceParams,
   HealthStatus,
+  IncomeStatement,
   LedgerAccount,
   ListAccountStatementsParams,
   ListAuditLogParams,
@@ -4821,6 +4825,162 @@ export function useGetTrialBalance<TData = Awaited<ReturnType<typeof getTrialBal
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetTrialBalanceQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetIncomeStatementUrl = (params?: GetIncomeStatementParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/income-statement?${stringifiedParams}` : `/api/reports/income-statement`
+}
+
+export const getIncomeStatement = async (params?: GetIncomeStatementParams, options?: RequestInit): Promise<IncomeStatement> => {
+
+  return customFetch<IncomeStatement>(getGetIncomeStatementUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIncomeStatementQueryKey = (params?: GetIncomeStatementParams,) => {
+    return [
+    `/api/reports/income-statement`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetIncomeStatementQueryOptions = <TData = Awaited<ReturnType<typeof getIncomeStatement>>, TError = ErrorType<unknown>>(params?: GetIncomeStatementParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIncomeStatement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIncomeStatementQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIncomeStatement>>> = ({ signal }) => getIncomeStatement(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIncomeStatement>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIncomeStatementQueryResult = NonNullable<Awaited<ReturnType<typeof getIncomeStatement>>>
+export type GetIncomeStatementQueryError = ErrorType<unknown>
+
+
+
+export function useGetIncomeStatement<TData = Awaited<ReturnType<typeof getIncomeStatement>>, TError = ErrorType<unknown>>(
+ params?: GetIncomeStatementParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIncomeStatement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIncomeStatementQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetBalanceSheetUrl = (params?: GetBalanceSheetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/balance-sheet?${stringifiedParams}` : `/api/reports/balance-sheet`
+}
+
+export const getBalanceSheet = async (params?: GetBalanceSheetParams, options?: RequestInit): Promise<BalanceSheet> => {
+
+  return customFetch<BalanceSheet>(getGetBalanceSheetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBalanceSheetQueryKey = (params?: GetBalanceSheetParams,) => {
+    return [
+    `/api/reports/balance-sheet`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBalanceSheetQueryOptions = <TData = Awaited<ReturnType<typeof getBalanceSheet>>, TError = ErrorType<unknown>>(params?: GetBalanceSheetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBalanceSheetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBalanceSheet>>> = ({ signal }) => getBalanceSheet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBalanceSheetQueryResult = NonNullable<Awaited<ReturnType<typeof getBalanceSheet>>>
+export type GetBalanceSheetQueryError = ErrorType<unknown>
+
+
+
+export function useGetBalanceSheet<TData = Awaited<ReturnType<typeof getBalanceSheet>>, TError = ErrorType<unknown>>(
+ params?: GetBalanceSheetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBalanceSheetQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

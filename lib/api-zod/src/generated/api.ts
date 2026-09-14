@@ -1149,6 +1149,65 @@ export const GetTrialBalanceResponse = zod.object({
 })
 
 
+export const GetIncomeStatementQueryParams = zod.object({
+  "from": zod.coerce.string().optional().describe('Period start (YYYY-MM-DD), inclusive.'),
+  "to": zod.coerce.string().optional().describe('Period end (YYYY-MM-DD), inclusive.')
+})
+
+export const GetIncomeStatementResponse = zod.object({
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "revenue": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "amount": zod.number()
+})),
+  "expenses": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "amount": zod.number()
+})),
+  "totalRevenue": zod.number(),
+  "totalExpenses": zod.number(),
+  "netIncome": zod.number()
+})
+
+
+export const GetBalanceSheetQueryParams = zod.object({
+  "asOf": zod.coerce.string().optional().describe('Balances as of this date (YYYY-MM-DD); omit for latest.')
+})
+
+export const GetBalanceSheetResponse = zod.object({
+  "asOf": zod.string().nullish(),
+  "assets": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "amount": zod.number()
+})),
+  "liabilities": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "amount": zod.number()
+})),
+  "equity": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "amount": zod.number()
+})),
+  "totalAssets": zod.number(),
+  "totalLiabilities": zod.number(),
+  "totalEquity": zod.number(),
+  "netIncome": zod.number(),
+  "totalLiabilitiesAndEquity": zod.number(),
+  "balanced": zod.boolean()
+})
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

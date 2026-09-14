@@ -89,5 +89,8 @@ jobs:
       - name: Receivables (rent charges + FIFO allocation) smoke
         run: pnpm --filter @workspace/api-server run smoke:receivables
 
+      - name: Reports (trial balance / income statement / balance sheet) smoke
+        run: pnpm --filter @workspace/api-server run smoke:reports
+
       - name: Ledger reconciliation (invariants + projections)
         run: pnpm --filter @workspace/scripts run reconcile:ledger
