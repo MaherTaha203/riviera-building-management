@@ -14,7 +14,7 @@
 // the sheet always foots.
 // ---------------------------------------------------------------------------
 import { db, accountsTable, financialMovementsTable } from "@workspace/db";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { accountNormalBalance } from "@workspace/db";
 import { SYSTEM_ACCOUNTS } from "./accounts";
 
@@ -44,9 +44,10 @@ export interface TrialBalance {
  * Per-account movement aggregate up to `asOf` (inclusive), in the storage
  * convention: credit = Σ amount of 'credit' movements, debit = Σ 'debit'.
  */
-async function movementAggByAccount(exec: Exec, asOf?: string): Promise<Map<number, { credit: number; debit: number }>> {
+async function movementAggByAccount(exec: Exec, range: { from?: string; to?: string } = {}): Promise<Map<number, { credit: number; debit: number }>> {
   const conds = [eq(financialMovementsTable.status, "posted")];
-  if (asOf) conds.push(lte(financialMovementsTable.txnDate, asOf));
+  if (range.from) conds.push(gte(financialMovementsTable.txnDate, range.from));
+  if (range.to) conds.push(lte(financialMovementsTable.txnDate, range.to));
   const rows = await exec
     .select({
       accountId: financialMovementsTable.accountId,
@@ -68,7 +69,7 @@ async function movementAggByAccount(exec: Exec, asOf?: string): Promise<Map<numb
  */
 export async function standardBalances(exec: Exec = db, asOf?: string): Promise<Map<number, number>> {
   const accounts = await exec.select().from(accountsTable);
-  const agg = await movementAggByAccount(exec, asOf);
+  const agg = await movementAggByAccount(exec, { to: asOf });
   const out = new Map<number, number>();
   let openingOffset = 0;
   let equityId: number | null = null;
@@ -112,5 +113,118 @@ export async function trialBalance(exec: Exec = db, asOf?: string): Promise<Tria
     totalDebit,
     totalCredit,
     balanced: Math.abs(totalDebit - totalCredit) < 0.005,
+  };
+}
+
+// ─── Income statement ───────────────────────────────────────────────────────
+
+export interface StatementLine {
+  accountId: number;
+  code: string | null;
+  name: string;
+  amount: number; // positive figure on the statement (revenue or expense)
+}
+
+export interface IncomeStatement {
+  from: string | null;
+  to: string | null;
+  revenue: StatementLine[];
+  expenses: StatementLine[];
+  totalRevenue: number;
+  totalExpenses: number;
+  netIncome: number;
+}
+
+/**
+ * Income statement over [from, to] (inclusive). Revenue = period activity on
+ * income accounts (debit − credit, since income accrues on the debit side under
+ * the storage convention); expenses = activity on expense accounts (credit −
+ * debit). Both presented as positive figures. netIncome = revenue − expenses.
+ */
+export async function incomeStatement(exec: Exec = db, from?: string, to?: string): Promise<IncomeStatement> {
+  const accounts = await exec.select().from(accountsTable).orderBy(accountsTable.code, accountsTable.id);
+  const agg = await movementAggByAccount(exec, { from, to });
+  const revenue: StatementLine[] = [];
+  const expenses: StatementLine[] = [];
+  let totalRevenue = 0, totalExpenses = 0;
+  for (const a of accounts) {
+    const m = agg.get(a.id) ?? { credit: 0, debit: 0 };
+    if (a.type === "income") {
+      const amount = round2(m.debit - m.credit);
+      if (amount === 0) continue;
+      revenue.push({ accountId: a.id, code: a.code, name: a.name, amount });
+      totalRevenue = round2(totalRevenue + amount);
+    } else if (a.type === "expense") {
+      const amount = round2(m.credit - m.debit);
+      if (amount === 0) continue;
+      expenses.push({ accountId: a.id, code: a.code, name: a.name, amount });
+      totalExpenses = round2(totalExpenses + amount);
+    }
+  }
+  return {
+    from: from ?? null, to: to ?? null,
+    revenue, expenses, totalRevenue, totalExpenses,
+    netIncome: round2(totalRevenue - totalExpenses),
+  };
+}
+
+// ─── Balance sheet ──────────────────────────────────────────────────────────
+
+export interface BalanceSheet {
+  asOf: string | null;
+  assets: StatementLine[];
+  liabilities: StatementLine[];
+  equity: StatementLine[];
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;          // equity accounts only
+  netIncome: number;            // current earnings not yet closed to equity
+  totalLiabilitiesAndEquity: number;
+  balanced: boolean;
+}
+
+/**
+ * Balance sheet as of a date. Assets carry their standard debit balance (B);
+ * liabilities and equity their credit balance (−B), presented positive. Income
+ * and expense accounts are folded into a single "current earnings" (net income
+ * to date) equity figure since they are not closed to retained earnings until
+ * period end. Assets = Liabilities + Equity + net income (identity from the
+ * footing trial balance).
+ */
+export async function balanceSheet(exec: Exec = db, asOf?: string): Promise<BalanceSheet> {
+  const accounts = await exec.select().from(accountsTable).orderBy(accountsTable.code, accountsTable.id);
+  const balances = await standardBalances(exec, asOf);
+  const assets: StatementLine[] = [];
+  const liabilities: StatementLine[] = [];
+  const equity: StatementLine[] = [];
+  let totalAssets = 0, totalLiabilities = 0, totalEquity = 0, netIncome = 0;
+  for (const a of accounts) {
+    const b = balances.get(a.id) ?? 0;
+    if (a.type === "asset") {
+      if (b === 0) continue;
+      assets.push({ accountId: a.id, code: a.code, name: a.name, amount: b });
+      totalAssets = round2(totalAssets + b);
+    } else if (a.type === "liability") {
+      const amount = round2(-b);
+      if (amount === 0) continue;
+      liabilities.push({ accountId: a.id, code: a.code, name: a.name, amount });
+      totalLiabilities = round2(totalLiabilities + amount);
+    } else if (a.type === "equity") {
+      const amount = round2(-b);
+      if (amount === 0) continue;
+      equity.push({ accountId: a.id, code: a.code, name: a.name, amount });
+      totalEquity = round2(totalEquity + amount);
+    } else {
+      // income (b < 0 → revenue) and expense (b > 0) fold into net income = −B.
+      netIncome = round2(netIncome - b);
+    }
+  }
+  const totalLiabilitiesAndEquity = round2(totalLiabilities + totalEquity + netIncome);
+  return {
+    asOf: asOf ?? null,
+    assets, liabilities, equity,
+    totalAssets, totalLiabilities, totalEquity, netIncome,
+    totalLiabilitiesAndEquity,
+    balanced: Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.005,
   };
 }

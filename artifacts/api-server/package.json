@@ -9,7 +9,8 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke:ledger": "tsx src/smoke/ledgerSmoke.ts",
-    "smoke:receivables": "tsx src/smoke/receivablesSmoke.ts"
+    "smoke:receivables": "tsx src/smoke/receivablesSmoke.ts",
+    "smoke:reports": "tsx src/smoke/reportsCheck.ts"
   },
   "dependencies": {
     "@node-rs/bcrypt": "^1.10.7",

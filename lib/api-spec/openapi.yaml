@@ -1199,6 +1199,47 @@ paths:
               schema:
                 $ref: "#/components/schemas/TrialBalance"
 
+  /reports/income-statement:
+    get:
+      operationId: getIncomeStatement
+      tags: [reports]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string }
+          description: Period start (YYYY-MM-DD), inclusive.
+        - name: to
+          in: query
+          required: false
+          schema: { type: string }
+          description: Period end (YYYY-MM-DD), inclusive.
+      responses:
+        "200":
+          description: Income statement (revenue, expenses, net income)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeStatement"
+
+  /reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      tags: [reports]
+      parameters:
+        - name: asOf
+          in: query
+          required: false
+          schema: { type: string }
+          description: Balances as of this date (YYYY-MM-DD); omit for latest.
+      responses:
+        "200":
+          description: Balance sheet (assets = liabilities + equity + net income)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSheet"
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2459,6 +2500,75 @@ components:
         totalDebit:
           type: number
         totalCredit:
+          type: number
+        balanced:
+          type: boolean
+
+    StatementLine:
+      type: object
+      required: [accountId, name, amount]
+      properties:
+        accountId:
+          type: integer
+        code:
+          type: string
+          nullable: true
+        name:
+          type: string
+        amount:
+          type: number
+    IncomeStatement:
+      type: object
+      required: [revenue, expenses, totalRevenue, totalExpenses, netIncome]
+      properties:
+        from:
+          type: string
+          nullable: true
+        to:
+          type: string
+          nullable: true
+        revenue:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementLine"
+        expenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementLine"
+        totalRevenue:
+          type: number
+        totalExpenses:
+          type: number
+        netIncome:
+          type: number
+    BalanceSheet:
+      type: object
+      required: [assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity, netIncome, totalLiabilitiesAndEquity, balanced]
+      properties:
+        asOf:
+          type: string
+          nullable: true
+        assets:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementLine"
+        liabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementLine"
+        equity:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementLine"
+        totalAssets:
+          type: number
+        totalLiabilities:
+          type: number
+        totalEquity:
+          type: number
+        netIncome:
+          type: number
+        totalLiabilitiesAndEquity:
           type: number
         balanced:
           type: boolean

@@ -1253,6 +1253,36 @@ export interface TrialBalance {
   balanced: boolean;
 }
 
+export interface StatementLine {
+  accountId: number;
+  code?: string | null;
+  name: string;
+  amount: number;
+}
+
+export interface IncomeStatement {
+  from?: string | null;
+  to?: string | null;
+  revenue: StatementLine[];
+  expenses: StatementLine[];
+  totalRevenue: number;
+  totalExpenses: number;
+  netIncome: number;
+}
+
+export interface BalanceSheet {
+  asOf?: string | null;
+  assets: StatementLine[];
+  liabilities: StatementLine[];
+  equity: StatementLine[];
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;
+  netIncome: number;
+  totalLiabilitiesAndEquity: number;
+  balanced: boolean;
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1317,6 +1347,24 @@ tenantId: number;
 };
 
 export type GetTrialBalanceParams = {
+/**
+ * Balances as of this date (YYYY-MM-DD); omit for latest.
+ */
+asOf?: string;
+};
+
+export type GetIncomeStatementParams = {
+/**
+ * Period start (YYYY-MM-DD), inclusive.
+ */
+from?: string;
+/**
+ * Period end (YYYY-MM-DD), inclusive.
+ */
+to?: string;
+};
+
+export type GetBalanceSheetParams = {
 /**
  * Balances as of this date (YYYY-MM-DD); omit for latest.
  */
