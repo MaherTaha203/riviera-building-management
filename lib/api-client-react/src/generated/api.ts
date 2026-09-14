@@ -52,6 +52,7 @@ import type {
   GetAgingReportParams,
   GetBalanceSheetParams,
   GetIncomeStatementParams,
+  GetNoticesParams,
   GetReceivablesSummaryParams,
   GetTrialBalanceParams,
   HealthStatus,
@@ -66,6 +67,7 @@ import type {
   ListDocumentsParams,
   ListRentChargesParams,
   LoginInput,
+  Notices,
   PaymentVoucher,
   PaymentVoucherInput,
   PaymentVoucherUpdate,
@@ -5288,6 +5290,84 @@ export function useGetAgingReport<TData = Awaited<ReturnType<typeof getAgingRepo
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAgingReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetNoticesUrl = (params?: GetNoticesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/notices?${stringifiedParams}` : `/api/notices`
+}
+
+export const getNotices = async (params?: GetNoticesParams, options?: RequestInit): Promise<Notices> => {
+
+  return customFetch<Notices>(getGetNoticesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNoticesQueryKey = (params?: GetNoticesParams,) => {
+    return [
+    `/api/notices`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetNoticesQueryOptions = <TData = Awaited<ReturnType<typeof getNotices>>, TError = ErrorType<unknown>>(params?: GetNoticesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNoticesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNotices>>> = ({ signal }) => getNotices(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNotices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNoticesQueryResult = NonNullable<Awaited<ReturnType<typeof getNotices>>>
+export type GetNoticesQueryError = ErrorType<unknown>
+
+
+
+export function useGetNotices<TData = Awaited<ReturnType<typeof getNotices>>, TError = ErrorType<unknown>>(
+ params?: GetNoticesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNoticesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

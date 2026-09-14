@@ -20,6 +20,7 @@ import rentChargesRouter from "./rentCharges";
 import transfersRouter from "./transfers";
 import financialPeriodsRouter from "./financialPeriods";
 import reportsRouter from "./reports";
+import noticesRouter from "./notices";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(rentChargesRouter);
 router.use(transfersRouter);
 router.use(financialPeriodsRouter);
 router.use(reportsRouter);
+router.use(noticesRouter);
 
 export default router;
