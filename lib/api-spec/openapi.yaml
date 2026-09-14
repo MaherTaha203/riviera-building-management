@@ -1180,6 +1180,76 @@ paths:
                 items:
                   $ref: "#/components/schemas/LedgerAccount"
 
+  /financial-periods:
+    get:
+      operationId: listFinancialPeriods
+      tags: [financialPeriods]
+      responses:
+        "200":
+          description: Financial periods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialPeriod"
+    post:
+      operationId: createFinancialPeriod
+      tags: [financialPeriods]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialPeriodInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialPeriod"
+
+  /financial-periods/{id}/close:
+    post:
+      operationId: closeFinancialPeriod
+      tags: [financialPeriods]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialPeriod"
+        "404":
+          description: Not found
+
+  /financial-periods/{id}/reopen:
+    post:
+      operationId: reopenFinancialPeriod
+      tags: [financialPeriods]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reopened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialPeriod"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -2321,3 +2391,35 @@ components:
           type: string
         balanceILS:
           type: number
+
+    # ─── Financial periods (closed-period control) ───────────────────────────
+    FinancialPeriod:
+      type: object
+      required: [id, label, startDate, endDate, status]
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        status:
+          type: string
+          enum: [open, closed]
+        closedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    FinancialPeriodInput:
+      type: object
+      required: [label, startDate, endDate]
+      properties:
+        label:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string

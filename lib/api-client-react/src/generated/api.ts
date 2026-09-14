@@ -42,6 +42,8 @@ import type {
   DocumentInput,
   ExchangeRates,
   ExchangeRatesUpdate,
+  FinancialPeriod,
+  FinancialPeriodInput,
   GenerateRentChargesInput,
   GetReceivablesSummaryParams,
   HealthStatus,
@@ -4750,4 +4752,268 @@ export function useListLedgerAccounts<TData = Awaited<ReturnType<typeof listLedg
 
 
 
+
+export const getListFinancialPeriodsUrl = () => {
+
+
+
+
+  return `/api/financial-periods`
+}
+
+export const listFinancialPeriods = async ( options?: RequestInit): Promise<FinancialPeriod[]> => {
+
+  return customFetch<FinancialPeriod[]>(getListFinancialPeriodsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListFinancialPeriodsQueryKey = () => {
+    return [
+    `/api/financial-periods`
+    ] as const;
+    }
+
+
+export const getListFinancialPeriodsQueryOptions = <TData = Awaited<ReturnType<typeof listFinancialPeriods>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFinancialPeriods>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFinancialPeriodsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFinancialPeriods>>> = ({ signal }) => listFinancialPeriods({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFinancialPeriods>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListFinancialPeriodsQueryResult = NonNullable<Awaited<ReturnType<typeof listFinancialPeriods>>>
+export type ListFinancialPeriodsQueryError = ErrorType<unknown>
+
+
+
+export function useListFinancialPeriods<TData = Awaited<ReturnType<typeof listFinancialPeriods>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFinancialPeriods>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListFinancialPeriodsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateFinancialPeriodUrl = () => {
+
+
+
+
+  return `/api/financial-periods`
+}
+
+export const createFinancialPeriod = async (financialPeriodInput: FinancialPeriodInput, options?: RequestInit): Promise<FinancialPeriod> => {
+
+  return customFetch<FinancialPeriod>(getCreateFinancialPeriodUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      financialPeriodInput,)
+  }
+);}
+
+
+
+
+export const getCreateFinancialPeriodMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFinancialPeriod>>, TError,{data: BodyType<FinancialPeriodInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFinancialPeriod>>, TError,{data: BodyType<FinancialPeriodInput>}, TContext> => {
+
+const mutationKey = ['createFinancialPeriod'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFinancialPeriod>>, {data: BodyType<FinancialPeriodInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFinancialPeriod(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFinancialPeriodMutationResult = NonNullable<Awaited<ReturnType<typeof createFinancialPeriod>>>
+    export type CreateFinancialPeriodMutationBody = BodyType<FinancialPeriodInput>
+    export type CreateFinancialPeriodMutationError = ErrorType<unknown>
+
+    export const useCreateFinancialPeriod = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFinancialPeriod>>, TError,{data: BodyType<FinancialPeriodInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createFinancialPeriod>>,
+        TError,
+        {data: BodyType<FinancialPeriodInput>},
+        TContext
+      > => {
+      return useMutation(getCreateFinancialPeriodMutationOptions(options));
+    }
+
+export const getCloseFinancialPeriodUrl = (id: number,) => {
+
+
+
+
+  return `/api/financial-periods/${id}/close`
+}
+
+export const closeFinancialPeriod = async (id: number, options?: RequestInit): Promise<FinancialPeriod> => {
+
+  return customFetch<FinancialPeriod>(getCloseFinancialPeriodUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCloseFinancialPeriodMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeFinancialPeriod>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof closeFinancialPeriod>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['closeFinancialPeriod'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closeFinancialPeriod>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  closeFinancialPeriod(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloseFinancialPeriodMutationResult = NonNullable<Awaited<ReturnType<typeof closeFinancialPeriod>>>
+
+    export type CloseFinancialPeriodMutationError = ErrorType<void>
+
+    export const useCloseFinancialPeriod = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeFinancialPeriod>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof closeFinancialPeriod>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getCloseFinancialPeriodMutationOptions(options));
+    }
+
+export const getReopenFinancialPeriodUrl = (id: number,) => {
+
+
+
+
+  return `/api/financial-periods/${id}/reopen`
+}
+
+export const reopenFinancialPeriod = async (id: number, options?: RequestInit): Promise<FinancialPeriod> => {
+
+  return customFetch<FinancialPeriod>(getReopenFinancialPeriodUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReopenFinancialPeriodMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenFinancialPeriod>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reopenFinancialPeriod>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['reopenFinancialPeriod'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reopenFinancialPeriod>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  reopenFinancialPeriod(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReopenFinancialPeriodMutationResult = NonNullable<Awaited<ReturnType<typeof reopenFinancialPeriod>>>
+
+    export type ReopenFinancialPeriodMutationError = ErrorType<void>
+
+    export const useReopenFinancialPeriod = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenFinancialPeriod>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reopenFinancialPeriod>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getReopenFinancialPeriodMutationOptions(options));
+    }
 
