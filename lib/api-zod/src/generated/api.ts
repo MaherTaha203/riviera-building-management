@@ -1085,3 +1085,33 @@ export const CancelRentChargeResponse = zod.object({
 })
 
 
+export const ListTransfersResponseItem = zod.object({
+  "id": zod.number(),
+  "fromAccountId": zod.number(),
+  "fromAccountName": zod.string().nullish(),
+  "toAccountId": zod.number(),
+  "toAccountName": zod.string().nullish(),
+  "amountILS": zod.number(),
+  "txnDate": zod.string(),
+  "reference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const ListTransfersResponse = zod.array(ListTransfersResponseItem)
+
+
+export const CreateTransferBody = zod.object({
+  "fromAccountId": zod.number(),
+  "toAccountId": zod.number(),
+  "amountILS": zod.number(),
+  "txnDate": zod.string(),
+  "reference": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+export const DeleteTransferParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+

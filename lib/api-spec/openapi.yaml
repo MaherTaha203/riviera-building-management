@@ -1120,6 +1120,52 @@ paths:
         "404":
           description: Not found
 
+  /transfers:
+    get:
+      operationId: listTransfers
+      tags: [transfers]
+      responses:
+        "200":
+          description: Transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transfer"
+    post:
+      operationId: createTransfer
+      tags: [transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+
+  /transfers/{id}:
+    delete:
+      operationId: deleteTransfer
+      tags: [transfers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -2204,3 +2250,46 @@ components:
           type: integer
         amountDueILS:
           type: number
+
+    # ─── Transfers (account-to-account) ──────────────────────────────────────
+    Transfer:
+      type: object
+      required: [id, fromAccountId, toAccountId, amountILS, txnDate]
+      properties:
+        id:
+          type: integer
+        fromAccountId:
+          type: integer
+        fromAccountName:
+          type: ["string", "null"]
+        toAccountId:
+          type: integer
+        toAccountName:
+          type: ["string", "null"]
+        amountILS:
+          type: number
+        txnDate:
+          type: string
+        reference:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TransferInput:
+      type: object
+      required: [fromAccountId, toAccountId, amountILS, txnDate]
+      properties:
+        fromAccountId:
+          type: integer
+        toAccountId:
+          type: integer
+        amountILS:
+          type: number
+        txnDate:
+          type: string
+        reference:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
