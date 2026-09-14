@@ -40,6 +40,11 @@ export const financialMovementsTable = pgTable(
     reference: text("reference"),
     status: text("status").notNull().default("posted"), // 'posted' | 'reversed'
     reversesId: integer("reverses_id").references((): AnyPgColumn => financialMovementsTable.id, { onDelete: "restrict" }),
+    // Double-entry grouping (Phase 2, slice 2): the legs of one balanced journal
+    // entry share an entryId; Σ signedDelta over an entryId is always 0. NULL for
+    // legacy single-leg postings. A reversal copies its original's entryId, so a
+    // fully-reversed entry group still sums to zero.
+    entryId: text("entry_id"),
     // Idempotency (F18): a repeated logical operation must not post twice
     idempotencyKey: text("idempotency_key"),
     // Audit
@@ -51,6 +56,7 @@ export const financialMovementsTable = pgTable(
     index("financial_movements_account_idx").on(t.accountId),
     index("financial_movements_period_idx").on(t.periodId),
     index("financial_movements_source_idx").on(t.sourceType, t.sourceId),
+    index("financial_movements_entry_idx").on(t.entryId),
     index("financial_movements_party_idx").on(t.relatedPartyType, t.relatedPartyId),
     uniqueIndex("financial_movements_idempotency_uk").on(t.idempotencyKey), // NULLs allowed & distinct in Postgres
     check("financial_movements_direction_ck", sql`${t.direction} in ('debit','credit')`),
