@@ -1115,3 +1115,12 @@ export const DeleteTransferParams = zod.object({
 })
 
 
+export const ListLedgerAccountsResponseItem = zod.object({
+  "id": zod.number(),
+  "kind": zod.enum(['cash', 'bank']),
+  "name": zod.string(),
+  "balanceILS": zod.number()
+})
+export const ListLedgerAccountsResponse = zod.array(ListLedgerAccountsResponseItem)
+
+

@@ -59,6 +59,8 @@ export * from './exchangeRatesUpdate';
 export * from './generateRentChargesInput';
 export * from './getReceivablesSummaryParams';
 export * from './healthStatus';
+export * from './ledgerAccount';
+export * from './ledgerAccountKind';
 export * from './listAccountStatementsParams';
 export * from './listAuditLogParams';
 export * from './listChequesParams';

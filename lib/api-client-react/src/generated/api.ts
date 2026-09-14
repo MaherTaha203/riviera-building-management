@@ -45,6 +45,7 @@ import type {
   GenerateRentChargesInput,
   GetReceivablesSummaryParams,
   HealthStatus,
+  LedgerAccount,
   ListAccountStatementsParams,
   ListAuditLogParams,
   ListChequesParams,
@@ -4678,4 +4679,75 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeleteTransferMutationOptions(options));
     }
+
+export const getListLedgerAccountsUrl = () => {
+
+
+
+
+  return `/api/ledger/accounts`
+}
+
+export const listLedgerAccounts = async ( options?: RequestInit): Promise<LedgerAccount[]> => {
+
+  return customFetch<LedgerAccount[]>(getListLedgerAccountsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLedgerAccountsQueryKey = () => {
+    return [
+    `/api/ledger/accounts`
+    ] as const;
+    }
+
+
+export const getListLedgerAccountsQueryOptions = <TData = Awaited<ReturnType<typeof listLedgerAccounts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLedgerAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLedgerAccountsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLedgerAccounts>>> = ({ signal }) => listLedgerAccounts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLedgerAccounts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLedgerAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof listLedgerAccounts>>>
+export type ListLedgerAccountsQueryError = ErrorType<unknown>
+
+
+
+export function useListLedgerAccounts<TData = Awaited<ReturnType<typeof listLedgerAccounts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLedgerAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLedgerAccountsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

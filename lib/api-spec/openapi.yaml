@@ -1166,6 +1166,20 @@ paths:
         "404":
           description: Not found
 
+  /ledger/accounts:
+    get:
+      operationId: listLedgerAccounts
+      tags: [ledger]
+      responses:
+        "200":
+          description: Accounts with their ledger-projected balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LedgerAccount"
+
 components:
   schemas:
     HealthStatus:
@@ -2293,3 +2307,17 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+
+    LedgerAccount:
+      type: object
+      required: [id, kind, name, balanceILS]
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum: [cash, bank]
+        name:
+          type: string
+        balanceILS:
+          type: number
