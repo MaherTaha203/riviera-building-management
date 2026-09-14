@@ -1128,6 +1128,27 @@ export const ListLedgerAccountsResponseItem = zod.object({
 export const ListLedgerAccountsResponse = zod.array(ListLedgerAccountsResponseItem)
 
 
+export const GetTrialBalanceQueryParams = zod.object({
+  "asOf": zod.coerce.string().optional().describe('Balances as of this date (YYYY-MM-DD); omit for latest.')
+})
+
+export const GetTrialBalanceResponse = zod.object({
+  "asOf": zod.string().nullish(),
+  "lines": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "type": zod.enum(['asset', 'liability', 'equity', 'income', 'expense']),
+  "normalBalance": zod.enum(['debit', 'credit']),
+  "debit": zod.number(),
+  "credit": zod.number()
+})),
+  "totalDebit": zod.number(),
+  "totalCredit": zod.number(),
+  "balanced": zod.boolean()
+})
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

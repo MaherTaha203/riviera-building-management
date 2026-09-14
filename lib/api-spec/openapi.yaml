@@ -1180,6 +1180,25 @@ paths:
                 items:
                   $ref: "#/components/schemas/LedgerAccount"
 
+  /reports/trial-balance:
+    get:
+      operationId: getTrialBalance
+      tags: [reports]
+      parameters:
+        - name: asOf
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Balances as of this date (YYYY-MM-DD); omit for latest.
+      responses:
+        "200":
+          description: Trial balance (per-account debit/credit + totals)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrialBalance"
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2403,6 +2422,46 @@ components:
           type: string
         balanceILS:
           type: number
+
+    # ─── Reports (double-entry projections) ──────────────────────────────────
+    TrialBalanceLine:
+      type: object
+      required: [accountId, name, type, normalBalance, debit, credit]
+      properties:
+        accountId:
+          type: integer
+        code:
+          type: string
+          nullable: true
+        name:
+          type: string
+        type:
+          type: string
+          enum: [asset, liability, equity, income, expense]
+        normalBalance:
+          type: string
+          enum: [debit, credit]
+        debit:
+          type: number
+        credit:
+          type: number
+    TrialBalance:
+      type: object
+      required: [lines, totalDebit, totalCredit, balanced]
+      properties:
+        asOf:
+          type: string
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrialBalanceLine"
+        totalDebit:
+          type: number
+        totalCredit:
+          type: number
+        balanced:
+          type: boolean
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
