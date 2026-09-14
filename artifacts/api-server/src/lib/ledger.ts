@@ -165,6 +165,22 @@ export async function setSourceLedgerEffect(
   key: { sourceType: MovementSourceType; sourceId: number },
   effect: Omit<PostMovementInput, "sourceType" | "sourceId" | "idempotencyKey"> | null,
 ) {
+  await reverseActiveSourceMovements(tx, key, effect?.createdBy ?? null);
+  if (!effect) return null;
+  return postMovement(tx, { ...effect, sourceType: key.sourceType, sourceId: key.sourceId });
+}
+
+/**
+ * Reverse every still-active movement a source posted (a posted original with
+ * reverses_id IS NULL that has not yet been reversed). Shared by the single-
+ * effect and multi-leg (transfer) sync helpers so corrections never mutate a
+ * posted row.
+ */
+async function reverseActiveSourceMovements(
+  tx: Exec,
+  key: { sourceType: MovementSourceType; sourceId: number },
+  createdBy: number | null,
+) {
   const active = await tx
     .select()
     .from(financialMovementsTable)
@@ -180,11 +196,35 @@ export async function setSourceLedgerEffect(
       .from(financialMovementsTable)
       .where(eq(financialMovementsTable.reversesId, m.id));
     if (!alreadyReversed) {
-      await reverseMovement(tx, m.id, { createdBy: effect?.createdBy ?? null, reason: "superseded by edit/cancel" });
+      await reverseMovement(tx, m.id, { createdBy, reason: "superseded by edit/cancel" });
     }
   }
-  if (!effect) return null;
-  return postMovement(tx, { ...effect, sourceType: key.sourceType, sourceId: key.sourceId });
+}
+
+/**
+ * Set a transfer's ledger effect: a balanced pair of movements sharing
+ * (sourceType 'transfer', sourceId) — a debit on the source account and a
+ * credit on the destination, same amount and date. create posts the pair, edit
+ * reverses the old pair and posts the new, delete reverses only. The two legs
+ * net to zero across the ledger, so total balances are unchanged; only the two
+ * accounts move.
+ */
+export async function setTransferLedgerEffect(
+  tx: Exec,
+  transferId: number,
+  effect: { fromAccountId: number; toAccountId: number; amountILS: number; txnDate: string; reference?: string | null; createdBy?: number | null } | null,
+) {
+  const key = { sourceType: "transfer" as const, sourceId: transferId };
+  await reverseActiveSourceMovements(tx, key, effect?.createdBy ?? null);
+  if (!effect) return;
+  await postMovement(tx, {
+    ...key, accountId: effect.fromAccountId, direction: "debit",
+    amountILS: effect.amountILS, txnDate: effect.txnDate, reference: effect.reference ?? null, createdBy: effect.createdBy ?? null,
+  });
+  await postMovement(tx, {
+    ...key, accountId: effect.toAccountId, direction: "credit",
+    amountILS: effect.amountILS, txnDate: effect.txnDate, reference: effect.reference ?? null, createdBy: effect.createdBy ?? null,
+  });
 }
 
 /**
@@ -200,6 +240,27 @@ export async function accountPostedMovementCount(exec: Exec, accountId: number):
     .from(financialMovementsTable)
     .where(and(eq(financialMovementsTable.accountId, accountId), eq(financialMovementsTable.status, "posted")));
   return Number(row?.n ?? 0);
+}
+
+/**
+ * Net ledger effect of TRANSFER movements on an account (credit − debit over
+ * posted transfer legs). The legacy balances can't represent account-to-account
+ * transfers, so the legacy-vs-ledger reconciliation nets these out to stay a
+ * true "vouchers/cheques dual-write is consistent" check.
+ */
+export async function accountTransferDeltaILS(exec: Exec, accountId: number): Promise<number> {
+  const [agg] = await exec
+    .select({
+      credit: sql<string>`coalesce(sum(${financialMovementsTable.amountILS}) filter (where ${financialMovementsTable.direction} = 'credit'), 0)`,
+      debit: sql<string>`coalesce(sum(${financialMovementsTable.amountILS}) filter (where ${financialMovementsTable.direction} = 'debit'), 0)`,
+    })
+    .from(financialMovementsTable)
+    .where(and(
+      eq(financialMovementsTable.accountId, accountId),
+      eq(financialMovementsTable.status, "posted"),
+      eq(financialMovementsTable.sourceType, "transfer"),
+    ));
+  return Number(agg?.credit ?? 0) - Number(agg?.debit ?? 0);
 }
 
 /** Projected balance for every account (opening + Σ movements). */

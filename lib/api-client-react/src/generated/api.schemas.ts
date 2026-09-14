@@ -1158,6 +1158,34 @@ export interface ReceivablesSummary {
   amountDueILS: number;
 }
 
+export interface Transfer {
+  id: number;
+  fromAccountId: number;
+  /** @nullable */
+  fromAccountName?: string | null;
+  toAccountId: number;
+  /** @nullable */
+  toAccountName?: string | null;
+  amountILS: number;
+  txnDate: string;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt?: string;
+}
+
+export interface TransferInput {
+  fromAccountId: number;
+  toAccountId: number;
+  amountILS: number;
+  txnDate: string;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export type ListChequesParams = {
 type?: ListChequesType;
 };

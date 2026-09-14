@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------
 import { db, pool, accountsTable, bankAccountsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { accountBalanceILS } from "../lib/ledger";
+import { accountBalanceILS, setTransferLedgerEffect } from "../lib/ledger";
 import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
 import { syncChequeLedger, clearChequeLedger } from "../lib/chequeLedger";
 import { mirrorBankAccount, resolveCashAccountId } from "../lib/accounts";
@@ -125,6 +125,17 @@ async function main() {
   } catch { threw = true; }
   console.log(`  ${threw ? "✓" : "✗"} unresolvable bank_transfer rejects the transaction`);
   if (!threw) failures++;
+
+  // --- transfers (slice 15): balanced pair, nets to zero across the ledger ---
+  console.log("\ntransfers:");
+  await db.transaction((tx) => setTransferLedgerEffect(tx, 9201, {
+    fromAccountId: cashAccId, toAccountId: bankAccId, amountILS: 400, txnDate: "2026-09-15", createdBy: USER,
+  }));
+  assertEq("cash after transfer 400 → bank", await bal(cashAccId), 1100);
+  assertEq("bank after transfer 400 ← cash", await bal(bankAccId), 900);
+  await db.transaction((tx) => setTransferLedgerEffect(tx, 9201, null));
+  assertEq("cash after reversing the transfer", await bal(cashAccId), 1500);
+  assertEq("bank after reversing the transfer", await bal(bankAccId), 500);
 
   console.log(failures === 0 ? "\n✓ ledger smoke passed" : `\n✗ ledger smoke failed (${failures})`);
   await pool.end();

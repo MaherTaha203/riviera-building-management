@@ -98,6 +98,8 @@ export * from './tenantInputType';
 export * from './tenantType';
 export * from './tenantUpdate';
 export * from './tenantUpdateType';
+export * from './transfer';
+export * from './transferInput';
 export * from './unit';
 export * from './unitInput';
 export * from './unitInputStatus';

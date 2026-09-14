@@ -16,3 +16,5 @@ export * from "./financialMovements";
 // Phase 1 — receivables (rent charges + receipt allocations)
 export * from "./rentCharges";
 export * from "./receiptAllocations";
+// Phase 1 — account-to-account transfers
+export * from "./transfers";

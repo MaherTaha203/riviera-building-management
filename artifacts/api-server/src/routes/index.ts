@@ -17,6 +17,7 @@ import auditLogRouter from "./auditLog";
 import settingsRouter from "./settings";
 import ledgerRouter from "./ledger";
 import rentChargesRouter from "./rentCharges";
+import transfersRouter from "./transfers";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(auditLogRouter);
 router.use(settingsRouter);
 router.use(ledgerRouter);
 router.use(rentChargesRouter);
+router.use(transfersRouter);
 
 export default router;

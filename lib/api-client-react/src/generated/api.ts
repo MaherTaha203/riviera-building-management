@@ -65,6 +65,8 @@ import type {
   Tenant,
   TenantInput,
   TenantUpdate,
+  Transfer,
+  TransferInput,
   Unit,
   UnitInput,
   UnitUpdate,
@@ -4475,5 +4477,205 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCancelRentChargeMutationOptions(options));
+    }
+
+export const getListTransfersUrl = () => {
+
+
+
+
+  return `/api/transfers`
+}
+
+export const listTransfers = async ( options?: RequestInit): Promise<Transfer[]> => {
+
+  return customFetch<Transfer[]>(getListTransfersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTransfersQueryKey = () => {
+    return [
+    `/api/transfers`
+    ] as const;
+    }
+
+
+export const getListTransfersQueryOptions = <TData = Awaited<ReturnType<typeof listTransfers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransfers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTransfersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTransfers>>> = ({ signal }) => listTransfers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTransfers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTransfersQueryResult = NonNullable<Awaited<ReturnType<typeof listTransfers>>>
+export type ListTransfersQueryError = ErrorType<unknown>
+
+
+
+export function useListTransfers<TData = Awaited<ReturnType<typeof listTransfers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransfers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTransfersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateTransferUrl = () => {
+
+
+
+
+  return `/api/transfers`
+}
+
+export const createTransfer = async (transferInput: TransferInput, options?: RequestInit): Promise<Transfer> => {
+
+  return customFetch<Transfer>(getCreateTransferUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      transferInput,)
+  }
+);}
+
+
+
+
+export const getCreateTransferMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransfer>>, TError,{data: BodyType<TransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTransfer>>, TError,{data: BodyType<TransferInput>}, TContext> => {
+
+const mutationKey = ['createTransfer'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTransfer>>, {data: BodyType<TransferInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTransfer(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTransferMutationResult = NonNullable<Awaited<ReturnType<typeof createTransfer>>>
+    export type CreateTransferMutationBody = BodyType<TransferInput>
+    export type CreateTransferMutationError = ErrorType<unknown>
+
+    export const useCreateTransfer = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransfer>>, TError,{data: BodyType<TransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTransfer>>,
+        TError,
+        {data: BodyType<TransferInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTransferMutationOptions(options));
+    }
+
+export const getDeleteTransferUrl = (id: number,) => {
+
+
+
+
+  return `/api/transfers/${id}`
+}
+
+export const deleteTransfer = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTransferUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteTransferMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransfer>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTransfer>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteTransfer'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTransfer>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteTransfer(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTransferMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTransfer>>>
+
+    export type DeleteTransferMutationError = ErrorType<void>
+
+    export const useDeleteTransfer = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransfer>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTransfer>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTransferMutationOptions(options));
     }
 
