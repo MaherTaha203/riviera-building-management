@@ -14,7 +14,7 @@
 // the sheet always foots.
 // ---------------------------------------------------------------------------
 import { db, accountsTable, financialMovementsTable } from "@workspace/db";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lt, lte, sql } from "drizzle-orm";
 import { accountNormalBalance } from "@workspace/db";
 import { SYSTEM_ACCOUNTS } from "./accounts";
 
@@ -226,5 +226,98 @@ export async function balanceSheet(exec: Exec = db, asOf?: string): Promise<Bala
     totalAssets, totalLiabilities, totalEquity, netIncome,
     totalLiabilitiesAndEquity,
     balanced: Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.005,
+  };
+}
+
+// ─── Account ledger (statement of one account's movements) ───────────────────
+
+export interface AccountLedgerEntry {
+  id: number;
+  txnDate: string;
+  sourceType: string;
+  sourceId: number | null;
+  entryId: string | null;
+  reference: string | null;
+  reason: string | null;
+  status: string;
+  debit: number;   // standard debit column (a 'credit' storage movement)
+  credit: number;  // standard credit column (a 'debit' storage movement)
+  balance: number; // running standard (debit-positive) balance after this row
+}
+
+export interface AccountLedger {
+  accountId: number;
+  code: string | null;
+  name: string;
+  type: string;
+  from: string | null;
+  to: string | null;
+  openingBalance: number;  // standard balance before the window
+  closingBalance: number;
+  entries: AccountLedgerEntry[];
+}
+
+/**
+ * Statement of a single account: its movements within [from, to] with a running
+ * standard (debit-positive) balance. The opening balance carries the account's
+ * documented opening plus every movement strictly before `from`, so the running
+ * balance is continuous. A storage 'credit' shows in the debit column and a
+ * storage 'debit' in the credit column (the universal inversion).
+ */
+export async function accountLedger(
+  exec: Exec = db,
+  accountId: number,
+  from?: string,
+  to?: string,
+): Promise<AccountLedger | null> {
+  const [acc] = await exec.select().from(accountsTable).where(eq(accountsTable.id, accountId));
+  if (!acc) return null;
+
+  // Opening balance = documented opening (on its normal side) + signed sum of
+  // everything strictly before the window.
+  const nbSign = accountNormalBalance(acc.type) === "debit" ? 1 : -1;
+  let opening = nbSign * Number(acc.openingBalanceILS);
+  if (from) {
+    const [pre] = await exec
+      .select({
+        credit: sql<string>`coalesce(sum(${financialMovementsTable.amountILS}) filter (where ${financialMovementsTable.direction}='credit'),0)`,
+        debit: sql<string>`coalesce(sum(${financialMovementsTable.amountILS}) filter (where ${financialMovementsTable.direction}='debit'),0)`,
+      })
+      .from(financialMovementsTable)
+      .where(and(
+        eq(financialMovementsTable.accountId, accountId),
+        eq(financialMovementsTable.status, "posted"),
+        lt(financialMovementsTable.txnDate, from),
+      ));
+    opening = round2(opening + Number(pre?.credit ?? 0) - Number(pre?.debit ?? 0));
+  } else {
+    opening = round2(opening);
+  }
+
+  const conds = [eq(financialMovementsTable.accountId, accountId), eq(financialMovementsTable.status, "posted")];
+  if (from) conds.push(gte(financialMovementsTable.txnDate, from));
+  if (to) conds.push(lte(financialMovementsTable.txnDate, to));
+  const rows = await exec
+    .select()
+    .from(financialMovementsTable)
+    .where(and(...conds))
+    .orderBy(asc(financialMovementsTable.txnDate), asc(financialMovementsTable.id));
+
+  let balance = opening;
+  const entries: AccountLedgerEntry[] = rows.map((m) => {
+    const isCredit = m.direction === "credit";
+    const amt = Number(m.amountILS);
+    balance = round2(balance + (isCredit ? amt : -amt));
+    return {
+      id: m.id, txnDate: m.txnDate, sourceType: m.sourceType, sourceId: m.sourceId,
+      entryId: m.entryId, reference: m.reference, reason: m.reason, status: m.status,
+      debit: isCredit ? amt : 0, credit: isCredit ? 0 : amt, balance,
+    };
+  });
+
+  return {
+    accountId: acc.id, code: acc.code, name: acc.name, type: acc.type,
+    from: from ?? null, to: to ?? null,
+    openingBalance: opening, closingBalance: balance, entries,
   };
 }

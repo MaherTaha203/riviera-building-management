@@ -1283,6 +1283,32 @@ export interface BalanceSheet {
   balanced: boolean;
 }
 
+export interface AccountLedgerEntry {
+  id: number;
+  txnDate: string;
+  sourceType: string;
+  sourceId?: number | null;
+  entryId?: string | null;
+  reference?: string | null;
+  reason?: string | null;
+  status: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface AccountLedger {
+  accountId: number;
+  code?: string | null;
+  name: string;
+  type: string;
+  from?: string | null;
+  to?: string | null;
+  openingBalance: number;
+  closingBalance: number;
+  entries: AccountLedgerEntry[];
+}
+
 export type FinancialPeriodStatus = typeof FinancialPeriodStatus[keyof typeof FinancialPeriodStatus];
 
 
@@ -1369,5 +1395,17 @@ export type GetBalanceSheetParams = {
  * Balances as of this date (YYYY-MM-DD); omit for latest.
  */
 asOf?: string;
+};
+
+export type GetAccountLedgerParams = {
+accountId: number;
+/**
+ * Window start (YYYY-MM-DD), inclusive.
+ */
+from?: string;
+/**
+ * Window end (YYYY-MM-DD), inclusive.
+ */
+to?: string;
 };
 

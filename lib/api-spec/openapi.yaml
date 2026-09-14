@@ -1240,6 +1240,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/BalanceSheet"
 
+  /reports/account-ledger:
+    get:
+      operationId: getAccountLedger
+      tags: [reports]
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string }
+          description: Window start (YYYY-MM-DD), inclusive.
+        - name: to
+          in: query
+          required: false
+          schema: { type: string }
+          description: Window end (YYYY-MM-DD), inclusive.
+      responses:
+        "200":
+          description: One account's movements with a running balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountLedger"
+        "404":
+          description: Account not found
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2572,6 +2601,38 @@ components:
           type: number
         balanced:
           type: boolean
+
+    AccountLedgerEntry:
+      type: object
+      required: [id, txnDate, sourceType, status, debit, credit, balance]
+      properties:
+        id: { type: integer }
+        txnDate: { type: string }
+        sourceType: { type: string }
+        sourceId: { type: integer, nullable: true }
+        entryId: { type: string, nullable: true }
+        reference: { type: string, nullable: true }
+        reason: { type: string, nullable: true }
+        status: { type: string }
+        debit: { type: number }
+        credit: { type: number }
+        balance: { type: number }
+    AccountLedger:
+      type: object
+      required: [accountId, name, type, openingBalance, closingBalance, entries]
+      properties:
+        accountId: { type: integer }
+        code: { type: string, nullable: true }
+        name: { type: string }
+        type: { type: string }
+        from: { type: string, nullable: true }
+        to: { type: string, nullable: true }
+        openingBalance: { type: number }
+        closingBalance: { type: number }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountLedgerEntry"
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
