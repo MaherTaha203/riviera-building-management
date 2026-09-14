@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LedgerAccountKind = typeof LedgerAccountKind[keyof typeof LedgerAccountKind];
+export type LedgerAccountKind = typeof LedgerAccountKind[keyof typeof LedgerAccountKind] | null;
 
 
 export const LedgerAccountKind = {
