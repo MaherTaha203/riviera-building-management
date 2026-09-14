@@ -31,7 +31,7 @@ export class ClosedPeriodError extends Error {
 
 export type MovementDirection = "credit" | "debit";
 export type MovementSourceType =
-  | "receipt" | "payment" | "cheque" | "transfer" | "rent_charge" | "adjustment" | "opening";
+  | "receipt" | "payment" | "cheque" | "transfer" | "rent_charge" | "adjustment" | "opening" | "closing";
 
 export interface PostMovementInput {
   sourceType: MovementSourceType;

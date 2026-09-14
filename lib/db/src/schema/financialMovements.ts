@@ -69,5 +69,5 @@ export type FinancialMovement = typeof financialMovementsTable.$inferSelect;
 export type InsertFinancialMovement = typeof financialMovementsTable.$inferInsert;
 export const financialMovementDirection = z.enum(["debit", "credit"]);
 export const financialMovementSourceType = z.enum([
-  "receipt", "payment", "cheque", "transfer", "rent_charge", "adjustment", "opening",
+  "receipt", "payment", "cheque", "transfer", "rent_charge", "adjustment", "opening", "closing",
 ]);

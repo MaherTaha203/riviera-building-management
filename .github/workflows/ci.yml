@@ -95,5 +95,8 @@ jobs:
       - name: Late-fee automation smoke
         run: pnpm --filter @workspace/api-server run smoke:latefees
 
+      - name: Period-end closing smoke
+        run: pnpm --filter @workspace/api-server run smoke:closing
+
       - name: Ledger reconciliation (invariants + projections)
         run: pnpm --filter @workspace/scripts run reconcile:ledger

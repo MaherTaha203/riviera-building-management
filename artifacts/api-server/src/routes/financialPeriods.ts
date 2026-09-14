@@ -5,6 +5,7 @@ import { authMiddleware, type JwtPayload } from "../lib/auth";
 import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
 import { CreateFinancialPeriodBody } from "@workspace/api-zod";
+import { computeClosing, postClosingEntry, reverseClosingEntry } from "../lib/periodClose";
 
 const router = Router();
 
@@ -38,28 +39,53 @@ router.post("/financial-periods", authMiddleware, validateBody(CreateFinancialPe
   res.status(201).json(shape(created));
 });
 
-/** Close a period: freezes posting/editing of any document dated within it. */
+/** Preview the closing entry (income/expense → retained earnings) for a period. */
+router.get("/financial-periods/:id/closing-preview", authMiddleware, async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  const [p] = await db.select().from(financialPeriodsTable).where(eq(financialPeriodsTable.id, id));
+  if (!p) { res.status(404).json({ error: "Not found" }); return; }
+  res.json(await computeClosing(db, { id: p.id, endDate: p.endDate }));
+});
+
+/**
+ * Close a period: post the closing entry (zeroing income/expense into retained
+ * earnings, dated the period end) THEN freeze the period. Both in one tx so the
+ * closing entry itself is posted while the period is still open.
+ */
 router.post("/financial-periods/:id/close", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [updated] = await db.update(financialPeriodsTable)
-    .set({ status: "closed", closedBy: user.userId, closedAt: new Date() })
-    .where(eq(financialPeriodsTable.id, id)).returning();
-  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  const result = await db.transaction(async (tx) => {
+    const [p] = await tx.select().from(financialPeriodsTable).where(eq(financialPeriodsTable.id, id));
+    if (!p) return { notFound: true as const };
+    if (p.status !== "closed") {
+      await postClosingEntry(tx, { id: p.id, endDate: p.endDate }, user.userId);
+    }
+    const [updated] = await tx.update(financialPeriodsTable)
+      .set({ status: "closed", closedBy: user.userId, closedAt: new Date() })
+      .where(eq(financialPeriodsTable.id, id)).returning();
+    return { updated };
+  });
+  if ("notFound" in result) { res.status(404).json({ error: "Not found" }); return; }
   await logAction(user, "UPDATE", "financial_period", id);
-  res.json(shape(updated));
+  res.json(shape(result.updated!));
 });
 
-/** Reopen a closed period (to correct historical entries). */
+/** Reopen a closed period: unfreeze it THEN reverse its closing entry. */
 router.post("/financial-periods/:id/reopen", authMiddleware, async (req, res): Promise<void> => {
   const user = (req as typeof req & { user: JwtPayload }).user;
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [updated] = await db.update(financialPeriodsTable)
-    .set({ status: "open", closedBy: null, closedAt: null })
-    .where(eq(financialPeriodsTable.id, id)).returning();
-  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  const result = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(financialPeriodsTable)
+      .set({ status: "open", closedBy: null, closedAt: null })
+      .where(eq(financialPeriodsTable.id, id)).returning();
+    if (!updated) return { notFound: true as const };
+    await reverseClosingEntry(tx, id); // period is now open → reversal (dated end) allowed
+    return { updated };
+  });
+  if ("notFound" in result) { res.status(404).json({ error: "Not found" }); return; }
   await logAction(user, "UPDATE", "financial_period", id);
-  res.json(shape(updated));
+  res.json(shape(result.updated!));
 });
 
 export default router;

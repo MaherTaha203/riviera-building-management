@@ -1366,6 +1366,26 @@ export const CreateFinancialPeriodBody = zod.object({
 })
 
 
+export const GetClosingPreviewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetClosingPreviewResponse = zod.object({
+  "periodId": zod.number(),
+  "endDate": zod.string(),
+  "lines": zod.array(zod.object({
+  "accountId": zod.number(),
+  "code": zod.string().nullish(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "balanceILS": zod.number()
+})),
+  "netIncomeILS": zod.number(),
+  "retainedEarningsDeltaILS": zod.number(),
+  "hasEntry": zod.boolean()
+})
+
+
 export const CloseFinancialPeriodParams = zod.object({
   "id": zod.coerce.number()
 })

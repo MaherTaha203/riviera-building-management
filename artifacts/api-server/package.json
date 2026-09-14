@@ -11,7 +11,8 @@
     "smoke:ledger": "tsx src/smoke/ledgerSmoke.ts",
     "smoke:receivables": "tsx src/smoke/receivablesSmoke.ts",
     "smoke:reports": "tsx src/smoke/reportsCheck.ts",
-    "smoke:latefees": "tsx src/smoke/lateFeesSmoke.ts"
+    "smoke:latefees": "tsx src/smoke/lateFeesSmoke.ts",
+    "smoke:closing": "tsx src/smoke/closingSmoke.ts"
   },
   "dependencies": {
     "@node-rs/bcrypt": "^1.10.7",

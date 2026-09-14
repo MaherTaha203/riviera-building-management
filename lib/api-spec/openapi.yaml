@@ -1376,6 +1376,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/FinancialPeriod"
 
+  /financial-periods/{id}/closing-preview:
+    get:
+      operationId: getClosingPreview
+      tags: [financialPeriods]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The closing entry that would be posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClosingPreview"
+        "404":
+          description: Not found
+
   /financial-periods/{id}/close:
     post:
       operationId: closeFinancialPeriod
@@ -2851,6 +2871,29 @@ components:
           properties:
             expiring: { type: integer }
             overdue: { type: integer }
+
+    ClosingLine:
+      type: object
+      required: [accountId, name, type, balanceILS]
+      properties:
+        accountId: { type: integer }
+        code: { type: ["string", "null"] }
+        name: { type: string }
+        type: { type: string }
+        balanceILS: { type: number }
+    ClosingPreview:
+      type: object
+      required: [periodId, endDate, lines, netIncomeILS, retainedEarningsDeltaILS, hasEntry]
+      properties:
+        periodId: { type: integer }
+        endDate: { type: string }
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClosingLine"
+        netIncomeILS: { type: number }
+        retainedEarningsDeltaILS: { type: number }
+        hasEntry: { type: boolean }
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
