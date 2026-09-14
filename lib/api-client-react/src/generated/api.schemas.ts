@@ -1186,6 +1186,21 @@ export interface TransferInput {
   notes?: string | null;
 }
 
+export type LedgerAccountKind = typeof LedgerAccountKind[keyof typeof LedgerAccountKind];
+
+
+export const LedgerAccountKind = {
+  cash: 'cash',
+  bank: 'bank',
+} as const;
+
+export interface LedgerAccount {
+  id: number;
+  kind: LedgerAccountKind;
+  name: string;
+  balanceILS: number;
+}
+
 export type ListChequesParams = {
 type?: ListChequesType;
 };

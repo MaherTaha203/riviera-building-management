@@ -37,6 +37,9 @@ const FINANCIAL_QUERY_KEYS: readonly string[] = [
   // Receivables: a tenant receipt is allocated FIFO to rent charges, so a
   // financial write also changes charge allocation + tenant amount due.
   "/api/rent-charges",
+  // Transfers move money between accounts; balances now project from the ledger.
+  "/api/transfers",
+  "/api/ledger/accounts",
 ];
 
 /**
