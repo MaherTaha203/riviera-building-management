@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListFinancialPeriods, useCreateFinancialPeriod, useCloseFinancialPeriod, useReopenFinancialPeriod } from "@workspace/api-client-react";
+import { useListFinancialPeriods, useCreateFinancialPeriod, useCloseFinancialPeriod, useReopenFinancialPeriod, useGetClosingPreview } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,25 @@ import { Badge } from "@/components/ui/badge";
 import { invalidateFinancial } from "@/lib/invalidate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Lock, LockOpen } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatAmount } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
+
+/** Shows the closing entry (income/expense → retained earnings) for a period. */
+function ClosingPreview({ periodId }: { periodId: number }) {
+  const { data } = useGetClosingPreview({ id: periodId } as any);
+  const p = data as any;
+  if (!p) return <p className="text-xs text-muted-foreground">جارٍ حساب قيد الإقفال…</p>;
+  if (!p.hasEntry) return <p className="text-xs text-muted-foreground">لا دخل أو مصروفات لإقفالها في هذه الفترة.</p>;
+  return (
+    <div className="rounded-md border p-3 text-sm space-y-1 max-h-52 overflow-y-auto">
+      <div className="font-medium mb-1">قيد الإقفال (يُرحَّل تلقائياً):</div>
+      {(p.lines as any[]).map((l) => (
+        <div key={l.accountId} className="flex justify-between"><span className="text-muted-foreground">{l.name}</span><span className="ltr-nums">{formatAmount(Math.abs(Number(l.balanceILS)), "ILS")}</span></div>
+      ))}
+      <div className="flex justify-between border-t pt-1 mt-1 font-bold"><span>صافي الدخل → الأرباح المحتجزة</span><span className={`ltr-nums ${p.netIncomeILS >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatAmount(Number(p.netIncomeILS), "ILS")}</span></div>
+    </div>
+  );
+}
 
 const emptyForm = { label: "", startDate: "", endDate: "" };
 
@@ -129,8 +146,9 @@ export default function FinancialPeriods() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>إقفال الفترة</AlertDialogTitle>
-            <AlertDialogDescription>بعد الإقفال لا يمكن تسجيل أو تعديل أي حركة بتاريخٍ ضمن الفترة حتى إعادة فتحها.</AlertDialogDescription>
+            <AlertDialogDescription>بعد الإقفال لا يمكن تسجيل أو تعديل أي حركة بتاريخٍ ضمن الفترة حتى إعادة فتحها. سيُرحَّل الدخل والمصروفات إلى الأرباح المحتجزة.</AlertDialogDescription>
           </AlertDialogHeader>
+          {closeId != null && <ClosingPreview periodId={closeId} />}
           <AlertDialogFooter>
             <AlertDialogCancel>تراجع</AlertDialogCancel>
             <AlertDialogAction onClick={doClose}>إقفال</AlertDialogAction>
