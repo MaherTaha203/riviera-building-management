@@ -17,7 +17,8 @@ import { eq, sql } from "drizzle-orm";
 import { accountBalanceILS, setTransferLedgerEffect, postJournalEntry, reverseJournalEntry } from "../lib/ledger";
 import { syncVoucherLedger, clearVoucherLedger } from "../lib/voucherLedger";
 import { syncChequeLedger, clearChequeLedger } from "../lib/chequeLedger";
-import { mirrorBankAccount, resolveCashAccountId, SYSTEM_ACCOUNTS } from "../lib/accounts";
+import { syncChargeLedger, clearChargeLedger } from "../lib/chargeLedger";
+import { mirrorBankAccount, resolveCashAccountId, resolveSystemAccountId, SYSTEM_ACCOUNTS } from "../lib/accounts";
 
 const USER = 1;
 let failures = 0;
@@ -28,7 +29,7 @@ function assertEq(label: string, actual: number, expected: number) {
   if (!ok) failures++;
 }
 
-async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: number; receivableAccId: number }> {
+async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: number; receivableAccId: number; expenseAccId: number; incomeAccId: number }> {
   // A user row for created_by (FK → users.id). Idempotent.
   await db.execute(sql`
     insert into users (id, username, password_hash, name, role)
@@ -44,24 +45,33 @@ async function ensurePrereqs(): Promise<{ cashAccId: number; bankLegacyId: numbe
     }).returning();
     cashAccId = cash.id;
   }
-  // The Tenant Receivable system account (code 1100) — a contra account for the
-  // double-entry check. Idempotent: CI runs migrate (not provision) before this.
-  await db.execute(sql`
-    insert into accounts (type, code, name, is_system, currency, opening_balance_ils, opening_source)
-    values ('asset', ${SYSTEM_ACCOUNTS.RECEIVABLE}, 'ذمم مدينة — مستأجرون', true, 'ILS', '0', 'smoke')
-    on conflict (code) do nothing
-  `);
-  const [recv] = await db.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.code, SYSTEM_ACCOUNTS.RECEIVABLE));
+  // The system contra accounts double-entry postings hit. Idempotent: CI runs
+  // migrate (not provision) before this smoke, so it seeds what it needs.
+  const seed: Array<[string, string, string]> = [
+    ["asset", SYSTEM_ACCOUNTS.RECEIVABLE, "ذمم مدينة — مستأجرون"],
+    ["expense", SYSTEM_ACCOUNTS.EXPENSES, "المصروفات"],
+    ["income", SYSTEM_ACCOUNTS.RENT_INCOME, "إيراد الإيجار"],
+  ];
+  for (const [type, code, name] of seed) {
+    await db.execute(sql`
+      insert into accounts (type, code, name, is_system, currency, opening_balance_ils, opening_source)
+      values (${type}, ${code}, ${name}, true, 'ILS', '0', 'smoke')
+      on conflict (code) do nothing
+    `);
+  }
+  const receivableAccId = (await resolveSystemAccountId(db, SYSTEM_ACCOUNTS.RECEIVABLE))!;
+  const expenseAccId = (await resolveSystemAccountId(db, SYSTEM_ACCOUNTS.EXPENSES))!;
+  const incomeAccId = (await resolveSystemAccountId(db, SYSTEM_ACCOUNTS.RENT_INCOME))!;
   // A legacy bank account + its unified mirror.
   const [bank] = await db.insert(bankAccountsTable).values({
     bankName: "بنك الاختبار", accountNumber: "SMOKE-1", accountName: "جاري", currency: "ILS",
   }).returning();
   await mirrorBankAccount(db, bank);
-  return { cashAccId, bankLegacyId: bank.id, receivableAccId: recv.id };
+  return { cashAccId, bankLegacyId: bank.id, receivableAccId, expenseAccId, incomeAccId };
 }
 
 async function main() {
-  const { cashAccId, bankLegacyId, receivableAccId } = await ensurePrereqs();
+  const { cashAccId, bankLegacyId, receivableAccId, expenseAccId, incomeAccId } = await ensurePrereqs();
   const bal = (id: number) => accountBalanceILS(db, id);
 
   console.log("ledger dual-write smoke\n");
@@ -189,6 +199,34 @@ async function main() {
   await db.transaction((tx) => reverseJournalEntry(tx, entryId, { createdBy: USER, reason: "smoke reversal" }));
   assertEq("cash after reversing the entry", await bal(cashAccId), cashBefore);
   assertEq("receivable after reversing the entry", await bal(receivableAccId), recvBefore);
+
+  // --- double-entry contra mapping (slice 3): vouchers + charges post pairs ---
+  console.log("\ndouble-entry contra (vouchers + charges):");
+  const c0 = await bal(cashAccId), r0 = await bal(receivableAccId), e0 = await bal(expenseAccId), i0 = await bal(incomeAccId);
+  // A cash receipt: cash +700 / receivable −700.
+  await db.transaction((tx) => syncVoucherLedger(tx, {
+    kind: "receipt", voucherId: 9501, paymentMethod: "cash", amountILS: 700, txnDate: "2026-07-21", tenantId: null, createdBy: USER,
+  }));
+  assertEq("cash after receipt 700", await bal(cashAccId), c0 + 700);
+  assertEq("receivable after receipt 700 (−)", await bal(receivableAccId), r0 - 700);
+  // A cash payment: cash −250 / expense +250.
+  await db.transaction((tx) => syncVoucherLedger(tx, {
+    kind: "payment", voucherId: 9502, paymentMethod: "cash", amountILS: 250, txnDate: "2026-07-21", createdBy: USER,
+  }));
+  assertEq("cash after payment 250", await bal(cashAccId), c0 + 700 - 250);
+  assertEq("expense after payment 250 (+)", await bal(expenseAccId), e0 + 250);
+  // A rent charge accrual: receivable +900 / income −900.
+  await db.transaction((tx) => syncChargeLedger(tx, { chargeId: 9601, tenantId: 1, amountILS: 900, txnDate: "2026-07-01", status: "open", createdBy: USER }));
+  assertEq("receivable after charge 900 (+)", await bal(receivableAccId), r0 - 700 + 900);
+  assertEq("income after charge 900 (−)", await bal(incomeAccId), i0 - 900);
+  // Clear all three → every contra returns to its starting balance.
+  await db.transaction((tx) => clearVoucherLedger(tx, "receipt", 9501));
+  await db.transaction((tx) => clearVoucherLedger(tx, "payment", 9502));
+  await db.transaction((tx) => clearChargeLedger(tx, 9601));
+  assertEq("cash restored", await bal(cashAccId), c0);
+  assertEq("receivable restored", await bal(receivableAccId), r0);
+  assertEq("expense restored", await bal(expenseAccId), e0);
+  assertEq("income restored", await bal(incomeAccId), i0);
 
   console.log(failures === 0 ? "\n✓ ledger smoke passed" : `\n✗ ledger smoke failed (${failures})`);
   await pool.end();

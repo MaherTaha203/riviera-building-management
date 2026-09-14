@@ -6,6 +6,7 @@ import { logAction } from "../lib/audit";
 import { validateBody } from "../lib/validate";
 import { GenerateRentChargesBody, UpdateRentChargeBody } from "@workspace/api-zod";
 import { generateChargesForContract, tenantAmountDueILS } from "../lib/receivables";
+import { syncChargeLedger, clearChargeLedger } from "../lib/chargeLedger";
 
 const router = Router();
 
@@ -41,10 +42,17 @@ router.post("/rent-charges/generate", authMiddleware, validateBody(GenerateRentC
   const [contract] = await db.select().from(contractsTable).where(eq(contractsTable.id, contractId));
   if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
 
-  const created = await db.transaction((tx) => generateChargesForContract(tx, {
-    id: contract.id, tenantId: contract.tenantId, startDate: contract.startDate, endDate: contract.endDate,
-    rentAmountILS: contract.rentAmountILS, paymentFrequency: contract.paymentFrequency, paymentCount: contract.paymentCount,
-  }, upToDate, user.userId));
+  const created = await db.transaction(async (tx) => {
+    const rows = await generateChargesForContract(tx, {
+      id: contract.id, tenantId: contract.tenantId, startDate: contract.startDate, endDate: contract.endDate,
+      rentAmountILS: contract.rentAmountILS, paymentFrequency: contract.paymentFrequency, paymentCount: contract.paymentCount,
+    }, upToDate, user.userId);
+    // Post the accrual entry (DR income / CR receivable) for each new charge.
+    for (const row of rows) {
+      await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, createdBy: user.userId });
+    }
+    return rows;
+  });
   if (created.length) await logAction(user, "CREATE", "rent_charge", contractId);
   res.status(201).json(created.map((c) => shape(c)));
 });
@@ -65,6 +73,8 @@ router.patch("/rent-charges/:id", authMiddleware, validateBody(UpdateRentChargeB
       updates.status = Number(existing.allocatedILS) >= Number(req.body.amountILS) - 0.005 ? "settled" : "open";
     }
     const [row] = await tx.update(rentChargesTable).set(updates).where(eq(rentChargesTable.id, id)).returning();
+    // Re-sync the accrual entry to the (possibly new) amount / due date / status.
+    if (row) await syncChargeLedger(tx, { chargeId: row.id, tenantId: row.tenantId, amountILS: row.amountILS, txnDate: row.dueDate, status: row.status, createdBy: user.userId });
     return row ?? null;
   });
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
@@ -81,6 +91,7 @@ router.post("/rent-charges/:id/cancel", authMiddleware, async (req, res): Promis
     if (!existing) return { notFound: true as const };
     if (Number(existing.allocatedILS) > 0.005) return { conflict: true as const };
     const [row] = await tx.update(rentChargesTable).set({ status: "cancelled" }).where(eq(rentChargesTable.id, id)).returning();
+    await clearChargeLedger(tx, id); // reverse the accrual entry
     return { row };
   });
   if ("notFound" in result) { res.status(404).json({ error: "Not found" }); return; }
