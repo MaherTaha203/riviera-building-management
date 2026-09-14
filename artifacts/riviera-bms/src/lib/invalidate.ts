@@ -40,6 +40,8 @@ const FINANCIAL_QUERY_KEYS: readonly string[] = [
   // Transfers move money between accounts; balances now project from the ledger.
   "/api/transfers",
   "/api/ledger/accounts",
+  // Closing/opening a financial period gates future postings.
+  "/api/financial-periods",
 ];
 
 /**
