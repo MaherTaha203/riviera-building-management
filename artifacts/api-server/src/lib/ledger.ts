@@ -304,6 +304,28 @@ export async function setSourceLedgerEffect(
 }
 
 /**
+ * Set a source document's ledger effect to a balanced JOURNAL ENTRY (or none),
+ * the double-entry analogue of setSourceLedgerEffect. Reverses every still-active
+ * movement this source posted, then posts a fresh balanced entry (legs sharing
+ * one entryId, Σ signedDelta = 0). create → legs set; edit → old reversed, new
+ * posted; delete → legs = null (reverse only). Idempotent within a transaction.
+ */
+export async function setSourceJournalEffect(
+  tx: Exec,
+  key: { sourceType: MovementSourceType; sourceId: number },
+  effect: { legs: JournalLeg[]; txnDate: string; createdBy?: number | null } | null,
+) {
+  await reverseActiveSourceMovements(tx, key, effect?.createdBy ?? null);
+  if (!effect) return null;
+  return postJournalEntry(tx, effect.legs, {
+    sourceType: key.sourceType,
+    sourceId: key.sourceId,
+    txnDate: effect.txnDate,
+    createdBy: effect.createdBy ?? null,
+  });
+}
+
+/**
  * Reverse every still-active movement a source posted (a posted original with
  * reverses_id IS NULL that has not yet been reversed). Shared by the single-
  * effect and multi-leg (transfer) sync helpers so corrections never mutate a
@@ -348,15 +370,13 @@ export async function setTransferLedgerEffect(
   effect: { fromAccountId: number; toAccountId: number; amountILS: number; txnDate: string; reference?: string | null; createdBy?: number | null } | null,
 ) {
   const key = { sourceType: "transfer" as const, sourceId: transferId };
-  await reverseActiveSourceMovements(tx, key, effect?.createdBy ?? null);
-  if (!effect) return;
-  await postMovement(tx, {
-    ...key, accountId: effect.fromAccountId, direction: "debit",
-    amountILS: effect.amountILS, txnDate: effect.txnDate, reference: effect.reference ?? null, createdBy: effect.createdBy ?? null,
-  });
-  await postMovement(tx, {
-    ...key, accountId: effect.toAccountId, direction: "credit",
-    amountILS: effect.amountILS, txnDate: effect.txnDate, reference: effect.reference ?? null, createdBy: effect.createdBy ?? null,
+  await setSourceJournalEffect(tx, key, effect && {
+    txnDate: effect.txnDate,
+    createdBy: effect.createdBy ?? null,
+    legs: [
+      { accountId: effect.fromAccountId, direction: "debit", amountILS: effect.amountILS, reference: effect.reference ?? null },
+      { accountId: effect.toAccountId, direction: "credit", amountILS: effect.amountILS, reference: effect.reference ?? null },
+    ],
   });
 }
 
