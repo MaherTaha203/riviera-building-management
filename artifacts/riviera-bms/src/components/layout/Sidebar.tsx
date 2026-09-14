@@ -18,6 +18,7 @@ import {
   BarChart3,
   Scale,
   History,
+  ShieldCheck,
   CalendarClock,
   Settings,
   LogOut,
@@ -49,6 +50,7 @@ const adminItems = [
   { name: "التقارير", path: "/reports", icon: BarChart3 },
   { name: "القوائم المالية", path: "/financial-reports", icon: Scale },
   { name: "الفترات المالية", path: "/financial-periods", icon: CalendarClock },
+  { name: "تدقيق الدفتر", path: "/ledger-audit", icon: ShieldCheck },
   { name: "سجل التدقيق", path: "/audit-log", icon: History },
   { name: "الإعدادات", path: "/settings", icon: Settings },
 ];
