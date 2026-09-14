@@ -1239,6 +1239,34 @@ export const GetAccountLedgerResponse = zod.object({
 })
 
 
+export const GetAgingReportQueryParams = zod.object({
+  "asOf": zod.coerce.string().optional().describe('Age receivables as of this date (YYYY-MM-DD); omit for today.')
+})
+
+export const GetAgingReportResponse = zod.object({
+  "asOf": zod.string(),
+  "rows": zod.array(zod.object({
+  "current": zod.number(),
+  "d1_30": zod.number(),
+  "d31_60": zod.number(),
+  "d61_90": zod.number(),
+  "d90_plus": zod.number(),
+  "total": zod.number()
+}).and(zod.object({
+  "tenantId": zod.number(),
+  "tenantName": zod.string().nullish()
+}))),
+  "totals": zod.object({
+  "current": zod.number(),
+  "d1_30": zod.number(),
+  "d31_60": zod.number(),
+  "d61_90": zod.number(),
+  "d90_plus": zod.number(),
+  "total": zod.number()
+})
+})
+
+
 export const ListFinancialPeriodsResponseItem = zod.object({
   "id": zod.number(),
   "label": zod.string(),

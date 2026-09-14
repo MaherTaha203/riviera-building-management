@@ -1269,6 +1269,24 @@ paths:
         "404":
           description: Account not found
 
+  /reports/aging:
+    get:
+      operationId: getAgingReport
+      tags: [reports]
+      parameters:
+        - name: asOf
+          in: query
+          required: false
+          schema: { type: string }
+          description: Age receivables as of this date (YYYY-MM-DD); omit for today.
+      responses:
+        "200":
+          description: Receivables aging (per-tenant buckets + totals)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgingReport"
+
   /financial-periods:
     get:
       operationId: listFinancialPeriods
@@ -2633,6 +2651,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AccountLedgerEntry"
+
+    AgingBuckets:
+      type: object
+      required: [current, d1_30, d31_60, d61_90, d90_plus, total]
+      properties:
+        current: { type: number }
+        d1_30: { type: number }
+        d31_60: { type: number }
+        d61_90: { type: number }
+        d90_plus: { type: number }
+        total: { type: number }
+    AgingRow:
+      allOf:
+        - $ref: "#/components/schemas/AgingBuckets"
+        - type: object
+          required: [tenantId]
+          properties:
+            tenantId: { type: integer }
+            tenantName: { type: string, nullable: true }
+    AgingReport:
+      type: object
+      required: [asOf, rows, totals]
+      properties:
+        asOf: { type: string }
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgingRow"
+        totals:
+          $ref: "#/components/schemas/AgingBuckets"
 
     # ─── Financial periods (closed-period control) ───────────────────────────
     FinancialPeriod:
