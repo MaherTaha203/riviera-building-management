@@ -70,7 +70,7 @@ export default function PaymentVouchers() {
   const [view, setView, resetFilters] = usePersistedView("payments", "filters",
     { from: "", to: "", method: "all", currency: "all", category: "all" });
   const { from: fFrom, to: fTo, method: fMethod, currency: fCurrency, category: fCategory } = view;
-  const categories = useMemo(() => [...new Set((vouchers as any[]).map((v: any) => v.category).filter(Boolean))].sort(), [vouchers]);
+  const filterCategories = useMemo(() => [...new Set((vouchers as any[]).map((v: any) => v.category).filter(Boolean))].sort(), [vouchers]);
   const filtered = useMemo(() => (vouchers as any[]).filter((v: any) => {
     if (fFrom && v.date < fFrom) return false;
     if (fTo && v.date > fTo) return false;
@@ -218,7 +218,7 @@ export default function PaymentVouchers() {
           { key: "currency", label: "العملة", value: fCurrency, onChange: v => setView({ currency: v }),
             options: [{ value: "all", label: "الكل" }, { value: "ILS", label: "ILS" }, { value: "USD", label: "USD" }, { value: "JOD", label: "JOD" }] },
           { key: "category", label: "البند", value: fCategory, onChange: v => setView({ category: v }),
-            options: [{ value: "all", label: "الكل" }, ...categories.map((c) => ({ value: c, label: c }))] },
+            options: [{ value: "all", label: "الكل" }, ...filterCategories.map((c) => ({ value: c, label: c }))] },
         ]}
         onReset={resetFilters}
         resultCount={filtered.length}
