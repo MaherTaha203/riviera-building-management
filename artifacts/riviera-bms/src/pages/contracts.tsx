@@ -344,7 +344,7 @@ export default function Contracts() {
                   invalid={!!errors.unitId}
                   value={form.unitId}
                   onChange={v => { setForm(f => ({ ...f, unitId: v })); clear("unitId"); }}
-                  options={(units as any[]).filter((u: any) => u.status !== "occupied" || String(u.id) === form.unitId).map((u: any) => ({ value: String(u.id), label: `وحدة ${u.unitNumber}` }))}
+                  options={(units as any[]).map((u: any) => ({ value: String(u.id), label: `وحدة ${u.unitNumber}${u.status === "occupied" ? " (مؤجرة حالياً)" : u.status === "maintenance" ? " (صيانة)" : ""}` }))}
                   placeholder="اختر وحدة"
                   clearable={false}
                 />
