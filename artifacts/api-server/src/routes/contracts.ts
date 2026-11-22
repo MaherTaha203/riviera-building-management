@@ -39,6 +39,27 @@ router.post("/contracts", authMiddleware, validateBody(CreateContractBody), asyn
   if (!tenantRef) { res.status(400).json({ error: "Tenant not found" }); return; }
   const [unitRef] = await db.select({ id: unitsTable.id }).from(unitsTable).where(eq(unitsTable.id, Number(unitId)));
   if (!unitRef) { res.status(400).json({ error: "Unit not found" }); return; }
+  if (String(startDate) > String(endDate)) {
+    res.status(400).json({ error: "تاريخ بداية العقد يجب أن يسبق تاريخ انتهائه أو يساويه" });
+    return;
+  }
+  // Allow future contracts for occupied units, but never allow overlapping
+  // lease periods for the same unit. Terminated contracts do not block reuse.
+  const unitContracts = await db.select({
+    id: contractsTable.id,
+    startDate: contractsTable.startDate,
+    endDate: contractsTable.endDate,
+    status: contractsTable.status,
+  }).from(contractsTable).where(eq(contractsTable.unitId, Number(unitId)));
+  const overlapping = unitContracts.find(c =>
+    c.status !== "terminated" &&
+    String(c.startDate) <= String(endDate) &&
+    String(c.endDate) >= String(startDate)
+  );
+  if (overlapping) {
+    res.status(409).json({ error: "لا يمكن إضافة العقد: توجد مدة عقد أخرى متداخلة لهذه الوحدة. اختر تاريخ بداية بعد انتهاء العقد الحالي." });
+    return;
+  }
   const rate = Number(exchangeRate ?? 1);
   const amountILS = Number(rentAmount) * rate;
   // Atomically generate contract number + insert + sync unit occupancy in one
